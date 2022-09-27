@@ -11,7 +11,7 @@ from neuron import h
 h.load_file('stdrun.hoc')
 
 
-class Recording():
+class Recording:
     """Manage recording parameters for NEURON simulations."""
 
     def __init__(self, fiber: object):
@@ -56,9 +56,7 @@ class Recording():
         self.ap_end_count = []
         self.ap_end_times = []
 
-    def record_ap(self,
-                  fiber: object,
-                  thresh: float = -30):
+    def record_ap(self, fiber: object, thresh: float = -30):
         # TODO: consider merging with record_ap_end_times
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
@@ -67,7 +65,7 @@ class Recording():
         """
         for i in range(0, fiber.axonnodes):
             if fiber.myelination:
-                ind = i*11
+                ind = i * 11
             else:
                 ind = i
             self.apc.append(h.APCount(fiber.sections[ind](0.5)))
@@ -85,7 +83,7 @@ class Recording():
         for ap_end_vector, ap_end_ind in zip(self.ap_end_times, ap_end_inds):
             if fiber.myelination:
                 # if myelinated, create APCount at node of Ranvier
-                ap_count = h.APCount(fiber.sections[ap_end_ind*11](0.5))
+                ap_count = h.APCount(fiber.sections[ap_end_ind * 11](0.5))
             else:
                 # if unmyelinated, create APCount at axon segment
                 ap_count = h.APCount(fiber.sections[ap_end_ind](0.5))
@@ -100,7 +98,7 @@ class Recording():
         """
         for ind in range(0, fiber.axonnodes):
             if fiber.myelination:
-                v_node = h.Vector().record(fiber.sections[ind*11](0.5)._ref_v)
+                v_node = h.Vector().record(fiber.sections[ind * 11](0.5)._ref_v)
             else:
                 v_node = h.Vector().record(fiber.sections[ind](0.5)._ref_v)
             self.vm.append(v_node)
@@ -122,10 +120,10 @@ class Recording():
         if fix_passive is False:
             # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
             for node_ind in self.gating_inds:
-                h_node = h.Vector().record(fiber.sections[node_ind*11](0.5)._ref_h_inf_axnode_myel)
-                m_node = h.Vector().record(fiber.sections[node_ind*11](0.5)._ref_m_inf_axnode_myel)
-                mp_node = h.Vector().record(fiber.sections[node_ind*11](0.5)._ref_mp_inf_axnode_myel)
-                s_node = h.Vector().record(fiber.sections[node_ind*11](0.5)._ref_s_inf_axnode_myel)
+                h_node = h.Vector().record(fiber.sections[node_ind * 11](0.5)._ref_h_inf_axnode_myel)
+                m_node = h.Vector().record(fiber.sections[node_ind * 11](0.5)._ref_m_inf_axnode_myel)
+                mp_node = h.Vector().record(fiber.sections[node_ind * 11](0.5)._ref_mp_inf_axnode_myel)
+                s_node = h.Vector().record(fiber.sections[node_ind * 11](0.5)._ref_s_inf_axnode_myel)
                 self.gating_h.append(h_node)
                 self.gating_m.append(m_node)
                 self.gating_mp.append(mp_node)
@@ -139,12 +137,13 @@ class Recording():
                 gating_vectors.insert(0, passive_node)
                 gating_vectors.append(passive_node)
 
-    def ap_checker(self,
-                   fiber: object,
-                   find_block_thresh: bool = False,
-                   ap_detect_location: float = 0.9,
-                   istim_delay: float = 0,
-                   ) -> int:
+    def ap_checker(
+        self,
+        fiber: object,
+        find_block_thresh: bool = False,
+        ap_detect_location: float = 0.9,
+        istim_delay: float = 0,
+    ) -> int:
         """Check to see if an action potential occurred at the end of a run.
 
         :param fiber: instance of Fiber class

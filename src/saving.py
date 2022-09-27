@@ -33,24 +33,25 @@ class Saving:
         self.output_path = None
         return
 
-    def inherit(self,
-                sim_path: str,
-                dt: float,
-                fiber: object,
-                space_vm: bool = False,
-                space_gating: bool = False,
-                space_times: list[float] = [],
-                time_vm: bool = False,
-                time_gating: bool = False,
-                istim: bool = False,
-                locs: list[float] = [],
-                end_ap_times: bool = False,
-                loc_min: float = 0.1,
-                loc_max: float = 0.9,
-                ap_end_thresh: float = -30,
-                ap_loctime: bool = False,
-                runtime: bool = False,
-                ):
+    def inherit(
+        self,
+        sim_path: str,
+        dt: float,
+        fiber: object,
+        space_vm: bool = False,
+        space_gating: bool = False,
+        space_times: list[float] = [],
+        time_vm: bool = False,
+        time_gating: bool = False,
+        istim: bool = False,
+        locs: list[float] = [],
+        end_ap_times: bool = False,
+        loc_min: float = 0.1,
+        loc_max: float = 0.9,
+        ap_end_thresh: float = -30,
+        ap_loctime: bool = False,
+        runtime: bool = False,
+    ):
         """Assign values to all Saving instance attributes.
 
         :param sim_path: path to n_sim directory

@@ -1,0 +1,6 @@
+[flake8]
+ignore = E203, W503, # Black compatibility
+    #place additional ignores here
+docstring-style: SPHINX
+max-line-length = 120
+max-complexity = 18

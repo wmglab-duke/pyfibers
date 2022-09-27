@@ -12,4 +12,3 @@ from .saving import Saving
 from .stimulation import Stimulation
 
 __all__ = ['Fiber', 'Recording', 'Saving', 'Stimulation']
-
