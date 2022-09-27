@@ -4,12 +4,13 @@ Please refer to the LICENSE and README.md files for licensing instructions.
 The source code can be found on the following GitHub repository: https://github.com/wmglab-duke/ascent
 """
 
-import json
 import math
-import pickle
 import time
+import json
+import pickle
 
 import numpy as np
+
 from neuron import h
 
 Section = h.Section
@@ -19,12 +20,11 @@ ion_style = h.ion_style
 h.load_file('stdrun.hoc')
 
 
-class Fiber:
+class Fiber():
     """Create a fiber model from NEURON sections."""
 
-    def __init__(self, diameter, fiber_mode, temperature):
+    def __init__(self, diameter: float, fiber_mode: str, temperature: float):
         """Initialize Fiber class.
-
         :param diameter: fiber diameter [um]
         :param fiber_mode: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
@@ -54,9 +54,8 @@ class Fiber:
         :param n_fiber_coords: number of fiber coordinates from COMSOL
         :return: Fiber object
         """
-        f = open('wmglab_neuron/fiber_z.json')
-        fiber_parameters = json.load(f)['fiber_type_parameters'][self.fiber_mode]
-        f.close()
+        with open('wmglab_neuron/fiber_z.json') as file:
+            fiber_parameters = json.load(file)['fiber_type_parameters'][self.fiber_mode]
         # Determine geometrical parameters for fiber based on fiber model
         if self.fiber_mode != 'MRG_DISCRETE' and self.fiber_mode != 'MRG_INTERPOLATION':
             fiber_type = fiber_parameters['fiber_type']
@@ -408,34 +407,17 @@ class Fiber:
         nsegments = axonnodes + paranodes1 + paranodes2 + axoninter
         for ind in range(1, nsegments + 1):
             if ind % 11 == 1:
-                section = create_node(
-                    node_ind,
-                    node_diam,
-                    nodelength,
-                    rhoa,
-                    mycm,
-                    mygm,
-                    passive_end_nodes,
-                    axonnodes,
-                    node_channels,
-                    nl,
-                    rpn0,
-                )
+                section = create_node(node_ind, node_diam, nodelength, rhoa, mycm, mygm, passive_end_nodes, axonnodes,
+                                       node_channels, nl, rpn0)
                 node_ind += 1
             elif ind % 11 == 2 or ind % 11 == 0:
-                section = create_mysa(
-                    mysa_ind, fiber_diam, paralength1, rhoa, para_diam_1, e_pas_vrest, rpn1, mycm, mygm, nl
-                )
+                section = create_mysa(mysa_ind, fiber_diam, paralength1, rhoa, para_diam_1, e_pas_vrest, rpn1, mycm, mygm, nl)
                 mysa_ind += 1
             elif ind % 11 == 3 or ind % 11 == 10:
-                section = create_flut(
-                    flut_ind, fiber_diam, paralength2, rhoa, para_diam_2, e_pas_vrest, rpn2, mycm, mygm, nl
-                )
+                section = create_flut(flut_ind, fiber_diam, paralength2, rhoa, para_diam_2, e_pas_vrest, rpn2, mycm, mygm, nl)
                 flut_ind += 1
             else:
-                section = create_stin(
-                    stin_ind, fiber_diam, interlength, rhoa, axon_diam, e_pas_vrest, rpx, mycm, mygm, nl
-                )
+                section = create_stin(stin_ind, fiber_diam, interlength, rhoa, axon_diam, e_pas_vrest, rpx, mycm, mygm, nl)
                 stin_ind += 1
             self.sections.append(section)
 
@@ -597,9 +579,7 @@ class Fiber:
                         node.nao / node.nai
                     )  # Manual Calculation of ena in order to use Schild F and R values
                     if conductances97:
-                        node.gbar_naf97mean = (
-                            0.022434928  # [S/cm^2] This block sets the conductance to the conductances in Schild 1997
-                        )
+                        node.gbar_naf97mean = 0.022434928  # [S/cm^2] This block sets the conductance to the conductances in Schild 1997
                         node.gbar_nas97mean = 0.022434928
                         node.gbar_kd = 0.001956534
                         node.gbar_ka = 0.001304356
@@ -621,16 +601,15 @@ class Fiber:
 
         return self
 
-    def finite_amplitudes(
-        self,
-        stimulation: object,
-        saving: object,
-        recording: object,
-        start_time: float,
-        amps: list,
-        t_init_ss: float = -200,
-        dt_init_ss: float = 10,
-    ):
+    def finite_amplitudes(self,
+                          stimulation: object,
+                          saving: object,
+                          recording: object,
+                          start_time: float,
+                          amps: list,
+                          t_init_ss: float = -200,
+                          dt_init_ss: float = 10
+                          ):
         """Submit runs for FINITE_AMPLITUDES protocol.
 
         :param stimulation: instance of Stimulation class
@@ -656,19 +635,19 @@ class Fiber:
 
     def find_threshold(  # noqa: C901
         self,
-        stimulation: object,
-        saving: object,
-        recording: object,
-        find_block_thresh: bool = False,
-        bounds_search_mode: str = 'PERCENT_INCREMENT',
-        step: float = 10,
-        termination_mode: str = 'PERCENT_DIFFERENCE',
-        termination_percent: float = 1,
-        termination_tolerance: float = 1,  # todo: come up with default value for this
-        stimamp_top: float = -1,
-        stimamp_bottom: float = -0.01,
-        t_init_ss: float = -200,
-        dt_init_ss: float = 10,
+            stimulation: object,
+            saving: object,
+            recording: object,
+            find_block_thresh: bool = False,
+            bounds_search_mode: str = 'PERCENT_INCREMENT',
+            step: float = 10,
+            termination_mode: str = 'PERCENT_DIFFERENCE',
+            termination_percent: float = 1,
+            termination_tolerance: float = 1,  # todo: come up with default value for this
+            stimamp_top: float = -1,
+            stimamp_bottom: float = -0.01,
+            t_init_ss: float = -200,
+            dt_init_ss: float = 10
     ):
         """Binary search to find threshold amplitudes.
 
@@ -687,14 +666,10 @@ class Fiber:
         :param dt_init_ss: the time step used to reach steady state [ms]
         """
         # Determine searching parameters for binary search bounds
-        if (
-            bounds_search_mode == 'PERCENT_INCREMENT'
-        ):  # relative increment (increase bound by a certain percentage of the previous value)
+        if bounds_search_mode == 'PERCENT_INCREMENT':  # relative increment (increase bound by a certain percentage of the previous value)
             increment_flag = 1  # flag is true for PERCENT_INCREMENT
             rel_increment = round(step / 100, 4)
-        elif (
-            bounds_search_mode == 'ABSOLUTE_INCREMENT'
-        ):  # absolute increment (increase bound by a a certain amount + previous value)
+        elif bounds_search_mode == 'ABSOLUTE_INCREMENT':  # absolute increment (increase bound by a a certain amount + previous value)
             increment_flag = 0  # flag is false for ABSOLUTE_INCREMENT
             abs_increment = round(step, 4)
 
@@ -715,14 +690,7 @@ class Fiber:
             if check_top_flag == 0:
                 # Check to see if upper-bound triggers action potential
                 print(f'Running stimamp_top = {stimamp_top:.6f}')
-                self.run(
-                    stimamp_top,
-                    stimulation,
-                    recording,
-                    find_block_thresh=find_block_thresh,
-                    t_init_ss=t_init_ss,
-                    dt_init_ss=dt_init_ss,
-                )
+                self.run(stimamp_top, stimulation, recording, find_block_thresh=find_block_thresh, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
 
                 if self.n_aps == 0:
                     if find_block_thresh == 0:
@@ -745,14 +713,7 @@ class Fiber:
             if check_bottom_flag == 0:
                 # Check to see if lower-bound does not trigger action potential
                 print(f'Running stimamp_bottom = {stimamp_bottom:.6f}')
-                self.run(
-                    stimamp_bottom,
-                    stimulation,
-                    recording,
-                    find_block_thresh=find_block_thresh,
-                    t_init_ss=t_init_ss,
-                    dt_init_ss=dt_init_ss,
-                )
+                self.run(stimamp_bottom, stimulation, recording, find_block_thresh=find_block_thresh, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
 
                 if self.n_aps != 0:
                     if find_block_thresh == 0:
@@ -789,14 +750,7 @@ class Fiber:
             stimamp = (stimamp_bottom + stimamp_top) / 2
             print(f'stimamp_bottom = {stimamp_bottom:.6f}      stimamp_top = {stimamp_top:.6f}')
             print(f'Running stimamp: {stimamp:.6f}')
-            self.run(
-                stimamp,
-                stimulation,
-                recording,
-                find_block_thresh=find_block_thresh,
-                t_init_ss=t_init_ss,
-                dt_init_ss=dt_init_ss,
-            )
+            self.run(stimamp, stimulation, recording, find_block_thresh=find_block_thresh, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
 
             if termination_flag == 0:
                 thresh_resoln = abs(rel_thresh_resoln)
@@ -812,15 +766,7 @@ class Fiber:
                 print(f'Done searching! stimamp: {stimamp:.6f} mA for extracellular\n')
 
                 # Run one more time at threshold to save user-specified variables
-                self.run(
-                    stimamp,
-                    stimulation,
-                    recording,
-                    find_block_thresh=find_block_thresh,
-                    saving=saving,
-                    t_init_ss=t_init_ss,
-                    dt_init_ss=dt_init_ss,
-                )
+                self.run(stimamp, stimulation, recording, find_block_thresh=find_block_thresh, saving=saving, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
                 saving.save_thresh(self, stimamp)  # Save threshold value to file
                 break
             elif self.n_aps >= 1:
@@ -829,17 +775,16 @@ class Fiber:
                 stimamp_bottom = stimamp
         return
 
-    def submit(
-        self,
-        stimulation: object,
-        saving: object,
-        recording: object,
-        start_time: float,
-        protocol_mode: str = 'ACTIVATION_THRESHOLD',
-        amps: list = [],
-        t_init_ss: float = -200,
-        dt_init_ss: float = 10,
-    ):
+    def submit(self,
+               stimulation: object,
+               saving: object,
+               recording: object,
+               start_time: float,
+               protocol_mode: str = 'ACTIVATION_THRESHOLD',
+               amps: list = [],
+               t_init_ss: float = -200,
+               dt_init_ss: float = 10
+               ):
         """Determine protocol and submit runs for simulation.
 
         :param stimulation: instance of Stimulation class
@@ -879,7 +824,7 @@ class Fiber:
         find_block_thresh: bool = False,
         saving: object = None,
         t_init_ss: float = -200,
-        dt_init_ss: float = 10,
+        dt_init_ss: float = 10
     ):
         """Run a simulation for a single stimulation amplitude.
 
@@ -914,7 +859,11 @@ class Fiber:
                         v_rest - s.ek
                     )
 
-        def steady_state(sim_dt: float, t_init_ss: float, dt_init_ss: float):
+        def steady_state(
+                sim_dt: float,
+                t_init_ss: float,
+                dt_init_ss: float
+        ):
             """Allow system to reach steady-state by using a large dt before simulation.
 
             :param sim_dt: user-specified time step for simulation
@@ -976,7 +925,7 @@ class Fiber:
         return self
 
     def save(self, path: str):
-        """Save fiber object to the specified path.
+        """Save the object to the specified path.
 
         :param path: The path to save the object to.
         """
