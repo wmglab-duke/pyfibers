@@ -48,25 +48,25 @@ isort:
   stage: lint
   script:
     - pip install isort
-    - isort --check-only config docs examples scripts src run tests
+    - isort --check-only src
 
 black:
   stage: lint
   script:
     - pip install black
-    - black --check config docs examples scripts src run tests
+    - black --check src
 
 flake8:
   stage: lint
   script:
     - pip install flake8 flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring
-    - flake8 --extend-ignore=T100,T101,T102 config docs examples scripts src run tests
+    - flake8 --extend-ignore=T100,T101,T102 src
 
 docstring_check:
   stage: lint
   script:
     - pip install flake8 flake8-docstrings flake8-rst-docstrings darglint
-    - flake8 --select=D,DAR,RST config docs examples scripts src run
+    - flake8 --select=D,DAR,RST src
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -77,7 +77,7 @@ dev_check:
   script:
     - ( ! grep "raise DevelopmentError" --include \*.py -r . )
     - pip install flake8 flake8-fixme
-    - flake8 --select=T100,T101,T102 config docs examples scripts src run tests
+    - flake8 --select=T100,T101,T102 src
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
