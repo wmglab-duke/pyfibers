@@ -1,8 +1,9 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""Configuration file for the Sphinx documentation builder.
+
+This file only contains a selection of the most common options.
+For a full list see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
 
 # -- Path setup --------------------------------------------------------------
 
@@ -12,14 +13,16 @@
 #
 import os
 import sys
+
 import mock
+
 sys.path.insert(0, os.path.abspath('../../src/wmglab-neuron'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'wmglab-neuron'
-copyright = '2022, Duke University'
+copyright_info = '2022, Duke University'
 
 # The full version, including alpha/beta/rc tags
 release = 'alpha'
