@@ -926,7 +926,7 @@ class Fiber():
         return self
 
     def save(self, path: str):
-        """Save the object to the specified path.
+        """Save fiber object to the specified path.
 
         :param path: The path to save the object to.
         """
