@@ -11,7 +11,7 @@ from neuron import h
 h.load_file('stdrun.hoc')
 
 
-class Stimulation():
+class Stimulation:  # TODO: rename to Simulation?
     """Manage stimulation of NEURON simulations."""
 
     def __init__(self):
@@ -26,7 +26,7 @@ class Stimulation():
         return
 
     def load_potentials(self, potentials_path: str):
-        # TODO: have run_controls.py load the potentials and pass them in as a numpy array
+        # TODO: have run_controls.py load the potentials and pass them in as a numpy array (in __init__)
         """Create Ve(x) -- vector of potentials from FEM.
 
         :param potentials_path: file name containing Extracellular Stim potentials data
@@ -43,7 +43,7 @@ class Stimulation():
         return self
 
     def load_waveform(self, waveform_path: str):
-        # TODO: have run_controls.py load the waveform and pass them in as a numpy array
+        # TODO: have run_controls.py load the waveform and pass them in as a numpy array (in __init__)
         """Create I(t) -- vector of amplitudes at each time step of the FEM. Read in simulation time step and time stop.
 
         :param waveform_path: file name containing Extracellular Stim waveform data
@@ -56,14 +56,16 @@ class Stimulation():
             self.waveform = [float(i) for i in file_lines]
         return self
 
-    def apply_intracellular(self, fiber: object,
-                            delay: float = 0,
-                            pw: float = 0,
-                            dur: float = 0,
-                            freq: float = 0,
-                            amp: float = 0,
-                            ind: int = 0
-                            ):
+    def apply_intracellular(  # TODO: change name to somethhing like add_intracellular_stim()
+        self,
+        fiber: object,
+        delay: float = 0,
+        pw: float = 0,
+        dur: float = 0,
+        freq: float = 0,
+        amp: float = 0,
+        ind: int = 0,
+    ):
         """Create instance of trainIClamp for intracellular stimulation.
 
         :param fiber: instance of Fiber class
@@ -77,7 +79,7 @@ class Stimulation():
         :return: instance of Stimulation class
         """
         if fiber.myelination:
-            intrastim_pulsetrain_ind = ind*11
+            intrastim_pulsetrain_ind = ind * 11
         else:
             intrastim_pulsetrain_ind = ind
         intracellular_stim = h.trainIClamp(fiber.sections[intrastim_pulsetrain_ind](0.5))

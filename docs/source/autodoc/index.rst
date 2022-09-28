@@ -5,3 +5,6 @@ autodoc
    :maxdepth: 1
 
    fiber
+   stimulation
+   recording
+   saving

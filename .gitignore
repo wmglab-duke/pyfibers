@@ -1,2 +1,4 @@
 __pycache__
 dist/*
+docs/build/*
+.idea/*
