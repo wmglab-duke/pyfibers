@@ -34,8 +34,7 @@ skip-string-normalization = true
 
 [tool.rstcheck]
 ignore_directives = [
-    "changelog",
-    "bibliography",
+    "automodule",
 ]
 
 [tool.flynt]

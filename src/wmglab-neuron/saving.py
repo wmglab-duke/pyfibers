@@ -14,24 +14,25 @@ import pandas as pd
 class Saving:
     """Manage saving parameters to file for NEURON simulations."""
 
-    def __init__(self,
-                 sim_path: str,
-                 dt: float,
-                 fiber: object,
-                 space_vm: bool = False,
-                 space_gating: bool = False,
-                 space_times: list[float] = [],
-                 time_vm: bool = False,
-                 time_gating: bool = False,
-                 istim: bool = False,
-                 locs: list[float] = [],
-                 end_ap_times: bool = False,
-                 loc_min: float = 0.1,
-                 loc_max: float = 0.9,
-                 ap_end_thresh: float = -30,
-                 ap_loctime: bool = False,
-                 runtime: bool = False,
-                 ):
+    def __init__(
+        self,
+        sim_path: str,
+        dt: float,
+        fiber: object,
+        space_vm: bool = False,
+        space_gating: bool = False,
+        space_times: list[float] = None,
+        time_vm: bool = False,
+        time_gating: bool = False,
+        istim: bool = False,
+        locs: list[float] = None,
+        end_ap_times: bool = False,
+        loc_min: float = 0.1,
+        loc_max: float = 0.9,
+        ap_end_thresh: float = -30,
+        ap_loctime: bool = False,
+        runtime: bool = False,
+    ):
         """Initialize instance of Saving class.
 
         :param sim_path: path to n_sim directory
@@ -52,16 +53,17 @@ class Saving:
         :param runtime: save the simulation runtime
         :return: Saving object
         """
-        # TODO: switch output_path to be some directory, add feature to check if exists/create, then in ASCENT, pass in data/outputs path
+        # TODO: switch output_path to be some directory,
+        #  add feature to check if exists/create, then in ASCENT, pass in data/outputs path
         self.space_vm = space_vm
         self.space_gating = space_gating
-        sim_times = space_times
+        sim_times = space_times or []
         self.time_inds = [int(t / dt) for t in sim_times]  # divide by dt to avoid indexing error
         self.time_inds.sort()
         self.time_vm = time_vm
         self.time_gating = time_gating
         self.istim = istim
-        self.locs = locs
+        self.locs = locs or []
         if self.locs != 'all':
             self.node_inds = [int((fiber.axonnodes - 1) * loc) for loc in self.locs]
         elif self.locs == 'all':
@@ -118,7 +120,7 @@ class Saving:
             activation_file.write(f'{fiber.n_aps:.3f}')
 
     def save_variables(self, fiber: object, recording: object, dt: float, amp_ind: int = 0):  # noqa: C901
-        # TODO: reduce complexity
+        # TODO: make each of these if statements a separate function, and have the user manually call
         """Write user-specified variables to file.
 
         :param fiber: instance of Fiber class
