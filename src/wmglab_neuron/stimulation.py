@@ -11,52 +11,25 @@ from neuron import h
 h.load_file('stdrun.hoc')
 
 
-class Stimulation:  # TODO: rename to Simulation?
+class Stimulation:
     """Manage stimulation of NEURON simulations."""
 
-    def __init__(self):
-        """Initialize Stimulation class."""
-        # initialize Configurable super class
+    def __init__(self, potentials_list: list[float], waveform_list: list[int], dt: float = 0.001, tstop: float = 50):
+        """Initialize Stimulation class.
 
-        self.potentials = []
-        self.waveform = []
-        self.dt = None
-        self.tstop = None
+        :param potentials_list: list of extracellular potentials Ve(x)
+        :param waveform_list: list of amplitudes at each time step of the simulation
+        :param dt: time step for simulation [seconds]
+        :param tstop: time step for simulation [seconds]
+        """
+        self.potentials = potentials_list
+        self.waveform = waveform_list
+        self.dt = dt
+        self.tstop = tstop
         self.istim = None
         return
 
-    def load_potentials(self, potentials_path: str):
-        # TODO: have run_controls.py load the potentials and pass them in as a numpy array (in __init__)
-        """Create Ve(x) -- vector of potentials from FEM.
-
-        :param potentials_path: file name containing Extracellular Stim potentials data
-        :return: Stimulation object
-        :raises Exception: size of the potentials file does not match the Fiber class
-        """
-        with open(potentials_path, 'r') as potentials_file:
-            axontotal = int(potentials_file.readline())
-            file_lines = potentials_file.read().splitlines()
-            self.potentials = [float(i) * 1000 for i in file_lines]  # Need to convert to V -> mV
-
-        if len(self.potentials) != axontotal:
-            raise Exception("Need axontotal from potentials file to match axontotal used in Python")
-        return self
-
-    def load_waveform(self, waveform_path: str):
-        # TODO: have run_controls.py load the waveform and pass them in as a numpy array (in __init__)
-        """Create I(t) -- vector of amplitudes at each time step of the FEM. Read in simulation time step and time stop.
-
-        :param waveform_path: file name containing Extracellular Stim waveform data
-        :return: Stimulation object
-        """
-        with open(waveform_path, 'r') as waveform_file:
-            self.dt = float(waveform_file.readline().strip())  # time step
-            self.tstop = int(waveform_file.readline().strip())  # stop time
-            file_lines = waveform_file.read().splitlines()
-            self.waveform = [float(i) for i in file_lines]
-        return self
-
-    def apply_intracellular(  # TODO: change name to somethhing like add_intracellular_stim()
+    def apply_intracellular(
         self,
         fiber: object,
         delay: float = 0,
