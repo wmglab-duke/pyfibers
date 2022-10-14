@@ -16,7 +16,6 @@ class Saving:
 
     def __init__(
         self,
-        sim_path: str,
         dt: float,
         fiber: object,
         space_vm: bool = False,
@@ -32,10 +31,10 @@ class Saving:
         ap_end_thresh: float = -30,
         ap_loctime: bool = False,
         runtime: bool = False,
+        output_path: str = None,
     ):
         """Initialize instance of Saving class.
 
-        :param sim_path: path to n_sim directory
         :param dt: user-specified time step for simulation
         :param fiber: instance of Fiber class
         :param space_vm: save transmembrane at all sections at the time stamps defined in 'space_times'
@@ -51,10 +50,9 @@ class Saving:
         :param ap_end_thresh: if end_ap_times, the threshold value for Vm to pass for an AP to be detected [mV]
         :param ap_loctime: save, for each fiber node, the last time an AP passed over that node
         :param runtime: save the simulation runtime
+        :param output_path: path to output directory
         :return: Saving object
         """
-        # TODO: switch output_path to be some directory,
-        #  add feature to check if exists/create, then in ASCENT, pass in data/outputs path
         self.space_vm = space_vm
         self.space_gating = space_gating
         sim_times = space_times or []
@@ -77,7 +75,7 @@ class Saving:
             self.ap_end_thresh = ap_end_thresh
         self.ap_loctime = ap_loctime
         self.runtime = runtime
-        self.output_path = os.path.join(sim_path, 'data', 'outputs')
+        self.output_path = output_path
         return
 
     def save_thresh(self, fiber: object, thresh: float):
