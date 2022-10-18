@@ -4,13 +4,13 @@ Please refer to the LICENSE and README.md files for licensing instructions.
 The source code can be found on the following GitHub repository: https://github.com/wmglab-duke/ascent
 """
 
-import json
 import math
-import pickle
 import time
 
 import numpy as np
 from neuron import h
+
+from src.wmglab_neuron import FiberTypeParameters, Recording, Saving, Stimulation
 
 Section = h.Section
 SectionList = h.SectionList
@@ -22,31 +22,27 @@ h.load_file('stdrun.hoc')
 class Fiber:
     """Create a fiber model from NEURON sections."""
 
-    def __init__(self, diameter: float, fiber_mode: str, temperature: float, inner_ind: int = 0, fiber_ind: int = 0):
+    def __init__(self, diameter: float, fiber_mode: str, temperature: float):
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
         :param fiber_mode: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
-        :param inner_ind: index of inner
-        :param fiber_ind: index of fiber
 
         :return: Fiber object
         """
         self.diameter = diameter
-        self.fiber_mode = fiber_mode
+        self.fiber_model = fiber_mode
         self.temperature = temperature
-        if fiber_mode != 'MRG_DISCRETE' and fiber_mode != 'MRG_INTERPOLATION':
-            self.myelination = False
+        if fiber_mode not in ['MRG_DISCRETE', 'MRG_INTERPOLATION']:
+            self.myelinated = False
         else:
-            self.myelination = True
+            self.myelinated = True
         self.axonnodes = None
         self.delta_z = None
         self.passive_end_nodes = None
         self.sections = []
         self.n_aps = None
-        self.inner_ind = inner_ind
-        self.fiber_ind = fiber_ind
         self.v_init = None
         return
 
@@ -58,10 +54,9 @@ class Fiber:
         :param n_fiber_coords: number of fiber coordinates from COMSOL
         :return: Fiber object
         """
-        with open('src/wmglab_neuron/fiber_z.json') as file:
-            fiber_parameters = json.load(file)['fiber_type_parameters'][self.fiber_mode]
+        fiber_parameters = FiberTypeParameters[self.fiber_model]
         # Determine geometrical parameters for fiber based on fiber model
-        if self.fiber_mode != 'MRG_DISCRETE' and self.fiber_mode != 'MRG_INTERPOLATION':
+        if self.fiber_model != 'MRG_DISCRETE' and self.fiber_model != 'MRG_INTERPOLATION':
             fiber_type = fiber_parameters['fiber_type']
             neuron_flag = fiber_parameters['neuron_flag']
             node_channels = fiber_parameters['node_channels']
@@ -69,7 +64,7 @@ class Fiber:
             self.passive_end_nodes = fiber_parameters['passive_end_nodes']
             channels_type = fiber_parameters['channels_type']
 
-        elif self.fiber_mode == 'MRG_DISCRETE':
+        elif self.fiber_model == 'MRG_DISCRETE':
             diameters, my_delta_zs, paranodal_length_2s, axon_diams, node_diams, para_diam_1, para_diam_2, nls = (
                 fiber_parameters[key]
                 for key in (
@@ -96,7 +91,7 @@ class Fiber:
             self.delta_z = fiber_parameters['delta_zs'][diameter_index]
             self.passive_end_nodes = fiber_parameters['passive_end_nodes']
 
-        elif self.fiber_mode == 'MRG_INTERPOLATION':
+        elif self.fiber_model == 'MRG_INTERPOLATION':
             diameter = self.diameter
             neuron_flag = fiber_parameters['neuron_flag']
             node_channels = fiber_parameters['node_channels']
@@ -126,7 +121,6 @@ class Fiber:
         elif fiber_type == 2:
             self.v_init = -80
         elif fiber_type == 3:
-            fiber_parameters['channels_type']
             v_init_c_fibers = [
                 -60,
                 -55,
@@ -136,7 +130,7 @@ class Fiber:
             self.v_init = v_init_c_fibers[channels_type - 1]
 
         # Create fiber sections
-        if self.myelination:
+        if self.myelinated:
             self.create_myelinated_fiber(
                 node_channels,
                 self.axonnodes,
@@ -150,7 +144,7 @@ class Fiber:
                 nl,
                 self.passive_end_nodes,
             )
-        elif not self.myelination:
+        elif not self.myelinated:
             self.create_unmyelinated_fiber(
                 self.diameter,
                 length,
@@ -626,9 +620,9 @@ class Fiber:
 
     def finite_amplitudes(
         self,
-        stimulation: object,
-        saving: object,
-        recording: object,
+        stimulation: Stimulation,
+        saving: Saving,
+        recording: Recording,
         start_time: float,
         amps: list,
         t_init_ss: float = -200,
@@ -649,20 +643,21 @@ class Fiber:
         for amp_ind, amp in enumerate(amps):
             print(f'Running amp {amp_ind} of {len(amps)}: {amp} mA')
 
-            self.run(amp, stimulation, recording, saving=saving, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
+            self.run_sim(amp, stimulation, recording, saving=saving, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
             time_individual = time.time() - start_time - time_total
-            saving.save_variables(self, recording, stimulation.dt, amp_ind)  # Save user-specified variables
-            saving.save_activation(self, amp_ind)  # Save number of APs triggered
-            saving.save_runtime(self, time_individual, amp_ind)  # Save runtime of inidividual run
+            # todo: remove saving class
+            # saving.save_variables(self, recording, stimulation.dt, amp_ind)  # Save user-specified variables
+            # saving.save_activation(self, amp_ind)  # Save number of APs triggered
+            # saving.save_runtime(self, time_individual, amp_ind)  # Save runtime of inidividual run
 
             time_total += time_individual
             recording.reset()  # Reset recording vectors to be used again
 
     def find_threshold(  # noqa: C901
         self,
-        stimulation: object,
-        saving: object,
-        recording: object,
+        stimulation: Stimulation,
+        saving: Saving,
+        recording: Recording,
         find_block_thresh: bool = False,
         bounds_search_mode: str = 'PERCENT_INCREMENT',
         step: float = 10,
@@ -719,7 +714,7 @@ class Fiber:
             if check_top_flag == 0:
                 # Check to see if upper-bound triggers action potential
                 print(f'Running stimamp_top = {stimamp_top:.6f}')
-                self.run(
+                self.run_sim(
                     stimamp_top,
                     stimulation,
                     recording,
@@ -749,7 +744,7 @@ class Fiber:
             if check_bottom_flag == 0:
                 # Check to see if lower-bound does not trigger action potential
                 print(f'Running stimamp_bottom = {stimamp_bottom:.6f}')
-                self.run(
+                self.run_sim(
                     stimamp_bottom,
                     stimulation,
                     recording,
@@ -793,7 +788,7 @@ class Fiber:
             stimamp = (stimamp_bottom + stimamp_top) / 2
             print(f'stimamp_bottom = {stimamp_bottom:.6f}      stimamp_top = {stimamp_top:.6f}')
             print(f'Running stimamp: {stimamp:.6f}')
-            self.run(
+            self.run_sim(
                 stimamp,
                 stimulation,
                 recording,
@@ -816,7 +811,7 @@ class Fiber:
                 print(f'Done searching! stimamp: {stimamp:.6f} mA for extracellular\n')
 
                 # Run one more time at threshold to save user-specified variables
-                self.run(
+                self.run_sim(
                     stimamp,
                     stimulation,
                     recording,
@@ -825,7 +820,8 @@ class Fiber:
                     t_init_ss=t_init_ss,
                     dt_init_ss=dt_init_ss,
                 )
-                saving.save_thresh(self, stimamp)  # Save threshold value to file
+                # todo: remove saving class
+                # saving.save_thresh(self, stimamp)  # Save threshold value to file
                 break
             elif self.n_aps >= 1:
                 stimamp_top = stimamp
@@ -833,11 +829,11 @@ class Fiber:
                 stimamp_bottom = stimamp
         return
 
-    def submit(
-        self,  # todo: rename run_protocol
-        stimulation: object,
-        saving: object,
-        recording: object,
+    def run_protocol(
+        self,
+        stimulation: Stimulation,
+        saving: Saving,
+        recording: Recording,
         start_time: float,
         protocol_mode: str = 'ACTIVATION_THRESHOLD',
         amps: list = None,
@@ -869,20 +865,20 @@ class Fiber:
 
         if find_thresh:  # Protocol is BLOCK_THRESHOLD or ACTIVATION_THRESHOLD
             self.find_threshold(stimulation, saving, recording, find_block_thresh)
-            time_individual = time.time() - start_time
-            saving.save_variables(self, recording, stimulation.dt)  # Save user-specified variables
-            saving.save_runtime(self, time_individual)  # Save runtime of simulation
+            # todo: remove saving class
+            # saving.save_variables(self, recording, stimulation.dt)  # Save user-specified variables
+            # saving.save_runtime(self, time_individual)  # Save runtime of simulation
 
         else:  # Protocol is FINITE_AMPLITUDES
             self.finite_amplitudes(stimulation, saving, recording, start_time, amps, t_init_ss, dt_init_ss)
 
-    def run(  # todo: rename to run_sim
+    def run_sim(
         self,
         stimamp: float,
-        stimulation: object,
-        recording: object,
+        stimulation: Stimulation,
+        recording: Recording,
         find_block_thresh: bool = False,
-        saving: object = None,
+        saving: Saving = None,
         t_init_ss: float = -200,
         dt_init_ss: float = 10,
     ):
@@ -898,7 +894,7 @@ class Fiber:
         :return: Fiber object
         """
 
-        def balance(fiber: object):
+        def balance(fiber: Fiber):
             """Balance membrane currents for Tigerholm model.
 
             :param fiber: instance of Fiber class
@@ -947,7 +943,7 @@ class Fiber:
                 recording.record_ap_end_times(self, saving.ap_end_inds, saving.ap_end_thresh)
 
         h.finitialize(self.v_init)  # Initialize the simulation
-        if self.fiber_mode == 'TIGERHOLM':  # Balance membrane currents if Tigerholm
+        if self.fiber_model == 'TIGERHOLM':  # Balance membrane currents if Tigerholm
             balance(self)
 
         stimulation.initialize_extracellular(self)  # Set extracellular stimulation at each segment to zero
@@ -979,11 +975,3 @@ class Fiber:
         if saving is None:
             print(f'{int(self.n_aps)} AP(s) detected')
         return self
-
-    def save(self, path: str):
-        """Save the object to the specified path.
-
-        :param path: The path to save the object to.
-        """
-        with open(path, 'wb') as file:
-            pickle.dump(self, file)

@@ -4,3 +4,5 @@ ignore = E203, W503, # Black compatibility
 docstring-style: SPHINX
 max-line-length = 120
 max-complexity = 18
+#TEMPORARY ignores
+per-file-ignores = __init__.py:F4, fiber.py:E800

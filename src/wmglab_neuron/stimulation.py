@@ -27,7 +27,6 @@ class Stimulation:
         self.dt = dt
         self.tstop = tstop
         self.istim = None
-        return
 
     def apply_intracellular(
         self,
@@ -51,7 +50,7 @@ class Stimulation:
 
         :return: instance of Stimulation class
         """
-        if fiber.myelination:
+        if fiber.myelinated:
             intrastim_pulsetrain_ind = ind * 11
         else:
             intrastim_pulsetrain_ind = ind
@@ -64,16 +63,17 @@ class Stimulation:
         self.istim = intracellular_stim
         return self
 
-    def initialize_extracellular(self, fiber: object):
+    @staticmethod
+    def initialize_extracellular(fiber: object):
         """Set extracellular stimulation values to zero along entire fiber.
 
         :param fiber: instance of Fiber class
         """
         for section in fiber.sections:
             section(0.5).e_extracellular = 0
-        return
 
-    def update_extracellular(self, fiber: object, e_stims: str):
+    @staticmethod
+    def update_extracellular(fiber: object, e_stims: list[float]):
         """Update the applied extracellular stimulation all along the fiber length.
 
         :param fiber: instance of Fiber class
