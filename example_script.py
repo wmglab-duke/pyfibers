@@ -93,7 +93,7 @@ saving = Saving(
 
 recording = Recording(fiber)
 
-fiber.submit(
+fiber.run_protocol(
     stimulation,
     saving,
     recording,

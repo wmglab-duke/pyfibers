@@ -66,7 +66,7 @@ class Recording:
         :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
         """
         for i in range(0, fiber.axonnodes):
-            if fiber.myelination:
+            if fiber.myelinated:
                 ind = i * 11
             else:
                 ind = i
@@ -83,7 +83,7 @@ class Recording:
         # Create vectors to save ap times to
         self.ap_end_times = [h.Vector(), h.Vector()]
         for ap_end_vector, ap_end_ind in zip(self.ap_end_times, ap_end_inds):
-            if fiber.myelination:
+            if fiber.myelinated:
                 # if myelinated, create APCount at node of Ranvier
                 ap_count = h.APCount(fiber.sections[ap_end_ind * 11](0.5))
             else:
@@ -99,7 +99,7 @@ class Recording:
         :param fiber: instance of Fiber class
         """
         for ind in range(0, fiber.axonnodes):
-            if fiber.myelination:
+            if fiber.myelinated:
                 v_node = h.Vector().record(fiber.sections[ind * 11](0.5)._ref_v)
             else:
                 v_node = h.Vector().record(fiber.sections[ind](0.5)._ref_v)

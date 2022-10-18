@@ -2,9 +2,18 @@ __pycache__
 dist/*
 docs/build/*
 .idea/*
+.spyproject/*
+
+data/*
+
 
 MOD_Files/x86_64
 src/MOD_Files/x86_64/
 src/MOD_Files/*.c
 src/MOD_Files/*.o
 src/MOD_Files/nrnmech.dll
+
+*.o
+*.mod
+*.c
+nrnmech.dll
