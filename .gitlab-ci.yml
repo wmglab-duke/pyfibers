@@ -98,8 +98,9 @@ test_docs:
     - pip install -U sphinx mock sphinx-rtd-theme
     - pip install -Ur docs/rtd_requirements.txt
     - cd docs/source; sphinx-build -W -b html . ../../public
-  except:
-    - master
+  rules:
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+
 
 pages:
   stage: deploy
@@ -110,5 +111,6 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - master
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
