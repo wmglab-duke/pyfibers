@@ -61,9 +61,8 @@ fiber = Fiber(diameter=8.7, fiber_mode='MRG_DISCRETE', temperature=37)
 fiber.generate(n_fiber_coords=133)
 
 # Create instance of Stimulation class
-stimulation = Stimulation(potentials_list=potentials, waveform_list=waveform, dt=time_step, tstop=time_stop)
+stimulation = Stimulation(fiber, potentials_list=potentials, waveform_list=waveform, dt=time_step, tstop=time_stop)
 stimulation.apply_intracellular(
-    fiber,
     delay=0,
     pw=0,
     dur=0,
@@ -93,8 +92,7 @@ saving = Saving(
 
 recording = Recording(fiber)
 
-fiber.run_protocol(
-    stimulation,
+stimulation.run_protocol(
     saving,
     recording,
     start_time,

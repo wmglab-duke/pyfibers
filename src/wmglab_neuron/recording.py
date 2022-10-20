@@ -17,10 +17,9 @@ class Recording:
     def __init__(self, fiber: object):
         """Initialize Recording class.
 
-        #TODO: discuss whether we should just automatically save all data, and then let the user decide what to output
-
         :param fiber: instance of Fiber class
         """
+        # TODO: discuss whether we should just automatically save all data, and then let the user decide what to output
         self.time = h.Vector().record(h._ref_t)
         self.space = list(range(0, fiber.axonnodes))
         self.vm = []
