@@ -5,8 +5,10 @@ refer to the LICENSE and README.md files for licensing instructions. The
 source code can be found on the following GitHub repository:
 https://github.com/wmglab-duke/ascent
 """
-
+import pandas as pd
 from neuron import h
+
+from src.wmglab_neuron import Fiber
 
 h.load_file('stdrun.hoc')
 
@@ -14,12 +16,22 @@ h.load_file('stdrun.hoc')
 class Recording:
     """Manage recording parameters for NEURON simulations."""
 
-    def __init__(self, fiber: object):
+    # TODO: either make this attach to an instance of stimulation or make all these methods of simulation
+    # TODO: need to init with a zero istim if none is provided
+    # TODO: saving all variables barely adds any runtime even now when it is saving with every run of
+    # Threshold search. I think we can save some data by default and then add
+    # some function which allows users to extend the saving themselves
+
+    def __init__(self, fiber: Fiber):
         """Initialize Recording class.
 
         :param fiber: instance of Fiber class
         """
         # TODO: discuss whether we should just automatically save all data, and then let the user decide what to output
+        # TODO also maybe sore all this in a dict?
+        self.save_vm = False
+        self.save_gating = False
+        self.save_istim = False
         self.time = h.Vector().record(h._ref_t)
         self.space = list(range(0, fiber.axonnodes))
         self.vm = []
@@ -38,8 +50,6 @@ class Recording:
         self.istim = []
 
         self.apc = []
-        self.ap_end_count = []
-        self.ap_end_times = []
 
     def reset(self):
         """Reset recording attributes in order to be used for subsequent runs."""
@@ -54,10 +64,8 @@ class Recording:
         self.istim = []
 
         self.apc = []
-        self.ap_end_count = []
-        self.ap_end_times = []
 
-    def record_ap(self, fiber: object, thresh: float = -30):
+    def record_ap(self, fiber: Fiber, thresh: float = -30):
         # TODO: consider merging with record_ap_end_times
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
@@ -72,27 +80,7 @@ class Recording:
             self.apc.append(h.APCount(fiber.sections[ind](0.5)))
             self.apc[i].thresh = thresh
 
-    def record_ap_end_times(self, fiber: object, ap_end_inds: list, ap_end_thresh: float):
-        """Record when action potential occurs at specified indices. For 'end_ap_times' in sim.json.
-
-        :param fiber: instance of Fiber class
-        :param ap_end_inds: list of user-specified indices to record APs
-        :param ap_end_thresh: threshold value for action potentials
-        """
-        # Create vectors to save ap times to
-        self.ap_end_times = [h.Vector(), h.Vector()]
-        for ap_end_vector, ap_end_ind in zip(self.ap_end_times, ap_end_inds):
-            if fiber.myelinated:
-                # if myelinated, create APCount at node of Ranvier
-                ap_count = h.APCount(fiber.sections[ap_end_ind * 11](0.5))
-            else:
-                # if unmyelinated, create APCount at axon segment
-                ap_count = h.APCount(fiber.sections[ap_end_ind](0.5))
-            ap_count.thresh = ap_end_thresh
-            ap_count.record(ap_end_vector)  # save AP times detected by APCount to vector
-            self.ap_end_count.append(ap_count)
-
-    def record_vm(self, fiber):
+    def record_vm(self, fiber: Fiber):
         """Record membrane voltage (mV) along the axon.
 
         :param fiber: instance of Fiber class
@@ -112,7 +100,7 @@ class Recording:
         """
         self.istim = h.Vector().record(istim._ref_i)
 
-    def record_gating(self, fiber: object, fix_passive: bool = False):
+    def record_gating(self, fiber: Fiber, fix_passive: bool = False):
         """Record gating parameters (h, m, mp, s) for myelinated fiber types.
 
         :param fiber: instance of Fiber class
@@ -140,12 +128,14 @@ class Recording:
 
     def ap_checker(
         self,
-        fiber: object,
+        fiber: Fiber,
         find_block_thresh: bool = False,
         ap_detect_location: float = 0.9,
         istim_delay: float = 0,
     ) -> int:
         """Check to see if an action potential occurred at the end of a run.
+
+        # remove this function and check in the respective functions
 
         :param fiber: instance of Fiber class
         :param find_block_thresh: true if BLOCK_THRESHOLD protocol, false otherwise
@@ -164,3 +154,32 @@ class Recording:
         else:
             n_aps = self.apc[node_index].n
         return n_aps
+
+    def get_variables(self, fiber: Fiber):  # noqa: C901
+        # TODO: make each of these if statements a separate function, and have the user manually call
+        """Return recorded variables from a simulation.
+
+        :param fiber: instance of Fiber class
+        :return: time, space, vm, gating, istim, apc
+        """
+        # Put all recorded data into pandas DataFrame
+        vm_data = pd.DataFrame(self.vm)
+        all_gating_data = {
+            param: pd.DataFrame(gating_vector) for param, gating_vector in zip(['h', 'm', 'mp', 's'], self.gating)
+        }
+        istim_data = pd.DataFrame(self.istim)
+        # TODO: add saving of ap end times
+        ap_loctime = [self.apc[loc_node_ind].time for loc_node_ind in range(0, fiber.axonnodes)]
+        ap_counts = [self.apc[loc_node_ind].n for loc_node_ind in range(0, fiber.axonnodes)]
+        return vm_data, all_gating_data, istim_data, ap_loctime, ap_counts
+
+    def set_save(self, vm=False, gating=False, istim=False):
+        """Set which variables to save.
+
+        :param vm: true if membrane voltage should be saved, false otherwise
+        :param gating: true if gating parameters should be saved, false otherwise
+        :param istim: true if intracellular stimulation should be saved, false otherwise
+        """
+        self.save_vm = vm
+        self.save_gating = gating
+        self.save_istim = istim

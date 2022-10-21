@@ -9,7 +9,6 @@ The source code can be found on the following GitHub repository: https://github.
 from .fiber_z import FiberTypeParameters
 from .fiber import Fiber
 from .recording import Recording
-from .saving import Saving
 from .stimulation import Stimulation
 from .enums import *
 

@@ -16,6 +16,7 @@ SectionList = h.SectionList
 ion_style = h.ion_style
 
 h.load_file('stdrun.hoc')
+# TODO: every variable with flag in the name needs to be changed to something more descriptive
 
 
 class Fiber:
@@ -30,6 +31,7 @@ class Fiber:
 
         :return: Fiber object
         """
+        # TODO: need to think about making sure this is built so it is easy to add new fiber models
         self.diameter = diameter
         self.fiber_model = fiber_mode
         self.temperature = temperature
@@ -43,6 +45,10 @@ class Fiber:
         self.sections = []
         self.n_aps = None
         self.v_init = None
+        # todo: generate fiber in init
+        # TODO: add function for interpolating fiber coordinates/potentials.
+        # TODO: make potentials at the fiber level,
+        #  so you can run the same simulation class on multiple fibers, or many different simulation on same fiber
         return
 
     def generate(self, n_fiber_coords: int):
