@@ -5,11 +5,10 @@ refer to the LICENSE and README.md files for licensing instructions. The
 source code can be found on the following GitHub repository:
 https://github.com/wmglab-duke/ascent
 """
-import time
 
 from neuron import h
 
-from src.wmglab_neuron import Fiber, Recording, Saving
+from src.wmglab_neuron import Fiber, Recording
 
 h.load_file('stdrun.hoc')
 
@@ -18,24 +17,29 @@ class Stimulation:
     """Manage stimulation of NEURON simulations."""
 
     def __init__(
-        self, fiber: Fiber, potentials_list: list[float], waveform_list: list[int], dt: float = 0.001, tstop: float = 50
+        self, fiber: Fiber, potentials: list[float], waveform: list[int], dt: float = 0.001, tstop: float = 50
     ):
         """Initialize Stimulation class.
 
         :param fiber: instance of Fiber class
-        :param potentials_list: list of extracellular potentials Ve(x)
-        :param waveform_list: list of amplitudes at each time step of the simulation
+        :param potentials: list of extracellular potentials Ve(x)
+        :param waveform: list of amplitudes at each time step of the simulation
         :param dt: time step for simulation [seconds]
         :param tstop: time step for simulation [seconds]
         """
+        # TODO: need to think about making this extensible so that users could add custom simulations
         self.fiber = fiber
-        self.potentials = potentials_list
-        self.waveform = waveform_list
+        self.potentials = potentials
+        self.waveform = waveform
         self.dt = dt
         self.tstop = tstop
         self.istim = None
+        # todo: error if len(potentials) != len(fiber coords)
+        # todo: possibly add the ability to run on a list of fiber objects
+        # this could allow massive parallelization
+        # also then potentials need to be stored in the fiber
 
-    def apply_intracellular(
+    def add_intracellular_stim(
         self,
         delay: float = 0,
         pw: float = 0,
@@ -55,6 +59,9 @@ class Stimulation:
 
         :return: instance of Stimulation class
         """
+        # TODO: need to init with a zero istim if none is provided
+        # or skip recording istim if none is provided because recording istim errors
+        # right now if this function isnt run
         if self.fiber.myelinated:
             intrastim_pulsetrain_ind = ind * 11
         else:
@@ -81,44 +88,10 @@ class Stimulation:
         for x, section in enumerate(self.fiber.sections):
             section(0.5).e_extracellular = e_stims[x]
 
-    def finite_amplitudes(
-        self,
-        saving: Saving,
-        recording: Recording,
-        start_time: float,
-        amps: list,
-        t_init_ss: float = -200,
-        dt_init_ss: float = 10,
-    ):
-        """Submit runs for FINITE_AMPLITUDES protocol.
-
-        :param saving: instance of Saving class
-        :param recording: instance of Recording class
-        :param start_time: time at the very beginning of simulation
-        :param amps: list of amplitudes to simulate
-        :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
-        :param dt_init_ss: the time step used to reach steady state [ms]
-        """
-        time_total = 0
-        amps = amps if amps is not None else []
-        for amp_ind, amp in enumerate(amps):
-            print(f'Running amp {amp_ind} of {len(amps)}: {amp} mA')
-
-            self.run_sim(amp, recording, saving=saving, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
-            time_individual = time.time() - start_time - time_total
-            # todo: remove saving class
-            # saving.save_variables(selfy, recording, stimulation.dt, amp_ind)  # Save user-specified variables
-            # saving.save_activation(selfy, amp_ind)  # Save number of APs triggered
-            # saving.save_runtime(selfy, time_individual, amp_ind)  # Save runtime of inidividual run
-
-            time_total += time_individual
-            recording.reset()  # Reset recording vectors to be used again
-
     def find_threshold(  # noqa: C901
         self,
-        saving: Saving,
         recording: Recording,
-        find_block_thresh: bool = False,
+        condition: str = "activation",
         bounds_search_mode: str = 'PERCENT_INCREMENT',
         step: float = 10,
         termination_mode: str = 'PERCENT_DIFFERENCE',
@@ -131,9 +104,8 @@ class Stimulation:
     ):
         """Binary search to find threshold amplitudes.
 
-        :param saving: instance of Saving class
         :param recording: instance of Recording class
-        :param find_block_thresh: true if BLOCK_THRESHOLD protocol, false otherwise
+        :param condition: condition to search for threshold (activation or block)
         :param bounds_search_mode: indicates how to change upper and lower bounds for the binary search
         :param step: the incremental increase/decrease of the upper/lower bound in the binary search
         :param termination_mode: indicates when upper and lower bounds converge on a solution of appropriate precision
@@ -143,7 +115,17 @@ class Stimulation:
         :param stimamp_bottom: the lower-bound stimulation amplitude first tested in a binary search for thresholds
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
         :param dt_init_ss: the time step used to reach steady state [ms]
+        :return: the threshold amplitude for the given condition, and the number of detected aps
         """
+        # TODO: only record data on threshold? or maybe once search bounds are set
+        # TODO: enable option for specific number of aps to qualify as threshold
+        # todo: change find threshold to argument: condition=activation or block
+        # todo: add error if condition is not activation or block
+        # todo: use a single "target" threshold and move a certain percent or increment from that
+        # todo: this can be hugely simplified
+        # todo: two functions here, one checks block thresh and the other checks activation thresh
+
+        find_block_thresh = condition == "block"
         # Determine searching parameters for binary search bounds
         if (
             bounds_search_mode == 'PERCENT_INCREMENT'
@@ -173,7 +155,7 @@ class Stimulation:
             if check_top_flag == 0:
                 # Check to see if upper-bound triggers action potential
                 print(f'Running stimamp_top = {stimamp_top:.6f}')
-                self.run_sim(
+                n_aps = self.run_sim(
                     stimamp_top,
                     recording,
                     find_block_thresh=find_block_thresh,
@@ -181,10 +163,10 @@ class Stimulation:
                     dt_init_ss=dt_init_ss,
                 )
 
-                if self.n_aps == 0:
+                if n_aps == 0:
                     if find_block_thresh == 0:
                         print(
-                            'ERROR: Initial stimamp_top value does not elicit an AP - '
+                            'WARNING: Initial stimamp_top value does not elicit an AP - '
                             'need to increase its magnitude and/or increase tstop to detect evoked AP'
                         )
                     else:
@@ -202,7 +184,7 @@ class Stimulation:
             if check_bottom_flag == 0:
                 # Check to see if lower-bound does not trigger action potential
                 print(f'Running stimamp_bottom = {stimamp_bottom:.6f}')
-                self.run_sim(
+                n_aps = self.run_sim(
                     stimamp_bottom,
                     recording,
                     find_block_thresh=find_block_thresh,
@@ -210,7 +192,7 @@ class Stimulation:
                     dt_init_ss=dt_init_ss,
                 )
 
-                if self.n_aps != 0:
+                if n_aps != 0:
                     if find_block_thresh == 0:
                         print(
                             'ERROR: Initial stimamp_bottom value elicits an AP - '
@@ -245,7 +227,7 @@ class Stimulation:
             stimamp = (stimamp_bottom + stimamp_top) / 2
             print(f'stimamp_bottom = {stimamp_bottom:.6f}      stimamp_top = {stimamp_top:.6f}')
             print(f'Running stimamp: {stimamp:.6f}')
-            self.run_sim(
+            n_aps = self.run_sim(
                 stimamp,
                 recording,
                 find_block_thresh=find_block_thresh,
@@ -262,75 +244,32 @@ class Stimulation:
 
             # Check to see if stimamp is at threshold
             if tolerance < thresh_resoln:
-                if self.n_aps < 1:
+                if n_aps < 1:
                     stimamp = stimamp_prev
                 print(f'Done searching! stimamp: {stimamp:.6f} mA for extracellular\n')
 
                 # Run one more time at threshold to save user-specified variables
-                self.run_sim(
+                # TODO: Currently looks like it is recording every time
+                n_aps = self.run_sim(
                     stimamp,
                     recording,
                     find_block_thresh=find_block_thresh,
-                    saving=saving,
                     t_init_ss=t_init_ss,
                     dt_init_ss=dt_init_ss,
                 )
                 # todo: remove saving class
-                # saving.save_thresh(selfy, stimamp)  # Save threshold value to file
                 break
-            elif self.n_aps >= 1:
+            elif n_aps >= 1:
                 stimamp_top = stimamp
-            elif self.n_aps < 1:
+            elif n_aps < 1:
                 stimamp_bottom = stimamp
-        return
-
-    def run_protocol(
-        self,
-        saving: Saving,
-        recording: Recording,
-        start_time: float,
-        protocol_mode: str = 'ACTIVATION_THRESHOLD',
-        amps: list = None,
-        t_init_ss: float = -200,
-        dt_init_ss: float = 10,
-    ):
-        """Determine protocol and submit runs for simulation.
-
-        :param saving: instance of Saving class
-        :param recording: instance of Recording class
-        :param start_time: time at the very beginning of simulation
-        :param protocol_mode: protocol for simulation ('FINITE_AMPLITUDES', 'BLOCK_THRESHOLD', 'ACTIVATION_THRESHOLD')
-        :param amps: list of amplitudes to simulate
-        :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
-        :param dt_init_ss: the time step used to reach steady state [ms]
-        """
-        amps = amps or []
-        # Determine protocol
-        if protocol_mode != 'FINITE_AMPLITUDES':
-            find_thresh = True
-            if protocol_mode == 'BLOCK_THRESHOLD':
-                find_block_thresh = 1
-            elif protocol_mode == 'ACTIVATION_THRESHOLD':
-                find_block_thresh = 0
-        elif protocol_mode == 'FINITE_AMPLITUDES':
-            find_thresh = False
-            find_block_thresh = False
-
-        if find_thresh:  # Protocol is BLOCK_THRESHOLD or ACTIVATION_THRESHOLD
-            self.find_threshold(saving, recording, find_block_thresh)
-            # todo: remove saving class
-            # saving.save_variables(selfy, recording, stimulation.dt)  # Save user-specified variables
-            # saving.save_runtime(selfy, time_individual)  # Save runtime of simulation
-
-        else:  # Protocol is FINITE_AMPLITUDES
-            self.finite_amplitudes(saving, recording, start_time, amps, t_init_ss, dt_init_ss)
+        return stimamp, n_aps
 
     def run_sim(
         self,
         stimamp: float,
         recording: Recording,
         find_block_thresh: bool = False,
-        saving: Saving = None,
         t_init_ss: float = -200,
         dt_init_ss: float = 10,
     ):
@@ -339,14 +278,15 @@ class Stimulation:
         :param stimamp: amplitude to be applied to extracellular stimulation
         :param recording: instance of Recording class
         :param find_block_thresh: true if BLOCK_THRESHOLD protocol, false otherwise
-        :param saving: instance of Saving class
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
         :param dt_init_ss: the time step used to reach steady state [ms]
         :return: Fiber object
         """
+        # TODO: make recording optional
 
         def balance():
             """Balance membrane currents for Tigerholm model."""
+            # TODO: this should be a method of fiber? or decorate runsim with a function that balances if tigerholm
             v_rest = -55
             for s in self.fiber.sections:
                 if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
@@ -363,6 +303,8 @@ class Stimulation:
                         v_rest - s.ek
                     )
 
+        # todo: reset recording at beginning
+        # todo: remove repeated input variables such as init SS
         def steady_state(sim_dt: float, t_init_ss: float, dt_init_ss: float):
             """Allow system to reach steady-state by using a large dt before simulation.
 
@@ -379,16 +321,16 @@ class Stimulation:
             h.fcurrent()
             h.frecord_init()
 
+        # init recording
+        recording.reset()
+
         # If saving variables, record variables
-        if saving is not None:
-            if saving.time_vm or saving.space_vm:
-                recording.record_vm(self.fiber)
-            if saving.time_gating or saving.space_gating:
-                recording.record_gating(self.fiber)
-            if saving.istim:
-                recording.record_istim(self.istim)
-            if saving.ap_end_times:
-                recording.record_ap_end_times(self.fiber, saving.ap_end_inds, saving.ap_end_thresh)
+        if recording.save_vm:
+            recording.record_vm(self.fiber)
+        if recording.save_gating:
+            recording.record_gating(self.fiber)
+        if recording.save_istim:
+            recording.record_istim(self.istim)
 
         h.finitialize(self.fiber.v_init)  # Initialize the simulation
         if self.fiber.fiber_model == 'TIGERHOLM':  # Balance membrane currents if Tigerholm
@@ -401,6 +343,7 @@ class Stimulation:
         # Set up APcount
         recording.record_ap(self.fiber)
 
+        # TODO: looks like this stops immediately upon reaching the end of the waveform?
         # Begin simulation
         n_tsteps = len(self.waveform)
         for i in range(0, n_tsteps):
@@ -414,12 +357,12 @@ class Stimulation:
         # Done with simulation
 
         # Insert vectors of 0's for gating parameters at passive end nodes
-        if saving is not None and (saving.time_gating or saving.space_gating):
+        if recording.save_gating:
             recording.record_gating(self.fiber, fix_passive=True)
 
         # Check if APs occurred
-        self.n_aps = recording.ap_checker(self.fiber, find_block_thresh)
+        n_aps = recording.ap_checker(self.fiber, find_block_thresh)
 
-        if saving is None:
-            print(f'{int(self.n_aps)} AP(s) detected')
-        return self
+        print(f'{int(n_aps)} AP(s) detected')
+
+        return n_aps
