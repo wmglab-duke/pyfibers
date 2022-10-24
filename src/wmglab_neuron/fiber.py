@@ -16,22 +16,27 @@ SectionList = h.SectionList
 ion_style = h.ion_style
 
 h.load_file('stdrun.hoc')
+
+
 # TODO: every variable with flag in the name needs to be changed to something more descriptive
 
 
 class Fiber:
     """Create a fiber model from NEURON sections."""
 
-    def __init__(self, diameter: float, fiber_mode: str, temperature: float):
+    def __init__(
+        self, diameter: float, fiber_mode: str, temperature: float, n_fiber_coords: int, potentials: list[float]
+    ):
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
         :param fiber_mode: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
-
-        :return: Fiber object
+        :param n_fiber_coords: number of fiber coordinates
+        :param potentials: list of membrane potentials [mV]
         """
         # TODO: need to think about making sure this is built so it is easy to add new fiber models
+        self.potentials = []
         self.diameter = diameter
         self.fiber_model = fiber_mode
         self.temperature = temperature
@@ -45,13 +50,16 @@ class Fiber:
         self.sections = []
         self.n_aps = None
         self.v_init = None
-        # todo: generate fiber in init
+        self.potentials = potentials
+        assert len(potentials) == n_fiber_coords, 'Number of fiber coordinates does not match number of potentials'
+
+        self._generate(n_fiber_coords)
+
         # TODO: add function for interpolating fiber coordinates/potentials.
         # TODO: make potentials at the fiber level,
         #  so you can run the same simulation class on multiple fibers, or many different simulation on same fiber
-        return
 
-    def generate(self, n_fiber_coords: int):
+    def _generate(self, n_fiber_coords: int):
         """Build fiber model sections with NEURON.
 
         #TODO: split this into a unmyel and a myel function for separate subclasses of fiber superclass
@@ -59,6 +67,7 @@ class Fiber:
         :param n_fiber_coords: number of fiber coordinates from COMSOL
         :return: Fiber object
         """
+        # todo: need to save fiber coordinates
         fiber_parameters = FiberTypeParameters[self.fiber_model]
         # Determine geometrical parameters for fiber based on fiber model
         if self.fiber_model != 'MRG_DISCRETE' and self.fiber_model != 'MRG_INTERPOLATION':
@@ -158,7 +167,6 @@ class Fiber:
                 delta_z=self.delta_z,
                 passive_end_nodes=self.passive_end_nodes,
             )
-
         return self
 
     def create_myelinated_fiber(
@@ -190,194 +198,6 @@ class Fiber:
         :param passive_end_nodes: true for passive end node strategy, false otherwise
         :return: Fiber object
         """
-
-        def create_mysa(
-            i: int,
-            fiber_diam: float,
-            paralength1: float,
-            rhoa: float,
-            para_diam_1: float,
-            e_pas_vrest: float,
-            rpn1: float,
-            mycm: float,
-            mygm: float,
-            nl: int,
-        ):
-            """Create a single MYSA segment for MRG_DISCRETE fiber type.
-
-            :param i: index of fiber segment
-            :param fiber_diam: fiber diameter [um]
-            :param paralength1: length of myelin attachment section of fiber segment (MYSA) [um]
-            :param rhoa: intracellular resistivity [Ohm-um]
-            :param para_diam_1: diameter of myelin attachment section of fiber segment (MYSA) [um]
-            :param e_pas_vrest: resting potential of axon [mV]
-            :param rpn1: periaxonal space resistivity for MYSA segment [Mohms/cm]
-            :param mycm: lamella membrane capacitance [uF/cm2]
-            :param mygm: lamella membrane conductance [uF/cm2]
-            :param nl: number of myelin lemella
-            :return: nrn.Section
-            """
-            mysa = Section(name='mysa ' + str(i))
-            mysa.nseg = 1
-            mysa.diam = fiber_diam
-            mysa.L = paralength1
-            mysa.Ra = rhoa * (1 / (para_diam_1 / fiber_diam) ** 2) / 10000
-            mysa.cm = 2 * para_diam_1 / fiber_diam
-            mysa.insert('pas')
-            mysa.g_pas = 0.001 * para_diam_1 / fiber_diam
-            mysa.e_pas = e_pas_vrest
-
-            mysa.insert('extracellular')
-            mysa.xraxial[0] = rpn1
-            mysa.xc[0] = mycm / (nl * 2)  # short circuit
-            mysa.xg[0] = mygm / (nl * 2)  # short circuit
-
-            return mysa
-
-        def create_flut(
-            i: int,
-            fiber_diam: float,
-            paralength2: float,
-            rhoa: float,
-            para_diam_2: float,
-            e_pas_vrest: float,
-            rpn2: float,
-            mycm: float,
-            mygm: float,
-            nl: float,
-        ):
-            """Create a single FLUT segment for MRG_DISCRETE fiber type.
-
-            :param i: index of fiber segment
-            :param fiber_diam: fiber diameter [um]
-            :param paralength2: length of main section of paranode fiber segment (FLUT) [um]
-            :param rhoa: intracellular resistivity [Ohm-um]
-            :param para_diam_2: diameter of main section of paranode fiber segment (FLUT) [um]
-            :param e_pas_vrest: resting potential of axon [mV]
-            :param rpn2: periaxonal space resistivity for of paranode fiber segment (FLUT) [Mohms/cm]
-            :param mycm: lamella membrane capacitance [uF/cm2]
-            :param mygm: lamella membrane conductance [uF/cm2]
-            :param nl: number of myelin lemella
-            :return: nrn.Section
-            """
-            flut = Section(name='flut ' + str(i))
-            flut.nseg = 1
-            flut.diam = fiber_diam
-            flut.L = paralength2
-            flut.Ra = rhoa * (1 / (para_diam_2 / fiber_diam) ** 2) / 10000
-            flut.cm = 2 * para_diam_2 / fiber_diam
-            flut.insert('pas')
-            flut.g_pas = 0.0001 * para_diam_2 / fiber_diam
-            flut.e_pas = e_pas_vrest
-
-            flut.insert('extracellular')
-            flut.xraxial[0] = rpn2
-            flut.xc[0] = mycm / (nl * 2)  # short circuit
-            flut.xg[0] = mygm / (nl * 2)  # short circuit
-
-            return flut
-
-        def create_stin(
-            i: int,
-            fiber_diam: float,
-            interlength: float,
-            rhoa: float,
-            axon_diam: float,
-            e_pas_vrest: float,
-            rpx: float,
-            mycm: float,
-            mygm: float,
-            nl: int,
-        ):
-            """Create a STIN segment for MRG_DISCRETE fiber type.
-
-            :param i: index of fiber segment
-            :param fiber_diam: fiber diameter [um]
-            :param interlength: length of internodal fiber segment (STIN) [um]
-            :param rhoa: intracellular resistivity [Ohm-um]
-            :param axon_diam: diameter of internodal fiber segment (STIN) [um]
-            :param e_pas_vrest: resting potential of axon [mV]
-            :param rpx: periaxonal space resistivity for internodal fiber segment (STIN) [Mohms/cm]
-            :param mycm: lamella membrane capacitance [uF/cm2]
-            :param mygm: lamella membrane conductance [uF/cm2]
-            :param nl: number of myelin lemella
-            :return: nrn.Section
-            """
-            stin = Section(name='stin ' + str(i))
-            stin.nseg = 1
-            stin.diam = fiber_diam
-            stin.L = interlength
-            stin.Ra = rhoa * (1 / (axon_diam / fiber_diam) ** 2) / 10000
-            stin.cm = 2 * axon_diam / fiber_diam
-            stin.insert('pas')
-            stin.g_pas = 0.0001 * axon_diam / fiber_diam
-            stin.e_pas = e_pas_vrest
-
-            stin.insert('extracellular')
-            stin.xraxial[0] = rpx
-            stin.xc[0] = mycm / (nl * 2)  # short circuit
-            stin.xg[0] = mygm / (nl * 2)  # short circuit
-
-            return stin
-
-        def create_node(
-            index: int,
-            node_diam: float,
-            nodelength: float,
-            rhoa: float,
-            mycm: float,
-            mygm: float,
-            passive: float,
-            axonnodes: float,
-            node_channels: float,
-            nl: int,
-            rpn0: float,
-        ):
-            """Create a node of Ranvier for MRG_DISCRETE fiber type.
-
-            :param index: index of fiber segment
-            :param node_diam: diameter of node of Ranvier fiber segment [um]
-            :param nodelength: Length of nodes of Ranvier [um]
-            :param rhoa: intracellular resistivity [Ohm-um]
-            :param mycm: lamella membrane capacitance [uF/cm2]
-            :param mygm: lamella membrane conductance [uF/cm2]
-            :param passive: true for passive end node strategy, false otherwise
-            :param axonnodes: number of node of Ranvier segments
-            :param node_channels: true for Schild fiber models mechanisms, false otherwise
-            :param nl: number of myelin lemella
-            :param rpn0: periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
-            :return: nrn.Section
-            """
-            node = Section(name='node ' + str(index))
-            node.nseg = 1
-            node.diam = node_diam
-            node.L = nodelength
-            node.Ra = rhoa / 10000
-
-            if passive and (index == 0 or index == axonnodes - 1):
-                node.cm = 2
-                node.insert('pas')
-                node.g_pas = 0.0001
-                node.e_pas = -70
-                node.insert('extracellular')
-                node.xc[0] = mycm / (nl * 2)  # short circuit
-                node.xg[0] = mygm / (nl * 2)  # short circuit
-
-            else:
-                if node_channels == 0:
-                    node.cm = 2
-                    node.insert('axnode_myel')
-                elif node_channels == 1:
-                    print('WARNING: Custom fiber models not yet implemented')
-                    pass
-
-                node.insert('extracellular')
-                node.xraxial[0] = rpn0
-                node.xc[0] = 0  # short circuit
-                node.xg[0] = 1e10  # short circuit
-
-            return node
-
         # Electrical parameters
         rhoa = 0.7e6  # [ohm-um]
         mycm = 0.1  # lamella membrane; [uF/cm2]
@@ -410,7 +230,7 @@ class Fiber:
         nsegments = axonnodes + paranodes1 + paranodes2 + axoninter
         for ind in range(1, nsegments + 1):
             if ind % 11 == 1:
-                section = create_node(
+                section = self.create_node(
                     node_ind,
                     node_diam,
                     nodelength,
@@ -425,17 +245,17 @@ class Fiber:
                 )
                 node_ind += 1
             elif ind % 11 == 2 or ind % 11 == 0:
-                section = create_mysa(
+                section = self.create_mysa(
                     mysa_ind, fiber_diam, paralength1, rhoa, para_diam_1, e_pas_vrest, rpn1, mycm, mygm, nl
                 )
                 mysa_ind += 1
             elif ind % 11 == 3 or ind % 11 == 10:
-                section = create_flut(
+                section = self.create_flut(
                     flut_ind, fiber_diam, paralength2, rhoa, para_diam_2, e_pas_vrest, rpn2, mycm, mygm, nl
                 )
                 flut_ind += 1
             else:
-                section = create_stin(
+                section = self.create_stin(
                     stin_ind, fiber_diam, interlength, rhoa, axon_diam, e_pas_vrest, rpx, mycm, mygm, nl
                 )
                 stin_ind += 1
@@ -622,3 +442,194 @@ class Fiber:
             self.sections[i + 1].connect(self.sections[i])
 
         return self
+
+    @staticmethod
+    def create_mysa(
+        i: int,
+        fiber_diam: float,
+        paralength1: float,
+        rhoa: float,
+        para_diam_1: float,
+        e_pas_vrest: float,
+        rpn1: float,
+        mycm: float,
+        mygm: float,
+        nl: int,
+    ):
+        """Create a single MYSA segment for MRG_DISCRETE fiber type.
+
+        :param i: index of fiber segment
+        :param fiber_diam: fiber diameter [um]
+        :param paralength1: length of myelin attachment section of fiber segment (MYSA) [um]
+        :param rhoa: intracellular resistivity [Ohm-um]
+        :param para_diam_1: diameter of myelin attachment section of fiber segment (MYSA) [um]
+        :param e_pas_vrest: resting potential of axon [mV]
+        :param rpn1: periaxonal space resistivity for MYSA segment [Mohms/cm]
+        :param mycm: lamella membrane capacitance [uF/cm2]
+        :param mygm: lamella membrane conductance [uF/cm2]
+        :param nl: number of myelin lemella
+        :return: nrn.Section
+        """
+        mysa = Section(name='mysa ' + str(i))
+        mysa.nseg = 1
+        mysa.diam = fiber_diam
+        mysa.L = paralength1
+        mysa.Ra = rhoa * (1 / (para_diam_1 / fiber_diam) ** 2) / 10000
+        mysa.cm = 2 * para_diam_1 / fiber_diam
+        mysa.insert('pas')
+        mysa.g_pas = 0.001 * para_diam_1 / fiber_diam
+        mysa.e_pas = e_pas_vrest
+
+        mysa.insert('extracellular')
+        mysa.xraxial[0] = rpn1
+        mysa.xc[0] = mycm / (nl * 2)  # short circuit
+        mysa.xg[0] = mygm / (nl * 2)  # short circuit
+
+        return mysa
+
+    @staticmethod
+    def create_flut(
+        i: int,
+        fiber_diam: float,
+        paralength2: float,
+        rhoa: float,
+        para_diam_2: float,
+        e_pas_vrest: float,
+        rpn2: float,
+        mycm: float,
+        mygm: float,
+        nl: float,
+    ):
+        """Create a single FLUT segment for MRG_DISCRETE fiber type.
+
+        :param i: index of fiber segment
+        :param fiber_diam: fiber diameter [um]
+        :param paralength2: length of main section of paranode fiber segment (FLUT) [um]
+        :param rhoa: intracellular resistivity [Ohm-um]
+        :param para_diam_2: diameter of main section of paranode fiber segment (FLUT) [um]
+        :param e_pas_vrest: resting potential of axon [mV]
+        :param rpn2: periaxonal space resistivity for of paranode fiber segment (FLUT) [Mohms/cm]
+        :param mycm: lamella membrane capacitance [uF/cm2]
+        :param mygm: lamella membrane conductance [uF/cm2]
+        :param nl: number of myelin lemella
+        :return: nrn.Section
+        """
+        flut = Section(name='flut ' + str(i))
+        flut.nseg = 1
+        flut.diam = fiber_diam
+        flut.L = paralength2
+        flut.Ra = rhoa * (1 / (para_diam_2 / fiber_diam) ** 2) / 10000
+        flut.cm = 2 * para_diam_2 / fiber_diam
+        flut.insert('pas')
+        flut.g_pas = 0.0001 * para_diam_2 / fiber_diam
+        flut.e_pas = e_pas_vrest
+
+        flut.insert('extracellular')
+        flut.xraxial[0] = rpn2
+        flut.xc[0] = mycm / (nl * 2)  # short circuit
+        flut.xg[0] = mygm / (nl * 2)  # short circuit
+
+        return flut
+
+    @staticmethod
+    def create_stin(
+        i: int,
+        fiber_diam: float,
+        interlength: float,
+        rhoa: float,
+        axon_diam: float,
+        e_pas_vrest: float,
+        rpx: float,
+        mycm: float,
+        mygm: float,
+        nl: int,
+    ):
+        """Create a STIN segment for MRG_DISCRETE fiber type.
+
+        :param i: index of fiber segment
+        :param fiber_diam: fiber diameter [um]
+        :param interlength: length of internodal fiber segment (STIN) [um]
+        :param rhoa: intracellular resistivity [Ohm-um]
+        :param axon_diam: diameter of internodal fiber segment (STIN) [um]
+        :param e_pas_vrest: resting potential of axon [mV]
+        :param rpx: periaxonal space resistivity for internodal fiber segment (STIN) [Mohms/cm]
+        :param mycm: lamella membrane capacitance [uF/cm2]
+        :param mygm: lamella membrane conductance [uF/cm2]
+        :param nl: number of myelin lemella
+        :return: nrn.Section
+        """
+        stin = Section(name='stin ' + str(i))
+        stin.nseg = 1
+        stin.diam = fiber_diam
+        stin.L = interlength
+        stin.Ra = rhoa * (1 / (axon_diam / fiber_diam) ** 2) / 10000
+        stin.cm = 2 * axon_diam / fiber_diam
+        stin.insert('pas')
+        stin.g_pas = 0.0001 * axon_diam / fiber_diam
+        stin.e_pas = e_pas_vrest
+
+        stin.insert('extracellular')
+        stin.xraxial[0] = rpx
+        stin.xc[0] = mycm / (nl * 2)  # short circuit
+        stin.xg[0] = mygm / (nl * 2)  # short circuit
+
+        return stin
+
+    @staticmethod
+    def create_node(
+        index: int,
+        node_diam: float,
+        nodelength: float,
+        rhoa: float,
+        mycm: float,
+        mygm: float,
+        passive: float,
+        axonnodes: float,
+        node_channels: float,
+        nl: int,
+        rpn0: float,
+    ):
+        """Create a node of Ranvier for MRG_DISCRETE fiber type.
+
+        :param index: index of fiber segment
+        :param node_diam: diameter of node of Ranvier fiber segment [um]
+        :param nodelength: Length of nodes of Ranvier [um]
+        :param rhoa: intracellular resistivity [Ohm-um]
+        :param mycm: lamella membrane capacitance [uF/cm2]
+        :param mygm: lamella membrane conductance [uF/cm2]
+        :param passive: true for passive end node strategy, false otherwise
+        :param axonnodes: number of node of Ranvier segments
+        :param node_channels: true for Schild fiber models mechanisms, false otherwise
+        :param nl: number of myelin lemella
+        :param rpn0: periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
+        :return: nrn.Section
+        """
+        node = Section(name='node ' + str(index))
+        node.nseg = 1
+        node.diam = node_diam
+        node.L = nodelength
+        node.Ra = rhoa / 10000
+
+        if passive and (index == 0 or index == axonnodes - 1):
+            node.cm = 2
+            node.insert('pas')
+            node.g_pas = 0.0001
+            node.e_pas = -70
+            node.insert('extracellular')
+            node.xc[0] = mycm / (nl * 2)  # short circuit
+            node.xg[0] = mygm / (nl * 2)  # short circuit
+
+        else:
+            if node_channels == 0:
+                node.cm = 2
+                node.insert('axnode_myel')
+            elif node_channels == 1:
+                print('WARNING: Custom fiber models not yet implemented')
+                pass
+
+            node.insert('extracellular')
+            node.xraxial[0] = rpn0
+            node.xc[0] = 0  # short circuit
+            node.xg[0] = 1e10  # short circuit
+
+        return node
