@@ -36,14 +36,12 @@ class Fiber:
         :param potentials: list of membrane potentials [mV]
         """
         # TODO: need to think about making sure this is built so it is easy to add new fiber models
+        self.fiber_parameters = FiberTypeParameters[fiber_mode]
         self.potentials = []
         self.diameter = diameter
         self.fiber_model = fiber_mode
         self.temperature = temperature
-        if fiber_mode not in ['MRG_DISCRETE', 'MRG_INTERPOLATION']:
-            self.myelinated = False
-        else:
-            self.myelinated = True
+        self.myelinated = self.fiber_parameters['myelinated']
         self.axonnodes = None
         self.delta_z = None
         self.passive_end_nodes = None
@@ -51,15 +49,19 @@ class Fiber:
         self.n_aps = None
         self.v_init = None
         self.potentials = potentials
+
         assert len(potentials) == n_fiber_coords, 'Number of fiber coordinates does not match number of potentials'
 
-        self._generate(n_fiber_coords)
+        if self.myelinated:
+            self._generate_myelinated(n_fiber_coords)
+        else:
+            self._generate_unmyelinated(n_fiber_coords)
 
         # TODO: add function for interpolating fiber coordinates/potentials.
         # TODO: make potentials at the fiber level,
         #  so you can run the same simulation class on multiple fibers, or many different simulation on same fiber
 
-    def _generate(self, n_fiber_coords: int):
+    def _generate_myelinated(self, n_fiber_coords: int):
         """Build fiber model sections with NEURON.
 
         #TODO: split this into a unmyel and a myel function for separate subclasses of fiber superclass
@@ -68,34 +70,11 @@ class Fiber:
         :return: Fiber object
         """
         # todo: need to save fiber coordinates
-        fiber_parameters = FiberTypeParameters[self.fiber_model]
+        fiber_parameters = self.fiber_parameters
         # Determine geometrical parameters for fiber based on fiber model
-        if self.fiber_model != 'MRG_DISCRETE' and self.fiber_model != 'MRG_INTERPOLATION':
-            fiber_type = fiber_parameters['fiber_type']
-            neuron_flag = fiber_parameters['neuron_flag']
+        if self.fiber_model == 'MRG_DISCRETE':
+            diameter_index = fiber_parameters['diameters'].index(self.diameter)
             node_channels = fiber_parameters['node_channels']
-            self.delta_z = fiber_parameters['delta_zs']
-            self.passive_end_nodes = fiber_parameters['passive_end_nodes']
-            channels_type = fiber_parameters['channels_type']
-
-        elif self.fiber_model == 'MRG_DISCRETE':
-            diameters, my_delta_zs, paranodal_length_2s, axon_diams, node_diams, para_diam_1, para_diam_2, nls = (
-                fiber_parameters[key]
-                for key in (
-                    'diameters',
-                    'delta_zs',
-                    'paranodal_length_2s',
-                    'axonDs',
-                    'nodeDs',
-                    'paraD1s',
-                    'paraD2s',
-                    'nls',
-                )
-            )
-            diameter_index = diameters.index(self.diameter)
-            neuron_flag = fiber_parameters['neuron_flag']
-            node_channels = fiber_parameters['node_channels']
-            fiber_type = fiber_parameters['fiber_type']
             paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
             axon_diam = fiber_parameters['axonDs'][diameter_index]
             node_diam = fiber_parameters['nodeDs'][diameter_index]
@@ -107,9 +86,7 @@ class Fiber:
 
         elif self.fiber_model == 'MRG_INTERPOLATION':
             diameter = self.diameter
-            neuron_flag = fiber_parameters['neuron_flag']
             node_channels = fiber_parameters['node_channels']
-            fiber_type = fiber_parameters['fiber_type']
             self.passive_end_nodes = fiber_parameters['passive_end_nodes']
             if self.diameter >= 5.643:
                 self.delta_z = -8.215 * diameter**2 + 272.4 * diameter - 780.2
@@ -123,50 +100,65 @@ class Fiber:
             axon_diam = para_diam_2
 
         # Determine number of axonnodes
-        if neuron_flag == 2:
-            self.axonnodes = int(1 + (n_fiber_coords - 1) / 11)
-        elif neuron_flag == 3:
-            self.axonnodes = int(n_fiber_coords)
-            length = self.delta_z * self.axonnodes
+        self.axonnodes = int(1 + (n_fiber_coords - 1) / 11)
 
         # Determine starting voltage of system
-        if fiber_type == 1:
-            self.v_init = -88.3
-        elif fiber_type == 2:
-            self.v_init = -80
-        elif fiber_type == 3:
-            v_init_c_fibers = [
-                -60,
-                -55,
-                -82,
-                -48,
-            ]  # v_rests for Sundt, Tigerholm, Rattay/Aberham, and Schild C-Fiber models, respectively
-            self.v_init = v_init_c_fibers[channels_type - 1]
+        self.v_init = -80  # todo: source this from fiber_z
 
         # Create fiber sections
-        if self.myelinated:
-            self.create_myelinated_fiber(
-                node_channels,
-                self.axonnodes,
-                self.diameter,
-                axon_diam,
-                node_diam,
-                para_diam_1,
-                para_diam_2,
-                self.delta_z,
-                paranodal_length_2,
-                nl,
-                self.passive_end_nodes,
-            )
-        elif not self.myelinated:
-            self.create_unmyelinated_fiber(
-                self.diameter,
-                length,
-                c_fiber_model_type=channels_type,
-                celsius=self.temperature,
-                delta_z=self.delta_z,
-                passive_end_nodes=self.passive_end_nodes,
-            )
+        self.create_myelinated_fiber(
+            node_channels,
+            self.axonnodes,
+            self.diameter,
+            axon_diam,
+            node_diam,
+            para_diam_1,
+            para_diam_2,
+            self.delta_z,
+            paranodal_length_2,
+            nl,
+            self.passive_end_nodes,
+        )
+        return self
+
+    def _generate_unmyelinated(self, n_fiber_coords: int):
+        """Build fiber model sections with NEURON.
+
+        #TODO: split this into a unmyel and a myel function for separate subclasses of fiber superclass
+
+        :param n_fiber_coords: number of fiber coordinates from COMSOL
+        :return: Fiber object
+        """
+        # todo: need to save fiber coordinates
+        fiber_parameters = FiberTypeParameters[self.fiber_model]
+        # Determine geometrical parameters for fiber based on fiber model
+        self.delta_z = fiber_parameters['delta_zs']
+        self.passive_end_nodes = fiber_parameters['passive_end_nodes']
+        channels_type = fiber_parameters['channels_type']
+
+        # Determine number of axonnodes
+        self.axonnodes = int(n_fiber_coords)
+        length = self.delta_z * self.axonnodes
+
+        # Determine starting voltage of system
+        # todo: source this from fiber_z
+        v_init_c_fibers = [
+            -60,
+            -55,
+            -82,
+            -48,
+        ]  # v_rests for Sundt, Tigerholm, Rattay/Aberham, and Schild C-Fiber models, respectively
+        self.v_init = v_init_c_fibers[channels_type - 1]
+
+        # Create fiber sections
+        self.create_unmyelinated_fiber(
+            self.diameter,
+            length,
+            c_fiber_model_type=channels_type,
+            celsius=self.temperature,
+            delta_z=self.delta_z,
+            passive_end_nodes=self.passive_end_nodes,
+        )
         return self
 
     def create_myelinated_fiber(

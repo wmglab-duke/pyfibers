@@ -19,7 +19,6 @@ FiberTypeParameters = {
         "nls": [15, 30, 80, 100, 110, 120, 130, 135, 140, 145, 150],
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
         "node_channels": 0,
-        "fiber_type": 2,  # TODO: remove and use myelinated flag
         "passive_end_nodes": 1,  # TODO make argument during fiber creation
     },
     "MRG_INTERPOLATION": {
@@ -37,7 +36,6 @@ FiberTypeParameters = {
         },
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
         "node_channels": 0,
-        "fiber_type": 2,
         "passive_end_nodes": 1,
     },
     "SUNDT": {
@@ -46,7 +44,6 @@ FiberTypeParameters = {
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 0,
-        "fiber_type": 3,
         "passive_end_nodes": 1,
         "channels_type": 1,
     },
@@ -56,7 +53,6 @@ FiberTypeParameters = {
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 0,
-        "fiber_type": 3,
         "passive_end_nodes": 0,
         "channels_type": 2,
     },
@@ -66,7 +62,6 @@ FiberTypeParameters = {
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 0,
-        "fiber_type": 3,
         "passive_end_nodes": 1,
         "channels_type": 3,
     },
@@ -76,7 +71,6 @@ FiberTypeParameters = {
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 1,
-        "fiber_type": 3,
         "passive_end_nodes": 1,
         "channels_type": 4,
     },
@@ -86,7 +80,6 @@ FiberTypeParameters = {
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 1,
-        "fiber_type": 3,
         "passive_end_nodes": 1,
         "channels_type": 5,
     },
