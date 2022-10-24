@@ -93,7 +93,7 @@ class Recording:
             self.vm.append(v_node)
         return
 
-    def record_istim(self, istim: object):
+    def record_istim(self, istim: object):  # todo: remove all object type hints
         """Record applied intracellular stimulation (nA).
 
         :param istim: instance of intracellular stimulation object
@@ -106,6 +106,7 @@ class Recording:
         :param fiber: instance of Fiber class
         :param fix_passive: true if fiber has passive end nodes, false otherwise
         """
+        # Todo: this should be two separate functions
         if fix_passive is False:
             # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
             for node_ind in self.gating_inds:
@@ -129,34 +130,46 @@ class Recording:
     def ap_checker(
         self,
         fiber: Fiber,
-        find_block_thresh: bool = False,
         ap_detect_location: float = 0.9,
-        istim_delay: float = 0,
     ) -> int:
         """Check to see if an action potential occurred at the end of a run.
 
         # remove this function and check in the respective functions
 
         :param fiber: instance of Fiber class
-        :param find_block_thresh: true if BLOCK_THRESHOLD protocol, false otherwise
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
-        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
         :return: number of action potentials that occurred
         """
         # Determine user-specified location along axon to check for action potential
         node_index = int((fiber.axonnodes - 1) * ap_detect_location)
+        return self.apc[node_index].n
 
-        if find_block_thresh:
-            if self.apc[node_index].time > istim_delay:
-                n_aps = 0  # False - block did not occur
-            else:
-                n_aps = 1  # True - block did occur
+    def threshold_checker(
+        self,
+        fiber: Fiber,
+        block: bool = False,
+        ap_detect_location: float = 0.9,
+        istim_delay: float = 0,
+    ) -> int:
+        """Check if stimulation was above or below threshold.
+
+        #todo: add more information on block vs activation
+        #todo: ap detect location should be a quality of recording?
+
+        :param fiber: instance of Fiber class
+        :param block: true if BLOCK_THRESHOLD protocol, false otherwise
+        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
+        :return: True if stim was supra-threshold, False if sub-threshold
+        """
+        # Determine user-specified location along axon to check for action potential
+        node_index = int((fiber.axonnodes - 1) * ap_detect_location)
+        if block:
+            return self.apc[node_index].time <= istim_delay
         else:
-            n_aps = self.apc[node_index].n
-        return n_aps
+            return bool(self.apc[node_index].n)
 
     def get_variables(self, fiber: Fiber):  # noqa: C901
-        # TODO: make each of these if statements a separate function, and have the user manually call
         """Return recorded variables from a simulation.
 
         :param fiber: instance of Fiber class
@@ -168,7 +181,6 @@ class Recording:
             param: pd.DataFrame(gating_vector) for param, gating_vector in zip(['h', 'm', 'mp', 's'], self.gating)
         }
         istim_data = pd.DataFrame(self.istim)
-        # TODO: add saving of ap end times
         ap_loctime = [self.apc[loc_node_ind].time for loc_node_ind in range(0, fiber.axonnodes)]
         ap_counts = [self.apc[loc_node_ind].n for loc_node_ind in range(0, fiber.axonnodes)]
         return vm_data, all_gating_data, istim_data, ap_loctime, ap_counts
