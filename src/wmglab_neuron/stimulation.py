@@ -7,7 +7,7 @@ https://github.com/wmglab-duke/ascent
 """
 from neuron import h
 
-from src.wmglab_neuron import Fiber, Recording
+from src.wmglab_neuron import Fiber, FiberModel, Recording
 
 h.load_file('stdrun.hoc')
 
@@ -211,25 +211,6 @@ class Stimulation:
         """
         # TODO: make recording optional
 
-        def balance():
-            """Balance membrane currents for Tigerholm model."""
-            # TODO: this should be a method of fiber? or decorate runsim with a function that balances if tigerholm
-            v_rest = -55
-            for s in self.fiber.sections:
-                if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
-                    s.pumpina_extrapump = -(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump)
-                else:
-                    s.gnaleak_leak = -(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (
-                        v_rest - s.ena
-                    )
-
-                if (-(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna) / (v_rest - s.ek)) < 0:
-                    s.pumpik_extrapump = -(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna)
-                else:
-                    s.gkleak_leak = -(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna) / (
-                        v_rest - s.ek
-                    )
-
         def steady_state():
             """Allow system to reach steady-state by using a large dt before simulation."""
             h.t = self.t_init_ss  # Start before t=0
@@ -260,8 +241,8 @@ class Stimulation:
             return recording
 
         h.finitialize(self.fiber.v_init)  # Initialize the simulation
-        if self.fiber.fiber_model == 'TIGERHOLM':  # Balance membrane currents if Tigerholm
-            balance()
+        if self.fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
+            self.fiber.balance()
 
         self.initialize_extracellular()  # Set extracellular stimulation at each segment to zero
         steady_state()  # Allow system to reach steady-state before simulation
