@@ -9,7 +9,7 @@ import math
 import numpy as np
 from neuron import h
 
-from src.wmglab_neuron import FiberTypeParameters
+from src.wmglab_neuron import FiberModel, FiberTypeParameters
 
 Section = h.Section
 SectionList = h.SectionList
@@ -20,34 +20,33 @@ h.load_file('stdrun.hoc')
 
 # TODO: every variable with flag in the name needs to be changed to something more descriptive
 
-
+# TODO: split into subclasses using factory pattern
 class Fiber:
     """Create a fiber model from NEURON sections."""
 
     def __init__(
-        self, diameter: float, fiber_mode: str, temperature: float, n_fiber_coords: int, potentials: list[float]
+        self, diameter: float, fiber_model: FiberModel, temperature: float, n_fiber_coords: int, potentials: list[float]
     ):
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
-        :param fiber_mode: name of fiber model type
+        :param fiber_model: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
         :param n_fiber_coords: number of fiber coordinates
         :param potentials: list of membrane potentials [mV]
         """
         # TODO: need to think about making sure this is built so it is easy to add new fiber models
-        self.fiber_parameters = FiberTypeParameters[fiber_mode]
+        self.fiber_parameters = FiberTypeParameters[fiber_model]
         self.potentials = []
         self.diameter = diameter
-        self.fiber_model = fiber_mode
+        self.fiber_model = fiber_model
         self.temperature = temperature
         self.myelinated = self.fiber_parameters['myelinated']
         self.axonnodes = None
         self.delta_z = None
         self.passive_end_nodes = None
         self.sections = []
-        self.n_aps = None
-        self.v_init = None
+        self.v_init = None  # todo: rename vrest
         self.potentials = potentials
 
         assert len(potentials) == n_fiber_coords, 'Number of fiber coordinates does not match number of potentials'
@@ -72,9 +71,8 @@ class Fiber:
         # todo: need to save fiber coordinates
         fiber_parameters = self.fiber_parameters
         # Determine geometrical parameters for fiber based on fiber model
-        if self.fiber_model == 'MRG_DISCRETE':
+        if self.fiber_model == FiberModel.MRG_DISCRETE:
             diameter_index = fiber_parameters['diameters'].index(self.diameter)
-            node_channels = fiber_parameters['node_channels']
             paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
             axon_diam = fiber_parameters['axonDs'][diameter_index]
             node_diam = fiber_parameters['nodeDs'][diameter_index]
@@ -84,9 +82,8 @@ class Fiber:
             self.delta_z = fiber_parameters['delta_zs'][diameter_index]
             self.passive_end_nodes = fiber_parameters['passive_end_nodes']
 
-        elif self.fiber_model == 'MRG_INTERPOLATION':
+        elif self.fiber_model == FiberModel.MRG_INTERPOLATION:
             diameter = self.diameter
-            node_channels = fiber_parameters['node_channels']
             self.passive_end_nodes = fiber_parameters['passive_end_nodes']
             if self.diameter >= 5.643:
                 self.delta_z = -8.215 * diameter**2 + 272.4 * diameter - 780.2
@@ -107,7 +104,6 @@ class Fiber:
 
         # Create fiber sections
         self.create_myelinated_fiber(
-            node_channels,
             self.axonnodes,
             self.diameter,
             axon_diam,
@@ -117,7 +113,6 @@ class Fiber:
             self.delta_z,
             paranodal_length_2,
             nl,
-            self.passive_end_nodes,
         )
         return self
 
@@ -134,7 +129,6 @@ class Fiber:
         # Determine geometrical parameters for fiber based on fiber model
         self.delta_z = fiber_parameters['delta_zs']
         self.passive_end_nodes = fiber_parameters['passive_end_nodes']
-        channels_type = fiber_parameters['channels_type']
 
         # Determine number of axonnodes
         self.axonnodes = int(n_fiber_coords)
@@ -142,28 +136,26 @@ class Fiber:
 
         # Determine starting voltage of system
         # todo: source this from fiber_z
-        v_init_c_fibers = [
-            -60,
-            -55,
-            -82,
-            -48,
-        ]  # v_rests for Sundt, Tigerholm, Rattay/Aberham, and Schild C-Fiber models, respectively
-        self.v_init = v_init_c_fibers[channels_type - 1]
+        v_init_c_fibers = {
+            FiberModel.SUNDT: -60,
+            FiberModel.TIGERHOLM: -55,
+            FiberModel.RATTAY: -82,
+            FiberModel.SCHILD97: -48,
+            FiberModel.SCHILD94: -48,
+        }  # v_rests for Sundt, Tigerholm, Rattay/Aberham, and Schild C-Fiber models, respectively
+        self.v_init = v_init_c_fibers[self.fiber_model]
 
         # Create fiber sections
         self.create_unmyelinated_fiber(
             self.diameter,
             length,
-            c_fiber_model_type=channels_type,
             celsius=self.temperature,
             delta_z=self.delta_z,
-            passive_end_nodes=self.passive_end_nodes,
         )
         return self
 
     def create_myelinated_fiber(
         self,
-        node_channels: bool,
         axonnodes: int,
         fiber_diam: float,
         axon_diam: float,
@@ -173,11 +165,9 @@ class Fiber:
         deltaz: float,
         paralength2: float,
         nl: int,
-        passive_end_nodes: bool,
     ):
         """Create and connect NEURON sections for a myelinated fiber type.
 
-        :param node_channels: true for Schild fiber models mechanisms, false otherwise
         :param axonnodes: number of node of Ranvier segments
         :param fiber_diam: fiber diameter [um]
         :param axon_diam: diameter of internodal fiber segment (STIN) [um]
@@ -187,7 +177,6 @@ class Fiber:
         :param deltaz: node-node separation [um]
         :param paralength2: length of main section of paranode fiber segment (FLUT) [um]
         :param nl: number of myelin lemella
-        :param passive_end_nodes: true for passive end node strategy, false otherwise
         :return: Fiber object
         """
         # Electrical parameters
@@ -195,10 +184,7 @@ class Fiber:
         mycm = 0.1  # lamella membrane; [uF/cm2]
         mygm = 0.001  # lamella membrane; [S/cm2]
 
-        if node_channels == 0:
-            e_pas_vrest = -80
-        elif node_channels == 1:
-            e_pas_vrest = -57
+        e_pas_vrest = -80  # TODO: can we just use self.v_init?
 
         # Geometrical parameters [um]
         paranodes1 = 2 * (axonnodes - 1)  # Number of MYSA paranodes
@@ -229,9 +215,8 @@ class Fiber:
                     rhoa,
                     mycm,
                     mygm,
-                    passive_end_nodes,
+                    self.passive_end_nodes,
                     axonnodes,
-                    node_channels,
                     nl,
                     rpn0,
                 )
@@ -263,23 +248,19 @@ class Fiber:
         self,
         fiber_diam: float = 6,
         length: float = 21,
-        c_fiber_model_type: int = 1,
         celsius: float = 37,
         delta_z: float = 50 / 6,
         insert97na: bool = 0,
         conductances97: bool = 0,
-        passive_end_nodes: bool = 0,
     ):
         """Create and connect NEURON sections for an unmyelinated fiber.
 
         :param fiber_diam: fiber diameter [um]
         :param length: fiber length [um]
-        :param c_fiber_model_type: fiber model type (1=Sundt, 2=Tigerholm, 3=Rattay, 4=Schild94/Schild97)
         :param celsius: model temperature [celsius]
         :param delta_z: node-node separation [um]
         :param insert97na: controls sodium channel mechanisms. True if Schild97 fiber model, false otherwise
         :param conductances97: controls conductance density. True if Schild97 fiber model, false otherwise
-        :param passive_end_nodes: true for passive end node strategy, false otherwise
         :return: instance of Fiber class
         """
         nsegments = int(length / delta_z)
@@ -292,16 +273,17 @@ class Fiber:
             node.diam = fiber_diam
             node.nseg = 1
             node.L = delta_z
-            if passive_end_nodes and (i == 0 or i == nsegments - 1):
+            if self.passive_end_nodes and (i == 0 or i == nsegments - 1):
                 node.insert('pas')
                 node.g_pas = 0.0001
-                if c_fiber_model_type == 1:
+                # TODO: can we just use self.v_init?, why are these different?
+                if self.fiber_model == FiberModel.SUNDT:
                     node.e_pas = -60  # Sundt model equilibrium potential
-                elif c_fiber_model_type == 2:
+                elif self.fiber_model == FiberModel.TIGERHOLM:
                     node.e_pas = -55  # Tigerholm model equilibrium potential
-                elif c_fiber_model_type == 3:
+                elif self.fiber_model == FiberModel.RATTAY:
                     node.e_pas = -70  # Rattay model equilibrium potential
-                elif c_fiber_model_type == 4:
+                elif self.fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:
                     node.e_pas = -48  # Schild model equilibrium potential
                 else:
                     node.e_pas = -70
@@ -312,8 +294,8 @@ class Fiber:
 
                 node.Ra = 1e10
 
-            else:
-                if c_fiber_model_type == 1:  # Sundt model
+            else:  # todo: split each of these into separate functions
+                if self.fiber_model == FiberModel.SUNDT:  # Sundt model
                     node.insert('nahh')
                     node.gnabar_nahh = 0.04
                     node.mshift_nahh = -6  # NaV1.7/1.8 channelshift
@@ -328,7 +310,7 @@ class Fiber:
                     node.Ra = 100  # intracellular resistance
                     node.v = -60
                     node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
-                elif c_fiber_model_type == 2:  # Tigerholm model
+                elif self.fiber_model == FiberModel.TIGERHOLM:  # Tigerholm model
                     node.insert('ks')
                     node.gbar_ks = 0.0069733
                     node.insert('kf')
@@ -365,14 +347,16 @@ class Fiber:
                     node.celsiusT_nakpump = celsius
                     node.celsiusT_kdrTiger = celsius
                     node.v = -55
-                elif c_fiber_model_type == 3:  # Rattay and Aberham model -- adjusted for a resting potential of -70mV
+                elif (
+                    self.fiber_model == FiberModel.RATTAY
+                ):  # Rattay and Aberham model -- adjusted for a resting potential of -70mV
                     node.insert('RattayAberham')
                     node.Ra = 100  # required for propagation; less than 100 does not propagate
                     node.cm = 1
                     node.v = -70
                     node.ena = 45
                     node.ek = -82
-                elif c_fiber_model_type == 4:  # Schild model
+                elif self.fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:  # Schild model
                     node.R = 8314
                     node.F = 96500
                     node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
@@ -506,6 +490,7 @@ class Fiber:
         :param nl: number of myelin lemella
         :return: nrn.Section
         """
+        # todo: flut and stin are identical, except for the name. Can we combine them?
         flut = Section(name='flut ' + str(i))
         flut.nseg = 1
         flut.diam = fiber_diam
@@ -577,7 +562,6 @@ class Fiber:
         mygm: float,
         passive: float,
         axonnodes: float,
-        node_channels: float,
         nl: int,
         rpn0: float,
     ):
@@ -591,7 +575,6 @@ class Fiber:
         :param mygm: lamella membrane conductance [uF/cm2]
         :param passive: true for passive end node strategy, false otherwise
         :param axonnodes: number of node of Ranvier segments
-        :param node_channels: true for Schild fiber models mechanisms, false otherwise
         :param nl: number of myelin lemella
         :param rpn0: periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
         :return: nrn.Section
@@ -612,16 +595,34 @@ class Fiber:
             node.xg[0] = mygm / (nl * 2)  # short circuit
 
         else:
-            if node_channels == 0:
-                node.cm = 2
-                node.insert('axnode_myel')
-            elif node_channels == 1:
-                print('WARNING: Custom fiber models not yet implemented')
-                pass
-
+            node.cm = 2
+            node.insert('axnode_myel')
             node.insert('extracellular')
             node.xraxial[0] = rpn0
             node.xc[0] = 0  # short circuit
             node.xg[0] = 1e10  # short circuit
 
         return node
+
+    def balance(self):
+        """Balance membrane currents for Tigerholm model.
+
+        :raises ValueError: if the model is not Tigerholm
+        """
+        if not self.fiber_model == FiberModel.TIGERHOLM:
+            raise ValueError('balance() is only valid for Tigerholm model')
+        v_rest = -55  # TODO: should source from fiberz
+        for s in self.fiber.sections:
+            if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
+                s.pumpina_extrapump = -(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump)
+            else:
+                s.gnaleak_leak = -(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (
+                    v_rest - s.ena
+                )
+
+            if (-(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna) / (v_rest - s.ek)) < 0:
+                s.pumpik_extrapump = -(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna)
+            else:
+                s.gkleak_leak = -(s.ik_ks + s.ik_kf + s.ik_h + s.ik_kdrTiger + s.ik_nakpump + s.ik_kna) / (
+                    v_rest - s.ek
+                )

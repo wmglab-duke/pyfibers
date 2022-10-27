@@ -6,10 +6,10 @@ Please refer to the LICENSE and README.md files for licensing instructions.
 The source code can be found on the following GitHub repository: https://github.com/wmglab-duke/ascent
 """
 
+from .enums import *
 from .fiber_z import FiberTypeParameters
 from .fiber import Fiber
 from .recording import Recording
 from .stimulation import Stimulation
-from .enums import *
 
-__all__ = ['Fiber', 'Recording', 'Saving', 'Stimulation']
+__all__ = ['Fiber', 'Recording', 'Stimulation']

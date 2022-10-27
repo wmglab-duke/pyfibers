@@ -1,8 +1,8 @@
 """Parameters for creating fiber models."""
+from src.wmglab_neuron import FiberModel
 
 FiberTypeParameters = {
-    "MRG_DISCRETE": {
-        "neuron_flag": 2,  # TODO: remove and use myelinated flag
+    FiberModel.MRG_DISCRETE: {
         "geom_determination_method": 0,
         "myelinated": True,
         "sampling": "discrete",
@@ -18,11 +18,9 @@ FiberTypeParameters = {
         "paraD2s": [0.8, 1.6, 3.4, 4.6, 5.8, 6.9, 8.1, 9.2, 10.4, 11.5, 12.7],
         "nls": [15, 30, 80, 100, 110, 120, 130, 135, 140, 145, 150],
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
-        "node_channels": 0,
         "passive_end_nodes": 1,  # TODO make argument during fiber creation
     },
-    "MRG_INTERPOLATION": {
-        "neuron_flag": 2,
+    FiberModel.MRG_INTERPOLATION: {
         "geom_determination_method": 1,
         "myelinated": True,
         "sampling": "interp",
@@ -35,52 +33,37 @@ FiberTypeParameters = {
             "diameter_less_5.643um": "81.08*diameter + 37.84",
         },
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
-        "node_channels": 0,
         "passive_end_nodes": 1,
     },
-    "SUNDT": {
-        "neuron_flag": 3,
+    FiberModel.SUNDT: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
         "node_channels": 0,
         "passive_end_nodes": 1,
-        "channels_type": 1,
     },
-    "TIGERHOLM": {
-        "neuron_flag": 3,
+    FiberModel.MRG_DISCRETE.TIGERHOLM: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
-        "node_channels": 0,
         "passive_end_nodes": 0,
-        "channels_type": 2,
     },
-    "RATTAY": {
-        "neuron_flag": 3,
+    FiberModel.RATTAY: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
-        "node_channels": 0,
         "passive_end_nodes": 1,
-        "channels_type": 3,
     },
-    "SCHILD97": {
-        "neuron_flag": 3,
+    FiberModel.SCHILD97: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
-        "node_channels": 1,
         "passive_end_nodes": 1,
-        "channels_type": 4,
     },
-    "SCHILD94": {
-        "neuron_flag": 3,
+    FiberModel.SCHILD94: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
-        "node_channels": 1,
         "passive_end_nodes": 1,
-        "channels_type": 5,
     },
 }
