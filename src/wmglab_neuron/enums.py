@@ -16,12 +16,11 @@ class FiberModel(Enum):
 
 
 @unique
-class Protocol(Enum):
-    """Protocol types."""
+class ThresholdCondition(Enum):
+    """ThresholdCondition."""
 
-    ACTIVATION_THRESHOLD = 0
-    BLOCK_THRESHOLD = 1
-    FINITE_AMPLITUDES = 2
+    ACTIVATION = 0
+    BLOCK = 1
 
 
 @unique

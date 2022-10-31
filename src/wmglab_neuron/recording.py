@@ -17,18 +17,12 @@ class Recording:
     """Manage recording parameters for NEURON simulations."""
 
     # TODO: either make this attach to an instance of stimulation or make all these methods of simulation
-    # TODO: need to init with a zero istim if none is provided
-    # TODO: saving all variables barely adds any runtime even now when it is saving with every run of
-    # Threshold search. I think we can save some data by default and then add
-    # some function which allows users to extend the saving themselves
-
+    # TODO: make extensible to allow user to save additional data?
     def __init__(self, fiber: Fiber):
         """Initialize Recording class.
 
         :param fiber: instance of Fiber class
         """
-        # TODO: discuss whether we should just automatically save all data, and then let the user decide what to output
-        # TODO also maybe sore all this in a dict?
         self.save_vm = False
         self.save_gating = False
         self.save_istim = False
@@ -66,7 +60,6 @@ class Recording:
         self.apc = []
 
     def record_ap(self, fiber: Fiber, thresh: float = -30):
-        # TODO: consider merging with record_ap_end_times
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
         :param fiber: instance of Fiber class
@@ -93,7 +86,7 @@ class Recording:
             self.vm.append(v_node)
         return
 
-    def record_istim(self, istim: object):  # todo: remove all object type hints
+    def record_istim(self, istim: h.trainIClamp):  # todo: remove all "object" type hints
         """Record applied intracellular stimulation (nA).
 
         :param istim: instance of intracellular stimulation object
@@ -107,6 +100,7 @@ class Recording:
         :param fix_passive: true if fiber has passive end nodes, false otherwise
         """
         # Todo: this should be two separate functions
+        # todo: do we need to fix passive if they were set to act passive?
         if fix_passive is False:
             # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
             for node_ind in self.gating_inds:
@@ -153,9 +147,6 @@ class Recording:
     ) -> int:
         """Check if stimulation was above or below threshold.
 
-        #todo: add more information on block vs activation
-        #todo: ap detect location should be a quality of recording?
-
         :param fiber: instance of Fiber class
         :param block: true if BLOCK_THRESHOLD protocol, false otherwise
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
@@ -176,6 +167,7 @@ class Recording:
         :return: time, space, vm, gating, istim, apc
         """
         # Put all recorded data into pandas DataFrame
+        # TODO: add column and index labels?
         vm_data = pd.DataFrame(self.vm)
         all_gating_data = {
             param: pd.DataFrame(gating_vector) for param, gating_vector in zip(['h', 'm', 'mp', 's'], self.gating)

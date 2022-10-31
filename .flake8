@@ -6,4 +6,4 @@ docstring-style: SPHINX
 max-line-length = 120
 max-complexity = 18
 #TEMPORARY ignores
-per-file-ignores = __init__.py:F4
+per-file-ignores = __init__.py:F4, test_wn.py: D

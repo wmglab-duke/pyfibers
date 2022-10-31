@@ -18,7 +18,8 @@ FiberTypeParameters = {
         "paraD2s": [0.8, 1.6, 3.4, 4.6, 5.8, 6.9, 8.1, 9.2, 10.4, 11.5, 12.7],
         "nls": [15, 30, 80, 100, 110, 120, 130, 135, 140, 145, 150],
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
-        "passive_end_nodes": 1,  # TODO make argument during fiber creation
+        "passive_end_nodes": 1,  # TODO make argument during fiber creation,
+        "v_rest": -80,  # millivolts
     },
     FiberModel.MRG_INTERPOLATION: {
         "geom_determination_method": 1,
@@ -34,6 +35,7 @@ FiberTypeParameters = {
         },
         "inter_length": "(delta_z - node_length - (2 * paranodal_length_1) - (2 * paranodal_length_2)) / 6",
         "passive_end_nodes": 1,
+        "v_rest": -80,  # millivolts
     },
     FiberModel.SUNDT: {
         "myelinated": False,
@@ -41,29 +43,34 @@ FiberTypeParameters = {
         "delta_zs": 8.333,
         "node_channels": 0,
         "passive_end_nodes": 1,
+        "v_rest": -60,  # millivolts
     },
     FiberModel.MRG_DISCRETE.TIGERHOLM: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
         "passive_end_nodes": 0,
+        "v_rest": -55,  # millivolts
     },
     FiberModel.RATTAY: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
         "passive_end_nodes": 1,
+        "v_rest": -70,  # millivolts
     },
     FiberModel.SCHILD97: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
         "passive_end_nodes": 1,
+        "v_rest": -48,  # millivolts
     },
     FiberModel.SCHILD94: {
         "myelinated": False,
         "sampling": "discrete",
         "delta_zs": 8.333,
         "passive_end_nodes": 1,
+        "v_rest": -48,  # millivolts
     },
 }

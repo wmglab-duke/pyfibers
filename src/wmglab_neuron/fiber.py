@@ -20,36 +20,33 @@ h.load_file('stdrun.hoc')
 
 # TODO: every variable with flag in the name needs to be changed to something more descriptive
 
-# TODO: split into subclasses using factory pattern
+# TODO: split into subclasses using factory pattern, the subclasses will inherit
+#  TODO: a generic fiber class that is easily extensible to new fiber models
 class Fiber:
     """Create a fiber model from NEURON sections."""
 
-    def __init__(
-        self, diameter: float, fiber_model: FiberModel, temperature: float, n_fiber_coords: int, potentials: list[float]
-    ):
+    def __init__(self, diameter: float, fiber_model: FiberModel, temperature: float, n_fiber_coords: int):
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
         :param fiber_model: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
         :param n_fiber_coords: number of fiber coordinates
-        :param potentials: list of membrane potentials [mV]
         """
         # TODO: need to think about making sure this is built so it is easy to add new fiber models
-        self.fiber_parameters = FiberTypeParameters[fiber_model]
-        self.potentials = []
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
-        self.myelinated = self.fiber_parameters['myelinated']
         self.axonnodes = None
         self.delta_z = None
         self.passive_end_nodes = None
         self.sections = []
-        self.v_init = None  # todo: rename vrest
-        self.potentials = potentials
+        self.v_rest = None
+        self.coordinates = [0]
 
-        assert len(potentials) == n_fiber_coords, 'Number of fiber coordinates does not match number of potentials'
+        self.fiber_parameters = FiberTypeParameters[fiber_model]
+        self.v_rest = self.fiber_parameters['v_rest']
+        self.myelinated = self.fiber_parameters['myelinated']
 
         if self.myelinated:
             self._generate_myelinated(n_fiber_coords)
@@ -57,18 +54,14 @@ class Fiber:
             self._generate_unmyelinated(n_fiber_coords)
 
         # TODO: add function for interpolating fiber coordinates/potentials.
-        # TODO: make potentials at the fiber level,
-        #  so you can run the same simulation class on multiple fibers, or many different simulation on same fiber
 
     def _generate_myelinated(self, n_fiber_coords: int):
         """Build fiber model sections with NEURON.
 
-        #TODO: split this into a unmyel and a myel function for separate subclasses of fiber superclass
-
         :param n_fiber_coords: number of fiber coordinates from COMSOL
         :return: Fiber object
         """
-        # todo: need to save fiber coordinates
+        # todo: need to save fiber coordinates (from build_z in ASCENT)
         fiber_parameters = self.fiber_parameters
         # Determine geometrical parameters for fiber based on fiber model
         if self.fiber_model == FiberModel.MRG_DISCRETE:
@@ -99,9 +92,6 @@ class Fiber:
         # Determine number of axonnodes
         self.axonnodes = int(1 + (n_fiber_coords - 1) / 11)
 
-        # Determine starting voltage of system
-        self.v_init = -80  # todo: source this from fiber_z
-
         # Create fiber sections
         self.create_myelinated_fiber(
             self.axonnodes,
@@ -119,8 +109,6 @@ class Fiber:
     def _generate_unmyelinated(self, n_fiber_coords: int):
         """Build fiber model sections with NEURON.
 
-        #TODO: split this into a unmyel and a myel function for separate subclasses of fiber superclass
-
         :param n_fiber_coords: number of fiber coordinates from COMSOL
         :return: Fiber object
         """
@@ -133,17 +121,6 @@ class Fiber:
         # Determine number of axonnodes
         self.axonnodes = int(n_fiber_coords)
         length = self.delta_z * self.axonnodes
-
-        # Determine starting voltage of system
-        # todo: source this from fiber_z
-        v_init_c_fibers = {
-            FiberModel.SUNDT: -60,
-            FiberModel.TIGERHOLM: -55,
-            FiberModel.RATTAY: -82,
-            FiberModel.SCHILD97: -48,
-            FiberModel.SCHILD94: -48,
-        }  # v_rests for Sundt, Tigerholm, Rattay/Aberham, and Schild C-Fiber models, respectively
-        self.v_init = v_init_c_fibers[self.fiber_model]
 
         # Create fiber sections
         self.create_unmyelinated_fiber(
@@ -184,7 +161,7 @@ class Fiber:
         mycm = 0.1  # lamella membrane; [uF/cm2]
         mygm = 0.001  # lamella membrane; [S/cm2]
 
-        e_pas_vrest = -80  # TODO: can we just use self.v_init?
+        e_pas_vrest = self.v_rest
 
         # Geometrical parameters [um]
         paranodes1 = 2 * (axonnodes - 1)  # Number of MYSA paranodes
@@ -238,9 +215,23 @@ class Fiber:
                 stin_ind += 1
             self.sections.append(section)
 
+            self.coordinates.append(self.coordinates[-1] + section.L)
+
         # Connect the axon sections
         for i in range(0, nsegments - 1):
             self.sections[i + 1].connect(self.sections[i])
+
+        # use section attribute L to generate coordinates
+        # get the coordinates at the center of each section, each section is a different length
+        start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
+        end_coords = np.array([section.L for section in self.sections])  # end of each section
+        self.coordinates = np.cumsum((start_coords + end_coords) / 2)  # center of each section
+
+        actual = self.coordinates[-1] - self.coordinates[0]  # actual length of fiber
+
+        expected = self.delta_z * (self.axonnodes - 1)  # expected length of fiber
+
+        assert np.isclose(actual, expected), f"Fiber length is not correct. Expected {expected} but got {actual}"
 
         return self
 
@@ -250,8 +241,6 @@ class Fiber:
         length: float = 21,
         celsius: float = 37,
         delta_z: float = 50 / 6,
-        insert97na: bool = 0,
-        conductances97: bool = 0,
     ):
         """Create and connect NEURON sections for an unmyelinated fiber.
 
@@ -259,8 +248,6 @@ class Fiber:
         :param length: fiber length [um]
         :param celsius: model temperature [celsius]
         :param delta_z: node-node separation [um]
-        :param insert97na: controls sodium channel mechanisms. True if Schild97 fiber model, false otherwise
-        :param conductances97: controls conductance density. True if Schild97 fiber model, false otherwise
         :return: instance of Fiber class
         """
         nsegments = int(length / delta_z)
@@ -276,18 +263,7 @@ class Fiber:
             if self.passive_end_nodes and (i == 0 or i == nsegments - 1):
                 node.insert('pas')
                 node.g_pas = 0.0001
-                # TODO: can we just use self.v_init?, why are these different?
-                if self.fiber_model == FiberModel.SUNDT:
-                    node.e_pas = -60  # Sundt model equilibrium potential
-                elif self.fiber_model == FiberModel.TIGERHOLM:
-                    node.e_pas = -55  # Tigerholm model equilibrium potential
-                elif self.fiber_model == FiberModel.RATTAY:
-                    node.e_pas = -70  # Rattay model equilibrium potential
-                elif self.fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:
-                    node.e_pas = -48  # Schild model equilibrium potential
-                else:
-                    node.e_pas = -70
-
+                node.e_pas = self.v_rest
                 node.insert('extracellular')
                 node.xc[0] = 0  # short circuit
                 node.xg[0] = 1e10  # short circuit
@@ -296,119 +272,14 @@ class Fiber:
 
             else:  # todo: split each of these into separate functions
                 if self.fiber_model == FiberModel.SUNDT:  # Sundt model
-                    node.insert('nahh')
-                    node.gnabar_nahh = 0.04
-                    node.mshift_nahh = -6  # NaV1.7/1.8 channelshift
-                    node.hshift_nahh = 6  # NaV1.7/1.8 channelshift
-
-                    node.insert('borgkdr')  # insert delayed rectified K channels
-                    node.gkdrbar_borgkdr = 0.04  # density of K channels
-                    node.ek = -90  # K equilibrium potential
-
-                    node.insert('pas')  # insert leak channels
-                    node.g_pas = 1 / 10000  # set Rm = 10000 ohms-cm2
-                    node.Ra = 100  # intracellular resistance
-                    node.v = -60
-                    node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
+                    self.create_sundt(node)
                 elif self.fiber_model == FiberModel.TIGERHOLM:  # Tigerholm model
-                    node.insert('ks')
-                    node.gbar_ks = 0.0069733
-                    node.insert('kf')
-                    node.gbar_kf = 0.012756
-                    node.insert('h')
-                    node.gbar_h = 0.0025377
-                    node.insert('nattxs')
-                    node.gbar_nattxs = 0.10664
-                    node.insert('nav1p8')
-                    node.gbar_nav1p8 = 0.24271
-                    node.insert('nav1p9')
-                    node.gbar_nav1p9 = 9.4779e-05
-                    node.insert('nakpump')
-                    node.smalla_nakpump = -0.0047891
-                    node.insert('kdrTiger')
-                    node.gbar_kdrTiger = 0.018002
-                    node.insert('kna')
-                    node.gbar_kna = 0.00042
-                    node.insert('naoiTiger')
-                    node.insert('koiTiger')
-
-                    node.insert('leak')
-                    node.insert('extrapump')
-
-                    node.Ra = 35.5
-                    node.cm = 1
-
-                    node.celsiusT_ks = celsius
-                    node.celsiusT_kf = celsius
-                    node.celsiusT_h = celsius
-                    node.celsiusT_nattxs = celsius
-                    node.celsiusT_nav1p8 = celsius
-                    node.celsiusT_nav1p9 = celsius
-                    node.celsiusT_nakpump = celsius
-                    node.celsiusT_kdrTiger = celsius
-                    node.v = -55
-                elif (
-                    self.fiber_model == FiberModel.RATTAY
-                ):  # Rattay and Aberham model -- adjusted for a resting potential of -70mV
-                    node.insert('RattayAberham')
-                    node.Ra = 100  # required for propagation; less than 100 does not propagate
-                    node.cm = 1
-                    node.v = -70
-                    node.ena = 45
-                    node.ek = -82
+                    self.create_tigerholm(celsius, node)
+                elif self.fiber_model == FiberModel.RATTAY:
+                    # Rattay and Aberham model -- adjusted for a resting potential of -70mV
+                    self.create_rattay(node)
                 elif self.fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:  # Schild model
-                    node.R = 8314
-                    node.F = 96500
-                    node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
-                    node.insert('kd')
-                    node.insert('ka')
-                    node.insert('can')
-                    node.insert('cat')
-                    node.insert('kds')
-                    node.insert('kca')
-                    node.insert('caextscale')
-                    node.insert('caintscale')
-                    node.insert('CaPump')
-                    node.insert('NaCaPump')
-                    node.insert('NaKpumpSchild')
-                    if insert97na:
-                        node.insert('naf97mean')
-                        node.insert('nas97mean')
-                    else:
-                        node.insert('naf')
-                        node.insert('nas')
-
-                    # Ionic concentrations
-                    node.cao0_ca_ion = 2.0  # [mM] Initial Cao Concentration
-                    node.cai0_ca_ion = 0.000117  # [mM] Initial Cai Concentrations
-                    node.ko = 5.4  # [mM] External K Concentration
-                    node.ki = 145.0  # [mM] Internal K Concentration
-                    node.kstyle = ion_style("k_ion", 1, 2, 0, 0, 0)  # Allows ek to be calculated manually
-                    node.ek = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
-                        node.ko / node.ki
-                    )  # Manual Calculation of ek in order to use Schild F and R values
-
-                    node.nao = 154  # [mM] External Na Concentration
-                    node.nai = 8.9  # [mM] Internal Na Concentration
-                    node.nastyle = ion_style("na_ion", 1, 2, 0, 0, 0)  # Allows ena to be calculated manually
-                    node.ena = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
-                        node.nao / node.nai
-                    )  # Manual Calculation of ena in order to use Schild F and R values
-                    if conductances97:
-                        node.gbar_naf97mean = (
-                            0.022434928  # [S/cm^2] This block sets the conductance to the conductances in Schild 1997
-                        )
-                        node.gbar_nas97mean = 0.022434928
-                        node.gbar_kd = 0.001956534
-                        node.gbar_ka = 0.001304356
-                        node.gbar_kds = 0.000782614
-                        node.gbar_kca = 0.000913049
-                        node.gbar_can = 0.000521743
-                        node.gbar_cat = 0.00018261
-                        node.gbna_leak = 1.8261e-05
-                    node.Ra = 100
-                    node.cm = 1.326291192
-                    node.v = -48
+                    self.create_schild(celsius, node)
 
                 node.insert('extracellular')
                 node.xc[0] = 0  # short circuit
@@ -417,7 +288,146 @@ class Fiber:
         for i in range(0, nsegments - 1):
             self.sections[i + 1].connect(self.sections[i])
 
+        # use section attribute L to generate coordinates, every section is the same length
+        self.coordinates = (
+            np.cumsum([section.L for section in self.sections]) - self.sections[0].L / 2
+        )  # end of each section
+
+        actual = self.coordinates[-1] - self.coordinates[0]  # actual length of fiber
+
+        expected = self.delta_z * (self.axonnodes - 1)  # expected length of fiber
+
+        assert np.isclose(actual, expected), f"Fiber length is not correct. Expected {expected} but got {actual}"
+
         return self
+
+    def create_schild(self, celsius, node):
+        """Create a SCHILD node.
+
+        :param celsius: model temperature [celsius]
+        :param node: NEURON section
+        """
+        node.R = 8314
+        node.F = 96500
+        node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
+        node.insert('kd')
+        node.insert('ka')
+        node.insert('can')
+        node.insert('cat')
+        node.insert('kds')
+        node.insert('kca')
+        node.insert('caextscale')
+        node.insert('caintscale')
+        node.insert('CaPump')
+        node.insert('NaCaPump')
+        node.insert('NaKpumpSchild')
+        if self.fiber_model == FiberModel.SCHILD97:
+            node.insert('naf97mean')
+            node.insert('nas97mean')
+        else:
+            node.insert('naf')
+            node.insert('nas')
+        # Ionic concentrations
+        node.cao0_ca_ion = 2.0  # [mM] Initial Cao Concentration
+        node.cai0_ca_ion = 0.000117  # [mM] Initial Cai Concentrations
+        node.ko = 5.4  # [mM] External K Concentration
+        node.ki = 145.0  # [mM] Internal K Concentration
+        node.kstyle = ion_style("k_ion", 1, 2, 0, 0, 0)  # Allows ek to be calculated manually
+        node.ek = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
+            node.ko / node.ki
+        )  # Manual Calculation of ek in order to use Schild F and R values
+        node.nao = 154  # [mM] External Na Concentration
+        node.nai = 8.9  # [mM] Internal Na Concentration
+        node.nastyle = ion_style("na_ion", 1, 2, 0, 0, 0)  # Allows ena to be calculated manually
+        node.ena = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
+            node.nao / node.nai
+        )  # Manual Calculation of ena in order to use Schild F and R values
+        if self.fiber_model == FiberModel.SCHILD97:
+            node.gbar_naf97mean = (
+                0.022434928  # [S/cm^2] This block sets the conductance to the conductances in Schild 1997
+            )
+            node.gbar_nas97mean = 0.022434928
+            node.gbar_kd = 0.001956534
+            node.gbar_ka = 0.001304356
+            node.gbar_kds = 0.000782614
+            node.gbar_kca = 0.000913049
+            node.gbar_can = 0.000521743
+            node.gbar_cat = 0.00018261
+            node.gbna_leak = 1.8261e-05
+        node.Ra = 100
+        node.cm = 1.326291192
+        node.v = self.v_rest
+
+    # todo: figure out if the order for calling all the node attrs matters
+    def create_rattay(self, node):
+        """Create a RATTAY node.
+
+        :param node: NEURON section
+        """
+        node.insert('RattayAberham')
+        node.Ra = 100  # required for propagation; less than 100 does not propagate
+        node.cm = 1
+        node.v = self.v_rest
+        node.ena = 45
+        node.ek = -82
+
+    def create_tigerholm(self, celsius, node):
+        """Create a TIGERHOLM node.
+
+        :param celsius: model temperature [celsius]
+        :param node: NEURON section
+        """
+        node.insert('ks')
+        node.gbar_ks = 0.0069733
+        node.insert('kf')
+        node.gbar_kf = 0.012756
+        node.insert('h')
+        node.gbar_h = 0.0025377
+        node.insert('nattxs')
+        node.gbar_nattxs = 0.10664
+        node.insert('nav1p8')
+        node.gbar_nav1p8 = 0.24271
+        node.insert('nav1p9')
+        node.gbar_nav1p9 = 9.4779e-05
+        node.insert('nakpump')
+        node.smalla_nakpump = -0.0047891
+        node.insert('kdrTiger')
+        node.gbar_kdrTiger = 0.018002
+        node.insert('kna')
+        node.gbar_kna = 0.00042
+        node.insert('naoiTiger')
+        node.insert('koiTiger')
+        node.insert('leak')
+        node.insert('extrapump')
+        node.Ra = 35.5
+        node.cm = 1
+        node.celsiusT_ks = celsius
+        node.celsiusT_kf = celsius
+        node.celsiusT_h = celsius
+        node.celsiusT_nattxs = celsius
+        node.celsiusT_nav1p8 = celsius
+        node.celsiusT_nav1p9 = celsius
+        node.celsiusT_nakpump = celsius
+        node.celsiusT_kdrTiger = celsius
+        node.v = self.v_rest
+
+    def create_sundt(self, node):
+        """Create a SUNDT node.
+
+        :param node: NEURON section
+        """
+        node.insert('nahh')
+        node.gnabar_nahh = 0.04
+        node.mshift_nahh = -6  # NaV1.7/1.8 channelshift
+        node.hshift_nahh = 6  # NaV1.7/1.8 channelshift
+        node.insert('borgkdr')  # insert delayed rectified K channels
+        node.gkdrbar_borgkdr = 0.04  # density of K channels
+        node.ek = -90  # K equilibrium potential
+        node.insert('pas')  # insert leak channels
+        node.g_pas = 1 / 10000  # set Rm = 10000 ohms-cm2
+        node.Ra = 100  # intracellular resistance
+        node.v = self.v_rest  # TODO: should use vrest
+        node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
 
     @staticmethod
     def create_mysa(
@@ -499,7 +509,9 @@ class Fiber:
         flut.cm = 2 * para_diam_2 / fiber_diam
         flut.insert('pas')
         flut.g_pas = 0.0001 * para_diam_2 / fiber_diam
-        flut.e_pas = e_pas_vrest
+        flut.e_pas = (
+            e_pas_vrest  # TODO: find out why e_pas vs v_rest is set one may be target v and other may be state v
+        )
 
         flut.insert('extracellular')
         flut.xraxial[0] = rpn2
@@ -611,8 +623,8 @@ class Fiber:
         """
         if not self.fiber_model == FiberModel.TIGERHOLM:
             raise ValueError('balance() is only valid for Tigerholm model')
-        v_rest = -55  # TODO: should source from fiberz
-        for s in self.fiber.sections:
+        v_rest = self.v_rest
+        for s in self.sections:
             if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
                 s.pumpina_extrapump = -(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump)
             else:
