@@ -44,6 +44,8 @@ class FiberBuilder:
             fiberclass = UnmyelinatedFiber(fiber_model, *args, **kwargs)
         return fiberclass.generate(n_fiber_coords, length)
 
+    # TODO: rework generation to be all insertions followed by all attributes
+
 
 class _Fiber:
     pass
