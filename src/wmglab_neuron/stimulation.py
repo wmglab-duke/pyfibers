@@ -7,7 +7,7 @@ https://github.com/wmglab-duke/ascent
 """
 from neuron import h
 
-from src.wmglab_neuron import Fiber, FiberModel, Recording
+from src.wmglab_neuron import FiberModel, Recording, _Fiber
 
 h.load_file('stdrun.hoc')
 
@@ -17,7 +17,7 @@ class Stimulation:
 
     def __init__(
         self,
-        fiber: Fiber,
+        fiber: _Fiber,
         waveform: list[int],
         potentials: list[int],
         dt: float = 0.001,
@@ -27,7 +27,7 @@ class Stimulation:
     ):
         """Initialize Stimulation class.
 
-        :param fiber: instance of Fiber class
+        :param fiber: instance of fiber class
         :param waveform: list of amplitudes at each time bounds_search_step of the simulation
         :param potentials: list of extracellular potentials to be applied along the fiber length
         :param dt: time bounds_search_step for simulation [seconds]
@@ -36,6 +36,7 @@ class Stimulation:
         :param dt_init_ss: the time bounds_search_step used to reach steady state [ms]
         """
         # TODO: need to think about making this extensible so that users could add custom simulations
+        # TODO: to do this, make basic stimulation class that then has a run method which takes a fiber as arg
         self.fiber = fiber
         self.waveform = waveform
         self.dt = dt
@@ -69,11 +70,7 @@ class Stimulation:
         :param ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
         :return: instance of Stimulation class
         """
-        if self.fiber.myelinated:
-            intrastim_pulsetrain_ind = ind * 11
-        else:
-            intrastim_pulsetrain_ind = ind
-        intracellular_stim = h.trainIClamp(self.fiber.sections[intrastim_pulsetrain_ind](0.5))
+        intracellular_stim = h.trainIClamp(self.fiber.nodes[ind](0.5))
         intracellular_stim.delay = delay
         intracellular_stim.PW = pw
         intracellular_stim.train = dur
@@ -106,6 +103,7 @@ class Stimulation:
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
         max_iterations=100,
+        **kwargs,
     ):
         """Binary search to find threshold amplitudes.
 
@@ -122,6 +120,7 @@ class Stimulation:
         :param stimamp_top: the upper-bound stimulation amplitude first tested in a binary search for thresholds
         :param stimamp_bottom: the lower-bound stimulation amplitude first tested in a binary search for thresholds
         :param max_iterations: the maximum number of iterations for finding search bounds
+        :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
         :raises ValueError: If stimamp bottom and stimamp top have different signs
         :raises ValueError: If stimamp top does not exceed stimamp bottom
@@ -142,8 +141,8 @@ class Stimulation:
         rel_thresh_resoln = round(termination_tolerance / 100, 4)
         # todo: add comments to this function
         # first check stimamps
-        supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition)
-        supra_top = self.run_sim(stimamp_top, check_threshold=condition)
+        supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
+        supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
         # Determine upper- and lower-bounds for simulation
         iterations = 0
         while iterations < max_iterations:
@@ -162,7 +161,7 @@ class Stimulation:
                     stimamp_top = stimamp_top + abs_increment
                 elif bounds_search_mode == 'PERCENT_INCREMENT':
                     stimamp_top = stimamp_top * (1 + rel_increment)
-                supra_top = self.run_sim(stimamp_top, check_threshold=condition)
+                supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
                 stimamp_top = stimamp_bottom
@@ -170,7 +169,7 @@ class Stimulation:
                     stimamp_bottom = stimamp_bottom - abs_increment
                 elif bounds_search_mode == 'PERCENT_INCREMENT':
                     stimamp_bottom = stimamp_bottom * (1 - rel_increment)
-                supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition)
+                supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
         else:  # todo: add print statements back in
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
         # Enter binary search
@@ -179,7 +178,7 @@ class Stimulation:
 
             stimamp = (stimamp_bottom + stimamp_top) / 2
 
-            suprathreshold = self.run_sim(stimamp, check_threshold=condition)
+            suprathreshold = self.run_sim(stimamp, check_threshold=condition, **kwargs)
 
             if termination_mode == 'PERCENT_DIFFERENCE':  # todo: make this a function
                 thresh_resoln = abs(rel_thresh_resoln)
@@ -193,7 +192,7 @@ class Stimulation:
                 if not suprathreshold:
                     stimamp = stimamp_prev
                 # Run one more time at threshold to save user-specified variables
-                n_aps = self.run_sim(stimamp, recording=recording)
+                n_aps = self.run_sim(stimamp, recording=recording, **kwargs)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -203,7 +202,13 @@ class Stimulation:
         return stimamp, n_aps
 
     def run_sim(
-        self, stimamp: float, recording: Recording = None, check_threshold: str = None, check_threshold_interval=10
+        self,
+        stimamp: float,
+        recording: Recording = None,
+        ap_detect_location: float = 0.9,
+        check_threshold: str = None,
+        check_threshold_interval=10,
+        istim_delay: float = 0,
     ):  # noqa: C901
         """Run a simulation for a single stimulation amplitude.
 
@@ -211,6 +216,8 @@ class Stimulation:
         :param recording: instance of Recording class
         :param check_threshold: condition to check for threshold (activation or block) or None
         :param check_threshold_interval: interval to check if threshold is reached and if so, exit ("activation" only)
+        :param ap_detect_location: location to detect action potentials (percent along fiber)
+        :param istim_delay: delay before searching for block threshold
         :raises ValueError: if waveform length is not equal to number of time steps
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
@@ -247,7 +254,6 @@ class Stimulation:
 
         recording = initialize_recording(recording)
 
-        # TODO: Add error if checkthresholdinterval and block
         h.finitialize(self.fiber.v_rest)  # Initialize the simulation
         if self.fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
             self.fiber.balance()
@@ -273,20 +279,14 @@ class Stimulation:
                 and i % check_threshold_interval == 0
                 and recording.threshold_checker(self.fiber)
             ):
-                print(i * self.dt)
                 break
-            # todo: find time of threshold crossing and use 2x that for supra and subthreshold
 
         # Done with simulation
-
-        # Insert vectors of 0's for gating parameters at passive end nodes
-        if recording.save_gating:
-            recording.record_gating(self.fiber, fix_passive=True)
-
         if not check_threshold:
-            # print(f'{int(n_aps)} AP(s) detected')
-            return recording.ap_checker(self.fiber)  # todo: not using istim delay or ap detect location
+            return recording.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
         elif check_threshold == "activation":
-            return recording.threshold_checker(self.fiber)
+            return recording.threshold_checker(self.fiber, ap_detect_location=ap_detect_location)
         elif check_threshold == "block":
-            return recording.threshold_checker(self.fiber, block=True)
+            return recording.threshold_checker(
+                self.fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
+            )

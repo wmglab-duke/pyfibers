@@ -8,7 +8,7 @@ from scipy.stats import norm
 
 sys.path.append(r'C:\nrn\lib\python')
 
-from src.wmglab_neuron import Fiber, FiberModel, Recording, Stimulation  # noqa: E402
+from src.wmglab_neuron import FiberBuilder, FiberModel, Recording, Stimulation  # noqa: E402
 
 # TODO: remove the sys.path.append (installation should add to python path) and the noqa: E402
 nodecount = 133
@@ -23,10 +23,10 @@ waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 time_step = 0.001
 time_stop = 50
 
-model = FiberModel.MRG_DISCRETE
+model = FiberModel.RATTAY
 
 # create fiber
-fiber = Fiber(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
+fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
 
 # Create instance of Stimulation class
 stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
