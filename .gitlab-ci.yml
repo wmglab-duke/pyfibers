@@ -7,7 +7,7 @@
 # https://hub.docker.com/r/library/python/tags/
 
 default:
-  image: python:latest
+  image: python:3.10
 
 workflow:
   rules:
@@ -82,15 +82,21 @@ docstring_check:
 #    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
 #    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-#Run tests
-#pytest:
-#  stage: test
-#  script:
-#    - pip install -r requirements.txt
-#    - pip install pytest pytest-cov
-#    - apt-get update && apt-get -y install libgl1
-#    - pytest --cov=src/ tests/
-#    - coverage xml
+#NOTE: will need to add building python package to this
+
+# Run tests
+pytest:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov
+    - cd src/MOD && nrnivmodl && cd ../..
+    - cp -r src/MOD/x86_64 x86_64
+    - export PYTHONPATH=$HOME/local/lib/python
+    - apt-get update && apt-get -y install libgl1
+    - pwd
+    - pytest --cov=src/ tests/
+    - coverage xml
 
 test_docs:
   stage: test

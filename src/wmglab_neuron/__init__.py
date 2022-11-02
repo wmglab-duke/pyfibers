@@ -8,10 +8,12 @@ The source code can be found on the following GitHub repository: https://github.
 from contextlib import suppress
 
 from neuron import h
-
+import neuron
 
 with suppress(RuntimeError):
     h.nrn_load_dll('src/MOD/nrnmech.dll')
+    neuron.load_mechanisms('src/MOD')
+    print('Loaded neuron mechanism files')
 
 from .enums import FiberModel
 from .fiber_z import FiberTypeParameters
