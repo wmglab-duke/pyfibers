@@ -9,7 +9,7 @@ https://github.com/wmglab-duke/ascent
 import numpy as np
 from scipy.stats import norm
 
-from src.wmglab_neuron import Fiber, FiberModel, Recording, Stimulation
+from src.wmglab_neuron import FiberBuilder, FiberModel, Recording, Stimulation
 
 # TODO: maybe remove this append?
 
@@ -19,7 +19,7 @@ def get_activation_threshold(model):
     nodecount = 133
     # create curve of potentials
     potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-    fiber = Fiber(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
+    fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
