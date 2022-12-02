@@ -19,18 +19,18 @@ def auto_compile(override: bool = False):
     operating_sys = 'UNIX-LIKE' if any([s in sys.platform for s in ['darwin', 'linux']]) else 'WINDOWS'
     if (
         (not os.path.exists(os.path.join('x86_64')) and operating_sys == 'UNIX-LIKE')
-        or (not os.path.exists(os.path.join('src', 'MOD_Files', 'nrnmech.dll')) and operating_sys == 'WINDOWS')
+        or (not os.path.exists(os.path.join('src', 'MOD', 'nrnmech.dll')) and operating_sys == 'WINDOWS')
         or override
     ):
         print('compiling')
-        os.chdir(os.path.join('src', 'MOD_Files'))
+        os.chdir(os.path.join('src', 'MOD'))
         exit_data = subprocess.run(['nrnivmodl'], shell=True, capture_output=True, text=True)
         if exit_data.returncode != 0:
             print(exit_data.stderr)
             sys.exit("Error in compiling of NEURON files. Exiting...")
         os.chdir('../..')
 
-        shutil.copytree('src/MOD_Files/x86_64', 'x86_64')
+        shutil.copytree('src/MOD/x86_64', 'x86_64')
         compiled = True
     else:
         print('skipped compile')
