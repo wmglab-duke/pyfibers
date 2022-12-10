@@ -5,7 +5,11 @@ refer to the LICENSE and README.md files for licensing instructions. The
 source code can be found on the following GitHub repository:
 https://github.com/wmglab-duke/ascent
 """
+import warnings
+
+import numpy as np
 from neuron import h
+from scipy.signal import argrelextrema
 
 from src.wmglab_neuron import FiberModel, Recording, _Fiber
 
@@ -219,6 +223,7 @@ class Stimulation:
         :param ap_detect_location: location to detect action potentials (percent along fiber)
         :param istim_delay: delay before searching for block threshold
         :raises ValueError: if waveform length is not equal to number of time steps
+        :raises RuntimeError: If end excitation is detected
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
         print('Running:', stimamp)
@@ -275,10 +280,27 @@ class Stimulation:
 
             h.fadvance()
             if (
-                check_threshold is not None
+                check_threshold == 'activation'
                 and i % check_threshold_interval == 0
                 and recording.threshold_checker(self.fiber)
-            ):
+            ):  # TODO: move this to threshold function
+                # check for end excitation
+                times = np.array([apc.time for apc in recording.apc])
+                print(1)
+
+                times[np.where(times == 0)] = float('Inf')
+
+                node = np.argmin(times)
+
+                if node <= 1 or node >= len(times - 2):
+                    raise RuntimeError("End excitation occurred.")
+
+                # find number of local minima in the aploc_data
+                n_local_minima = len(argrelextrema(times, np.less)[0])
+
+                if n_local_minima > 1:
+                    warnings.warn('Found multiple activation sites.')
+
                 break
 
         # Done with simulation
