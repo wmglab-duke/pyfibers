@@ -44,7 +44,7 @@ MOCK_MODULES = ['numpy', 'pandas']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
-autodoc_mock_imports = ['neuron']
+autodoc_mock_imports = ['neuron', 'scipy']
 
 # Add any paths that contain templates here, relative to this directory.
 

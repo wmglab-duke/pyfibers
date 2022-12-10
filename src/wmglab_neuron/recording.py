@@ -63,6 +63,7 @@ class Recording:
         :param fiber: instance of fiber class
         :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
         """
+        # TODO: add check for end excitation
         self.apc = [h.APCount(node(0.5)) for node in fiber.nodes]
         for apc in self.apc:
             apc.thresh = thresh

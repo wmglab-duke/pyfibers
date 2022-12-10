@@ -23,7 +23,7 @@ waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 time_step = 0.001
 time_stop = 50
 
-model = FiberModel.RATTAY
+model = FiberModel.TIGERHOLM
 
 # create fiber
 fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
