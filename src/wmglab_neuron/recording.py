@@ -18,6 +18,7 @@ class Recording:
 
     # TODO: either make this attach to an instance of stimulation or make all these methods of simulation
     # TODO: make extensible to allow user to save additional data?
+    # TODO: make all variable recording part of the fiber class, and then make stimulation ap checkler static methods
     def __init__(self, fiber: _Fiber):
         """Initialize Recording class.
 
@@ -139,6 +140,7 @@ class Recording:
         else:
             return bool(self.apc[node_index].n)
 
+    # TODO: threshold checker
     def get_variables(self, fiber: _Fiber):  # noqa: C901
         """Return recorded variables from a simulation.
 

@@ -39,6 +39,31 @@ def get_activation_threshold(model):
     return amp
 
 
+def get_amp_responses(model, stimamps, save=False):
+    """Get activation threshold."""
+    nodecount = 133
+    # create curve of potentials
+    potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
+    fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
+
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+
+    # initialize recoding class
+    recording = Recording(fiber)
+
+    # decide what to save
+    recording.set_save(vm=save, gating=False, istim=False)
+
+    # parameters
+    time_step = 0.001
+    time_stop = 50
+    stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
+
+    aps = [stimulation.run_sim(stimamp, recording) for stimamp in stimamps]
+
+    return aps, recording, fiber
+
+
 def test_mrg_discrete():
     assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), -0.023414306640625)
 
@@ -53,6 +78,16 @@ def test_tigerholm():
 
 def test_rattay():
     assert np.isclose(get_activation_threshold(FiberModel.RATTAY), -0.042266845703125)
+
+
+def test_finite_amps():
+    assert np.array_equal(np.array(get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1])[0]), [0, 1, 1])
+
+
+def test_recording_mrg():
+    _, recording, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
+    data = recording.get_variables(fiber)
+    assert np.isclose(data[0][200][6], 388.3427452679563)
 
 
 # TODO: below tests enable
