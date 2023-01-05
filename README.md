@@ -1,4 +1,5 @@
 Note add badges
+
 # wmglab-neuron
 This package implements biophysical models of axons in the NEURON simulation environment using Python. You can run simulations of stimulation of axons, with the ability to search for activation and block thresholds. You can also add your own fiber models or custom simulations.
 
@@ -9,38 +10,38 @@ We have implemented the following models:
 - TIGERHOLM
 - RATTAY
 
-
 ## Installation
-
 Install the package using the command
 ```
 pip install wmglab-neuron
 ```
 ## Usage
 ### Creating a fiber model
-
+Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `Stimulation` class, or in your own custom simulation setup.
+```python
+# create fiber
+fiber = FiberBuilder.generate(fiber_model=FiberModel.MRG_DISCRETE, n_fiber_coords=133, temperature=37, diameter=5.7)
+#TODO: add default args for temperature and diameter
+#TODO: allow specifying nodecount and not just n coords
+```
 ### Running a Simulatiion
+Once you have a fiber object, you can create a `Stimulation` instance. Provide a list of potential values along the fiber sections, and a time varying waveform.
+```python
+# Create instance of Stimulation class
+stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
 
-### Analyzing results
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+# run threshold search
+amp, _ = stimulation.find_threshold()
+print(f'Threshold for 5.7 micron fiber: {amp} (mA)')
+```
+For more examples, see the documentation.
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+If you have a contribution which you feel would be of value, please open a Pull Request.
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Based on the original paper by authors
+Developed by Elie, Daniel, and Eric
 
 ## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+See LICENSE
