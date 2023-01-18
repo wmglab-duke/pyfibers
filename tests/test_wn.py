@@ -9,7 +9,7 @@ https://github.com/wmglab-duke/ascent
 import numpy as np
 from scipy.stats import norm
 
-from src.wmglab_neuron import FiberBuilder, FiberModel, Recording, Stimulation
+from src.wmglab_neuron import FiberBuilder, FiberModel, Stimulation
 
 # TODO: maybe remove this append?
 
@@ -23,18 +23,12 @@ def get_activation_threshold(model):
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
-    # initialize recoding class
-    recording = Recording(fiber)
-
-    # decide what to save
-    recording.set_save(vm=False, gating=False, istim=False)
-
     # parameters
     time_step = 0.001
     time_stop = 50
     stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
 
-    amp, ap = stimulation.find_threshold(recording)
+    amp, ap = stimulation.find_threshold()
 
     return amp
 
@@ -46,22 +40,20 @@ def get_amp_responses(model, stimamps, save=False):
     potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
     fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
 
+    if save:
+        fiber.set_save_gating()
+        fiber.set_save_vm()
+
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
-
-    # initialize recoding class
-    recording = Recording(fiber)
-
-    # decide what to save
-    recording.set_save(vm=save, gating=False, istim=False)
 
     # parameters
     time_step = 0.001
     time_stop = 50
     stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
 
-    aps = [stimulation.run_sim(stimamp, recording) for stimamp in stimamps]
+    aps = [stimulation.run_sim(stimamp) for stimamp in stimamps]
 
-    return aps, recording, fiber
+    return aps, fiber
 
 
 def test_mrg_discrete():
@@ -84,10 +76,17 @@ def test_finite_amps():
     assert np.array_equal(np.array(get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1])[0]), [0, 1, 1])
 
 
-def test_recording_mrg():
-    _, recording, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
-    data = recording.get_variables(fiber)
-    assert np.isclose(data[0][200][6], 388.3427452679563)
+def test_vm():
+    _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
+    assert np.isclose(fiber.vm[6][200], 388.5680657889212)
+
+
+def test_gating():
+    _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
+    assert np.isclose(fiber.gating['h'][5][200], 0.0014151250180505406)
+    assert np.isclose(fiber.gating['m'][5][200], 0.9999924898989334)
+    assert np.isclose(fiber.gating['mp'][5][200], 0.9999961847550823)
+    assert np.isclose(fiber.gating['s'][5][200], 0.9090909090909091)
 
 
 # TODO: below tests enable

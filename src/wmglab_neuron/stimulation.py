@@ -11,7 +11,7 @@ import numpy as np
 from neuron import h
 from scipy.signal import argrelextrema
 
-from src.wmglab_neuron import FiberModel, Recording, _Fiber
+from src.wmglab_neuron import FiberModel, _Fiber
 
 h.load_file('stdrun.hoc')
 
@@ -98,7 +98,6 @@ class Stimulation:
 
     def find_threshold(  # noqa: C901
         self,
-        recording: Recording,
         condition: str = "activation",  # TODO: change to enums
         bounds_search_mode: str = 'PERCENT_INCREMENT',  # TODO: change to enums
         bounds_search_step: float = 10,
@@ -111,7 +110,6 @@ class Stimulation:
     ):
         """Binary search to find threshold amplitudes.
 
-        :param recording: instance of Recording class
         :param condition: condition to search for threshold (activation or block)
         :param bounds_search_mode: indicates how to change upper and lower bounds for the binary search
         :param bounds_search_step: the incremental increase/decrease of the upper/lower bound in the binary search
@@ -196,7 +194,7 @@ class Stimulation:
                 if not suprathreshold:
                     stimamp = stimamp_prev
                 # Run one more time at threshold to save user-specified variables
-                n_aps = self.run_sim(stimamp, recording=recording, **kwargs)
+                n_aps = self.run_sim(stimamp, **kwargs)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -208,7 +206,6 @@ class Stimulation:
     def run_sim(
         self,
         stimamp: float,
-        recording: Recording = None,
         ap_detect_location: float = 0.9,
         check_threshold: str = None,
         check_threshold_interval=10,
@@ -217,7 +214,6 @@ class Stimulation:
         """Run a simulation for a single stimulation amplitude.
 
         :param stimamp: amplitude to be applied to extracellular stimulation
-        :param recording: instance of Recording class
         :param check_threshold: condition to check for threshold (activation or block) or None
         :param check_threshold_interval: interval to check if threshold is reached and if so, exit ("activation" only)
         :param ap_detect_location: location to detect action potentials (percent along fiber)
@@ -239,26 +235,7 @@ class Stimulation:
             h.fcurrent()
             h.frecord_init()
 
-        def initialize_recording(rec):
-            # init rec
-            if rec is None:
-                rec = Recording(self.fiber)
-            else:
-                rec.reset()
-            # If saving variables, record variables
-            if rec.save_vm:
-                rec.record_vm(self.fiber)
-            if rec.save_gating:
-                rec.record_gating(self.fiber)
-            if rec.save_istim:
-                assert self.istim is not None, 'There must be intracellular stimulation to record istim'
-                rec.record_istim(self.istim)
-            # Set up APcount
-            rec.record_ap(self.fiber)
-            return rec
-
-        recording = initialize_recording(recording)
-
+        self.fiber.apcounts()
         h.finitialize(self.fiber.v_rest)  # Initialize the simulation
         if self.fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
             self.fiber.balance()
@@ -268,24 +245,24 @@ class Stimulation:
         h.celsius = self.fiber.temperature  # Set simulation temperature
 
         # Begin simulation
-        n_tsteps = len(self.waveform)
-        if n_tsteps != self.tstop / self.dt:
+        if len(self.waveform) != self.tstop / self.dt:
             raise ValueError(
-                f"Waveform length ({n_tsteps}) not equal to the number of time steps (t_stop*dt={self.tstop/self.dt})."
+                f"Waveform length ({len(self.waveform)}) not equal to "
+                f"the number of time steps (t_stop*dt={self.tstop/self.dt})."
             )
-        for i in range(0, n_tsteps):
-            amp = self.waveform[i]
+        for i, amp in enumerate(self.waveform):
             scaled_stim = [stimamp * amp * x for x in self.potentials]
             self.update_extracellular(scaled_stim)
 
             h.fadvance()
+
             if (
                 check_threshold == 'activation'
                 and i % check_threshold_interval == 0
-                and recording.threshold_checker(self.fiber)
+                and self.threshold_checker(self.fiber)
             ):  # TODO: move this to threshold function
                 # check for end excitation
-                times = np.array([apc.time for apc in recording.apc])
+                times = np.array([apc.time for apc in self.fiber.apc])
                 print(1)
 
                 times[np.where(times == 0)] = float('Inf')
@@ -305,10 +282,57 @@ class Stimulation:
 
         # Done with simulation
         if not check_threshold:
-            return recording.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
+            return self.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
         elif check_threshold == "activation":
-            return recording.threshold_checker(self.fiber, ap_detect_location=ap_detect_location)
+            return self.threshold_checker(self.fiber, ap_detect_location=ap_detect_location)
         elif check_threshold == "block":
-            return recording.threshold_checker(
+            return self.threshold_checker(
                 self.fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
             )
+
+    @staticmethod
+    def ap_checker(
+        fiber: _Fiber,
+        ap_detect_location: float = 0.9,
+    ) -> int:
+        """Check to see if an action potential occurred at the end of a run.
+
+        # remove this function and check in the respective functions
+
+        :param fiber: instance of fiber class
+        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :return: number of action potentials that occurred
+        """
+        # Determine user-specified location along axon to check for action potential
+        node_index = int((fiber.nodecount - 1) * ap_detect_location)
+        return fiber.apc[node_index].n
+
+    @staticmethod
+    def threshold_checker(
+        fiber: _Fiber,
+        block: bool = False,
+        ap_detect_location: float = 0.9,
+        istim_delay: float = 0,
+    ) -> int:
+        """Check if stimulation was above or below threshold.
+
+        :param fiber: instance of fiber class
+        :param block: true if BLOCK_THRESHOLD protocol, false otherwise
+        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
+        :return: True if stim was supra-threshold, False if sub-threshold
+        """
+        # Determine user-specified location along axon to check for action potential
+        node_index = int((fiber.nodecount - 1) * ap_detect_location)
+        if block:
+            return fiber.apc[node_index].time <= istim_delay
+        else:
+            return bool(fiber.apc[node_index].n)
+
+    # TODO: make this work too
+    def record_istim(self, istim):  # todo: remove all "object" type hints
+        """Record applied intracellular stimulation (nA).
+
+        :param istim: instance of intracellular stimulation object
+        """
+        self.istim = h.Vector().record(istim._ref_i)
