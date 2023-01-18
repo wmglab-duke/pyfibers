@@ -97,6 +97,20 @@ class _Fiber:
             potential_coords = potential_coords - (potential_coords[0] + potential_coords[-1]) / 2
         return np.interp(target_coords, potential_coords, potentials)
 
+    def apcounts(self, thresh: float = -30):
+        """Create a list of NEURON APCount objects at all nodes along the axon.
+
+        :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
+        """
+        self.apc = [h.APCount(node(0.5)) for node in self.nodes]
+        for apc in self.apc:
+            apc.thresh = thresh
+
+    def set_save_vm(self):
+        # todo: need to reset this upon each call of run sim
+        """Record membrane voltage (mV) along the axon."""
+        self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self.nodes]
+
 
 class MRGFiber(_Fiber):
     """Implementation of the MRG fiber model."""
@@ -379,7 +393,7 @@ class MRGFiber(_Fiber):
         node.L = nodelength
         node.Ra = rhoa / 10000
 
-        if self.passive_end_nodes and (index == 0 or index == self.nodecount - 1):
+        if self.passive_end_nodes and (index == 1 or index == (self.nodecount - 1) * 11 + 1):
             node.cm = 2
             node.insert('pas')
             node.g_pas = 0.0001
@@ -397,6 +411,27 @@ class MRGFiber(_Fiber):
             node.xg[0] = 1e10  # short circuit
 
         return node
+
+    def set_save_gating(self):
+        # todo: need to reset this upon each call of run sim
+        """Record gating parameters (h, m, mp, s) for myelinated fiber types."""
+        # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
+        # TODO: decide whether to fix passive by adding Nones or something to the ends.
+        # TODO: Also decide whether to do so for vm
+        self.gating = {"h": [], "m": [], "mp": [], "s": []}
+        if self.passive_end_nodes:
+            nodelist = self.nodes[1:-1]
+        else:
+            nodelist = self.nodes
+        for node in nodelist:
+            h_node = h.Vector().record(node(0.5)._ref_h_inf_axnode_myel)
+            m_node = h.Vector().record(node(0.5)._ref_m_inf_axnode_myel)
+            mp_node = h.Vector().record(node(0.5)._ref_mp_inf_axnode_myel)
+            s_node = h.Vector().record(node(0.5)._ref_s_inf_axnode_myel)
+            self.gating['h'].append(h_node)
+            self.gating['m'].append(m_node)
+            self.gating['mp'].append(mp_node)
+            self.gating['s'].append(s_node)
 
 
 class _HomogeneousFiber(_Fiber):

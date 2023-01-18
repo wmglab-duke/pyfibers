@@ -1,4 +1,0 @@
-recording
-==========
-.. automodule:: recording
-   :members:

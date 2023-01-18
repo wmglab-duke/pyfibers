@@ -6,4 +6,3 @@ autodoc
 
    fiber
    stimulation
-   recording

@@ -18,7 +18,6 @@ with suppress(RuntimeError):
 from .enums import FiberModel
 from .fiber_z import FiberTypeParameters
 from .fiber import FiberBuilder, _Fiber
-from .recording import Recording
 from .stimulation import Stimulation
 
 __all__ = ['FiberBuilder', 'Recording', 'Stimulation', 'FiberModel', 'FiberTypeParameters']
