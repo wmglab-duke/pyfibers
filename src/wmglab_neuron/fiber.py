@@ -26,13 +26,16 @@ class FiberBuilder:
     """
 
     @staticmethod
-    def generate(fiber_model: FiberModel, *args, n_fiber_coords: int = None, length: float = None, **kwargs):
+    def generate(
+        fiber_model: FiberModel, *args, n_fiber_coords: int = None, length: float = None, apcthresh=-30, **kwargs
+    ):
         """Generate a fiber model in NEURON.
 
         :param fiber_model: fiber model to use
         :param args: arguments to pass to the fiber model class
         :param n_fiber_coords: number of fiber coordinates to use
         :param length: length of the fiber
+        :param apcthresh: threshold for action potential counter
         :param kwargs: keyword arguments to pass to the fiber model class
         :raises ValueError: if the fiber model is not supported
         :return: generated instance of fiber model class
@@ -766,3 +769,24 @@ class SundtFiber(_HomogeneousFiber):
         node.Ra = 100  # intracellular resistance
         node.v = v_rest
         node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
+
+    def set_save_gating(self, fix_passive: bool = False):
+        """Record gating parameters (h, m, mp, s) for myelinated fiber types.
+
+        :param fix_passive: true if fiber has passive end nodes, false otherwise
+        """
+        # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
+        self.gating = {"h": [], "m": [], "mp": [], "s": []}
+        if self.passive_end_nodes:
+            nodelist = self.nodes[1:-1]
+        else:
+            nodelist = self.nodes
+        for node in nodelist:
+            h_node = h.Vector().record(node(0.5)._ref_h_inf_axnode_myel)
+            m_node = h.Vector().record(node(0.5)._ref_m_inf_axnode_myel)
+            mp_node = h.Vector().record(node(0.5)._ref_mp_inf_axnode_myel)
+            s_node = h.Vector().record(node(0.5)._ref_s_inf_axnode_myel)
+            self.gating['h'].append(h_node)
+            self.gating['m'].append(m_node)
+            self.gating['mp'].append(mp_node)
+            self.gating['s'].append(s_node)

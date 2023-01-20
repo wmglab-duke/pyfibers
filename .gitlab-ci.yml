@@ -59,13 +59,13 @@ black:
 flake8:
   stage: lint
   script:
-    - pip install flake8 flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring
+    - pip install flake8==5.* flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring
     - flake8 --extend-ignore=T100,T101,T102 src
 
 docstring_check:
   stage: lint
   script:
-    - pip install flake8 flake8-docstrings flake8-rst-docstrings darglint
+    - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
     - flake8 --select=D,DAR,RST src
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
