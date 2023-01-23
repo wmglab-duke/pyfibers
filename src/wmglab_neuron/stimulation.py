@@ -12,6 +12,7 @@ from neuron import h
 from scipy.signal import argrelextrema
 
 from src.wmglab_neuron import FiberModel, _Fiber
+from src.wmglab_neuron.enums import BoundsSearchMode, TerminationMode, ThresholdCondition
 
 h.load_file('stdrun.hoc')
 
@@ -39,8 +40,6 @@ class Stimulation:
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
         :param dt_init_ss: the time bounds_search_step used to reach steady state [ms]
         """
-        # TODO: need to think about making this extensible so that users could add custom simulations
-        # TODO: to do this, make basic stimulation class that then has a run method which takes a fiber as arg
         self.fiber = fiber
         self.waveform = waveform
         self.dt = dt
@@ -52,8 +51,6 @@ class Stimulation:
             fiber.coordinates
         ), 'Number of fiber coordinates does not match number of potentials'
         self.potentials = potentials
-
-        # todo: pass fiber as a run_sim argument so that a Stimulation class can operate on any fiber it is given.
 
     def add_intracellular_stim(
         self,
@@ -98,10 +95,10 @@ class Stimulation:
 
     def find_threshold(  # noqa: C901
         self,
-        condition: str = "activation",  # TODO: change to enums
-        bounds_search_mode: str = 'PERCENT_INCREMENT',  # TODO: change to enums
+        condition: str = ThresholdCondition.ACTIVATION,  # TODO: change to enums
+        bounds_search_mode: str = BoundsSearchMode.PERCENT_INCREMENT,  # TODO: change to enums
         bounds_search_step: float = 10,
-        termination_mode: str = 'PERCENT_DIFFERENCE',  # TODO: change to enums
+        termination_mode: str = TerminationMode.PERCENT_DIFFERENCE,  # TODO: change to enums
         termination_tolerance: float = 1,
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
@@ -128,7 +125,7 @@ class Stimulation:
         :raises ValueError: If stimamp top does not exceed stimamp bottom
         :return: the threshold amplitude for the given condition, and the number of detected aps
         """
-        # TODO: enable option for specific number of aps to qualify as threshold
+        # TODO: run top first, then use time to detect AP For all subsequent runs
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
         if stimamp_top * stimamp_bottom < 0:
@@ -157,20 +154,20 @@ class Stimulation:
             elif not supra_bot and not supra_top:
                 # search upward with stimamp top
                 stimamp_bottom = stimamp_top
-                if bounds_search_mode == 'ABSOLUTE_INCREMENT':
+                if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_top = stimamp_top + abs_increment
-                elif bounds_search_mode == 'PERCENT_INCREMENT':
+                elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_top = stimamp_top * (1 + rel_increment)
                 supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
                 stimamp_top = stimamp_bottom
-                if bounds_search_mode == 'ABSOLUTE_INCREMENT':
+                if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - abs_increment
-                elif bounds_search_mode == 'PERCENT_INCREMENT':
+                elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_bottom = stimamp_bottom * (1 - rel_increment)
                 supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
-        else:  # todo: add print statements back in
+        else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
         # Enter binary search
         while True:
@@ -180,10 +177,10 @@ class Stimulation:
 
             suprathreshold = self.run_sim(stimamp, check_threshold=condition, **kwargs)
 
-            if termination_mode == 'PERCENT_DIFFERENCE':  # todo: make this a function
+            if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(rel_thresh_resoln)
                 tolerance = abs((stimamp_bottom - stimamp_top) / stimamp_top)
-            elif termination_mode == 'ABSOLUTE_DIFFERENCE':
+            elif termination_mode == TerminationMode.ABSOLUTE_DIFFERENCE:
                 thresh_resoln = abs(abs_thresh_resoln)
                 tolerance = abs(stimamp_bottom - stimamp_top)
 
@@ -246,7 +243,7 @@ class Stimulation:
         if len(self.waveform) != self.tstop / self.dt:
             raise ValueError(
                 f"Waveform length ({len(self.waveform)}) not equal to "
-                f"the number of time steps (t_stop*dt={self.tstop/self.dt})."
+                f"the number of time steps (t_stop*dt={self.tstop / self.dt})."
             )
         for i, amp in enumerate(self.waveform):
             scaled_stim = [stimamp * amp * x for x in self.potentials]
@@ -255,10 +252,10 @@ class Stimulation:
             h.fadvance()
 
             if (
-                check_threshold == 'activation'
+                check_threshold == ThresholdCondition.ACTIVATION
                 and i % check_threshold_interval == 0
                 and self.threshold_checker(self.fiber)
-            ):  # TODO: move this to threshold function
+            ):
                 # check for end excitation
                 times = np.array([apc.time for apc in self.fiber.apc])
                 print(1)
@@ -281,9 +278,9 @@ class Stimulation:
         # Done with simulation
         if not check_threshold:
             return self.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
-        elif check_threshold == "activation":
+        elif check_threshold == ThresholdCondition.ACTIVATION:
             return self.threshold_checker(self.fiber, ap_detect_location=ap_detect_location)
-        elif check_threshold == "block":
+        elif check_threshold == ThresholdCondition.BLOCK:
             return self.threshold_checker(
                 self.fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
             )
@@ -327,7 +324,6 @@ class Stimulation:
         else:
             return bool(fiber.apc[node_index].n)
 
-    # TODO: make this work too
     def record_istim(self, istim):
         """Record applied intracellular stimulation (nA).
 
