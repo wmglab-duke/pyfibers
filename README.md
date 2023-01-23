@@ -21,8 +21,6 @@ Use the FiberBuilder class to create fiber object. This fiber object consists of
 ```python
 # create fiber
 fiber = FiberBuilder.generate(fiber_model=FiberModel.MRG_DISCRETE, n_fiber_coords=133, temperature=37, diameter=5.7)
-#TODO: add default args for temperature and diameter
-#TODO: allow specifying nodecount and not just n coords
 ```
 ### Running a Simulatiion
 Once you have a fiber object, you can create a `Stimulation` instance. Provide a list of potential values along the fiber sections, and a time varying waveform.

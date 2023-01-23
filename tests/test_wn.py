@@ -83,10 +83,10 @@ def test_vm():
 
 def test_gating():
     _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
-    assert np.isclose(fiber.gating['h'][5][200], 0.0014151250180505406)
-    assert np.isclose(fiber.gating['m'][5][200], 0.9999924898989334)
-    assert np.isclose(fiber.gating['mp'][5][200], 0.9999961847550823)
-    assert np.isclose(fiber.gating['s'][5][200], 0.9090909090909091)
+    assert np.isclose(fiber.gating['h'][6][200], 0.0014151250180505406)
+    assert np.isclose(fiber.gating['m'][6][200], 0.9999924898989334)
+    assert np.isclose(fiber.gating['mp'][6][200], 0.9999961847550823)
+    assert np.isclose(fiber.gating['s'][6][200], 0.9090909090909091)
 
 
 # TODO: below tests enable
