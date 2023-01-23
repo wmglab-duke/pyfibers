@@ -129,7 +129,6 @@ class Stimulation:
         :return: the threshold amplitude for the given condition, and the number of detected aps
         """
         # TODO: enable option for specific number of aps to qualify as threshold
-        # todo: add error if condition is not activation or block
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
         if stimamp_top * stimamp_bottom < 0:
@@ -141,7 +140,6 @@ class Stimulation:
         # Determine searching parameters for termination of binary search
         abs_thresh_resoln = round(termination_tolerance, 4)
         rel_thresh_resoln = round(termination_tolerance / 100, 4)
-        # todo: add comments to this function
         # first check stimamps
         supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
         supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
@@ -159,7 +157,7 @@ class Stimulation:
             elif not supra_bot and not supra_top:
                 # search upward with stimamp top
                 stimamp_bottom = stimamp_top
-                if bounds_search_mode == 'ABSOLUTE_INCREMENT':  # Todo: change to enum
+                if bounds_search_mode == 'ABSOLUTE_INCREMENT':
                     stimamp_top = stimamp_top + abs_increment
                 elif bounds_search_mode == 'PERCENT_INCREMENT':
                     stimamp_top = stimamp_top * (1 + rel_increment)
@@ -185,7 +183,7 @@ class Stimulation:
             if termination_mode == 'PERCENT_DIFFERENCE':  # todo: make this a function
                 thresh_resoln = abs(rel_thresh_resoln)
                 tolerance = abs((stimamp_bottom - stimamp_top) / stimamp_top)
-            elif termination_mode == 'ABSOLUTE_DIFFERENCE':  # todo: enum
+            elif termination_mode == 'ABSOLUTE_DIFFERENCE':
                 thresh_resoln = abs(abs_thresh_resoln)
                 tolerance = abs(stimamp_bottom - stimamp_top)
 
@@ -330,7 +328,7 @@ class Stimulation:
             return bool(fiber.apc[node_index].n)
 
     # TODO: make this work too
-    def record_istim(self, istim):  # todo: remove all "object" type hints
+    def record_istim(self, istim):
         """Record applied intracellular stimulation (nA).
 
         :param istim: instance of intracellular stimulation object

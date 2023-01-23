@@ -60,7 +60,9 @@ class FiberBuilder:
 
 
 class _Fiber:
-    def __init__(self, diameter: float, fiber_model: FiberModel, temperature: float, passive_end_nodes: bool = True):
+    def __init__(
+        self, diameter: float, fiber_model: FiberModel, temperature: float = 37, passive_end_nodes: bool = True
+    ):
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
@@ -110,9 +112,11 @@ class _Fiber:
             apc.thresh = thresh
 
     def set_save_vm(self):
-        # todo: need to reset this upon each call of run sim
         """Record membrane voltage (mV) along the axon."""
-        self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self.nodes]
+        if self.passive_end_nodes:
+            self.vm = [None] + [h.Vector().record(node(0.5)._ref_v) for node in self.nodes[1:-1]] + [None]
+        else:
+            self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self.nodes]
 
 
 class MRGFiber(_Fiber):
@@ -416,11 +420,8 @@ class MRGFiber(_Fiber):
         return node
 
     def set_save_gating(self):
-        # todo: need to reset this upon each call of run sim
         """Record gating parameters (h, m, mp, s) for myelinated fiber types."""
         # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
-        # TODO: decide whether to fix passive by adding Nones or something to the ends.
-        # TODO: Also decide whether to do so for vm
         self.gating = {"h": [], "m": [], "mp": [], "s": []}
         if self.passive_end_nodes:
             nodelist = self.nodes[1:-1]
@@ -435,6 +436,11 @@ class MRGFiber(_Fiber):
             self.gating['m'].append(m_node)
             self.gating['mp'].append(mp_node)
             self.gating['s'].append(s_node)
+        if self.passive_end_nodes:
+            self.gating['h'] = [None] + self.gating['h'] + [None]
+            self.gating['m'] = [None] + self.gating['m'] + [None]
+            self.gating['mp'] = [None] + self.gating['mp'] + [None]
+            self.gating['s'] = [None] + self.gating['s'] + [None]
 
 
 class _HomogeneousFiber(_Fiber):
@@ -505,6 +511,7 @@ class _HomogeneousFiber(_Fiber):
             node.insert('extracellular')
             node.xc[0] = 0  # short circuit
             node.xg[0] = 1e10  # short circuit
+            node.v = self.v_rest
 
             return nodefunc(node, *args, **kwargs)
 
@@ -550,20 +557,18 @@ class RattayFiber(_HomogeneousFiber):
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
     def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_rattay, v_rest=self.v_rest)
+        return self.generate_homogeneous(n_fiber_coords, length, self.create_rattay)
 
     @staticmethod
-    def create_rattay(node, v_rest):
+    def create_rattay(node):
         """Create a RATTAY node.
 
         :param node: NEURON section
-        :param v_rest: resting potential [mV]
         """
         node.insert('RattayAberham')
 
         node.Ra = 100  # required for propagation; less than 100 does not propagate
         node.cm = 1
-        node.v = v_rest
         node.ena = 45
         node.ek = -82
 
@@ -581,17 +586,14 @@ class SchildFiber(_HomogeneousFiber):
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
     def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(
-            n_fiber_coords, length, self.create_schild, v_rest=self.v_rest, celsius=self.temperature
-        )
+        return self.generate_homogeneous(n_fiber_coords, length, self.create_schild, celsius=self.temperature)
 
     @staticmethod
-    def create_schild(node, celsius, v_rest, model97=False):
+    def create_schild(node, celsius, model97=False):
         """Create a SCHILD node.
 
         :param celsius: model temperature [celsius]
         :param node: NEURON section
-        :param v_rest: resting potential [mV]
         :param model97: True for Schild 1997 model, False for Schild 1994 model
         """
         node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
@@ -644,7 +646,6 @@ class SchildFiber(_HomogeneousFiber):
         node.F = 96500
         node.Ra = 100
         node.cm = 1.326291192
-        node.v = v_rest  # todo move all node.v assignments out to nodebuilder method
 
 
 class TigerholmFiber(_HomogeneousFiber):
@@ -663,17 +664,14 @@ class TigerholmFiber(_HomogeneousFiber):
             self.passive_end_nodes = False
 
     def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(
-            n_fiber_coords, length, self.create_tigerholm, v_rest=self.v_rest, celsius=self.temperature
-        )
+        return self.generate_homogeneous(n_fiber_coords, length, self.create_tigerholm, celsius=self.temperature)
 
     @staticmethod
-    def create_tigerholm(node, celsius, v_rest):
+    def create_tigerholm(node, celsius):
         """Create a TIGERHOLM node.
 
         :param celsius: model temperature [celsius]
         :param node: NEURON section
-        :param v_rest: resting potential [mV]
         """
         node.insert('ks')
         node.insert('kf')
@@ -708,7 +706,6 @@ class TigerholmFiber(_HomogeneousFiber):
         node.gbar_nav1p9 = 9.4779e-05
         node.smalla_nakpump = -0.0047891
         node.gbar_kdrTiger = 0.018002
-        node.v = v_rest
 
     def balance(self):
         """Balance membrane currents for Tigerholm model.
@@ -717,6 +714,7 @@ class TigerholmFiber(_HomogeneousFiber):
         """
         if not self.fiber_model == FiberModel.TIGERHOLM:
             raise ValueError('balance() is only valid for Tigerholm model')
+
         v_rest = self.v_rest
         for s in self.sections:
             if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
@@ -747,14 +745,13 @@ class SundtFiber(_HomogeneousFiber):
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
     def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_sundt, v_rest=self.v_rest)
+        return self.generate_homogeneous(n_fiber_coords, length, self.create_sundt)
 
     @staticmethod
-    def create_sundt(node, v_rest):
+    def create_sundt(node):
         """Create a SUNDT node.
 
         :param node: NEURON section
-        :param v_rest: resting potential [mV]
         """
         node.insert('nahh')
         node.insert('borgkdr')  # insert delayed rectified K channels
@@ -767,7 +764,6 @@ class SundtFiber(_HomogeneousFiber):
         node.ek = -90  # K equilibrium potential
         node.g_pas = 1 / 10000  # set Rm = 10000 ohms-cm2
         node.Ra = 100  # intracellular resistance
-        node.v = v_rest
         node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
 
     def set_save_gating(self, fix_passive: bool = False):
