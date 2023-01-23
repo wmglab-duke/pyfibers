@@ -26,23 +26,21 @@ class FiberBuilder:
     """
 
     @staticmethod
-    def generate(
-        fiber_model: FiberModel, *args, n_fiber_coords: int = None, length: float = None, apcthresh=-30, **kwargs
-    ):
+    def generate(fiber_model: FiberModel, *args, n_fiber_coords: int = None, length: float = None, **kwargs):
         """Generate a fiber model in NEURON.
 
         :param fiber_model: fiber model to use
         :param args: arguments to pass to the fiber model class
         :param n_fiber_coords: number of fiber coordinates to use
         :param length: length of the fiber
-        :param apcthresh: threshold for action potential counter
         :param kwargs: keyword arguments to pass to the fiber model class
         :raises ValueError: if the fiber model is not supported
         :return: generated instance of fiber model class
         """
         assert (length is not None) or (n_fiber_coords is not None), "Must specify either length or n_fiber_coords"
         assert (length is None) or (n_fiber_coords is None), "Can't specify both length and n_fiber_coords"
-
+        # TODO: error if bad params such as weird fiber diameters are passed in.
+        #  Maybe provide recommended range in the documentation?
         if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
             fiberclass = MRGFiber(fiber_model, *args, **kwargs)
         elif fiber_model == FiberModel.RATTAY:
@@ -765,24 +763,3 @@ class SundtFiber(_HomogeneousFiber):
         node.g_pas = 1 / 10000  # set Rm = 10000 ohms-cm2
         node.Ra = 100  # intracellular resistance
         node.e_pas = node.v + (node.ina + node.ik) / node.g_pas  # calculate leak equilibrium potential
-
-    def set_save_gating(self, fix_passive: bool = False):
-        """Record gating parameters (h, m, mp, s) for myelinated fiber types.
-
-        :param fix_passive: true if fiber has passive end nodes, false otherwise
-        """
-        # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
-        self.gating = {"h": [], "m": [], "mp": [], "s": []}
-        if self.passive_end_nodes:
-            nodelist = self.nodes[1:-1]
-        else:
-            nodelist = self.nodes
-        for node in nodelist:
-            h_node = h.Vector().record(node(0.5)._ref_h_inf_axnode_myel)
-            m_node = h.Vector().record(node(0.5)._ref_m_inf_axnode_myel)
-            mp_node = h.Vector().record(node(0.5)._ref_mp_inf_axnode_myel)
-            s_node = h.Vector().record(node(0.5)._ref_s_inf_axnode_myel)
-            self.gating['h'].append(h_node)
-            self.gating['m'].append(m_node)
-            self.gating['mp'].append(mp_node)
-            self.gating['s'].append(s_node)

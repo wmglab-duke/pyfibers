@@ -14,12 +14,12 @@ from src.wmglab_neuron import FiberBuilder, FiberModel, Stimulation
 # TODO: maybe remove this append?
 
 
-def get_activation_threshold(model):
+def get_activation_threshold(model, nodecount=133, diameter=5.7):
     """Get activation threshold."""
-    nodecount = 133
+
     # create curve of potentials
     potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-    fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
+    fiber = FiberBuilder.generate(diameter=diameter, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -72,6 +72,10 @@ def test_rattay():
     assert np.isclose(get_activation_threshold(FiberModel.RATTAY), -0.042266845703125)
 
 
+def test_sundt():
+    assert np.isclose(get_activation_threshold(FiberModel.SUNDT, diameter=0.2, nodecount=665), -0.6867578125)
+
+
 def test_finite_amps():
     assert np.array_equal(np.array(get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1])[0]), [0, 1, 1])
 
@@ -88,10 +92,6 @@ def test_gating():
     assert np.isclose(fiber.gating['mp'][6][200], 0.9999961847550823)
     assert np.isclose(fiber.gating['s'][6][200], 0.9090909090909091)
 
-
-# TODO: below tests enable
-# def test_sundt():
-#     assert np.isclose(get_activation_threshold(FiberModel.SUNDT), float)
 
 # def test_schild94():
 #     assert np.isclose(get_activation_threshold(FiberModel.SCHILD94), float)
