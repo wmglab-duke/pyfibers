@@ -11,8 +11,6 @@ from scipy.stats import norm
 
 from src.wmglab_neuron import FiberBuilder, FiberModel, Stimulation
 
-# TODO: maybe remove this append?
-
 
 def get_activation_threshold(model, nodecount=133, diameter=5.7):
     """Get activation threshold."""
@@ -51,7 +49,9 @@ def get_amp_responses(model, stimamps, save=False):
     time_stop = 50
     stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
 
-    aps = [stimulation.run_sim(stimamp) for stimamp in stimamps]
+    result = [stimulation.run_sim(stimamp) for stimamp in stimamps]
+
+    aps = [r[0] for r in result]
 
     return aps, fiber
 

@@ -41,4 +41,4 @@ amp, ap = stimulation.find_threshold()
 
 
 # run a finite amp
-ap = stimulation.run_sim(-1)
+ap, time = stimulation.run_sim(-1)
