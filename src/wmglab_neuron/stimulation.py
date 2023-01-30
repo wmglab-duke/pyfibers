@@ -47,6 +47,7 @@ class Stimulation:
         self.istim = None
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
+        self.exit_t = None
         assert len(potentials) == len(
             fiber.coordinates
         ), 'Number of fiber coordinates does not match number of potentials'
@@ -95,14 +96,15 @@ class Stimulation:
 
     def find_threshold(  # noqa: C901
         self,
-        condition: str = ThresholdCondition.ACTIVATION,  # TODO: change to enums
-        bounds_search_mode: str = BoundsSearchMode.PERCENT_INCREMENT,  # TODO: change to enums
+        condition: str = ThresholdCondition.ACTIVATION,
+        bounds_search_mode: str = BoundsSearchMode.PERCENT_INCREMENT,
         bounds_search_step: float = 10,
-        termination_mode: str = TerminationMode.PERCENT_DIFFERENCE,  # TODO: change to enums
+        termination_mode: str = TerminationMode.PERCENT_DIFFERENCE,
         termination_tolerance: float = 1,
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
         max_iterations=100,
+        exit_t_scale: float = 2,
         **kwargs,
     ):
         """Binary search to find threshold amplitudes.
@@ -119,17 +121,18 @@ class Stimulation:
         :param stimamp_top: the upper-bound stimulation amplitude first tested in a binary search for thresholds
         :param stimamp_bottom: the lower-bound stimulation amplitude first tested in a binary search for thresholds
         :param max_iterations: the maximum number of iterations for finding search bounds
+        :param exit_t_scale: multiplier for detected action potential time to exit subthreshold stimulation
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
         :raises ValueError: If stimamp bottom and stimamp top have different signs
         :raises ValueError: If stimamp top does not exceed stimamp bottom
         :return: the threshold amplitude for the given condition, and the number of detected aps
         """
-        # TODO: run top first, then use time to detect AP For all subsequent runs
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
         if stimamp_top * stimamp_bottom < 0:
             raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
+        assert exit_t_scale > 1, 'exit_t_scale must be greater than 1'
         # Determine searching parameters for binary search bounds
         rel_increment = round(bounds_search_step / 100, 4)
         abs_increment = round(bounds_search_step, 4)
@@ -138,12 +141,14 @@ class Stimulation:
         abs_thresh_resoln = round(termination_tolerance, 4)
         rel_thresh_resoln = round(termination_tolerance / 100, 4)
         # first check stimamps
-        supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
-        supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
+        supra_top, t = self.threshsim(stimamp_top, check_threshold=condition, **kwargs)
+        supra_bot, _ = self.threshsim(stimamp_bottom, check_threshold=condition, **kwargs)
         # Determine upper- and lower-bounds for simulation
         iterations = 0
         while iterations < max_iterations:
             iterations += 1
+            if supra_top and exit_t_scale:
+                self.exit_t = t * exit_t_scale
             if not supra_bot and supra_top:  # found search bounds
                 break
             elif supra_bot and not supra_top:
@@ -158,7 +163,7 @@ class Stimulation:
                     stimamp_top = stimamp_top + abs_increment
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_top = stimamp_top * (1 + rel_increment)
-                supra_top = self.run_sim(stimamp_top, check_threshold=condition, **kwargs)
+                supra_top, t = self.threshsim(stimamp_top, check_threshold=condition, **kwargs)
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
                 stimamp_top = stimamp_bottom
@@ -166,7 +171,7 @@ class Stimulation:
                     stimamp_bottom = stimamp_bottom - abs_increment
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_bottom = stimamp_bottom * (1 - rel_increment)
-                supra_bot = self.run_sim(stimamp_bottom, check_threshold=condition, **kwargs)
+                    supra_bot, _ = self.threshsim(stimamp_bottom, check_threshold=condition, **kwargs)
         else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
         # Enter binary search
@@ -175,7 +180,7 @@ class Stimulation:
 
             stimamp = (stimamp_bottom + stimamp_top) / 2
 
-            suprathreshold = self.run_sim(stimamp, check_threshold=condition, **kwargs)
+            suprathreshold, _ = self.threshsim(stimamp, check_threshold=condition, **kwargs)
 
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(rel_thresh_resoln)
@@ -189,7 +194,7 @@ class Stimulation:
                 if not suprathreshold:
                     stimamp = stimamp_prev
                 # Run one more time at threshold to save user-specified variables
-                n_aps = self.run_sim(stimamp, **kwargs)
+                n_aps, _ = self.threshsim(stimamp, **kwargs)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -198,23 +203,81 @@ class Stimulation:
 
         return stimamp, n_aps
 
+    def supra_exit(self):
+        """Exit simulation if threshold is reached, activation searches only.
+
+        :raises RuntimeError: If end excitation occurs
+        :return: True if threshold is reached, False otherwise
+        """
+        if self.threshold_checker(self.fiber):
+            # check for end excitation
+            times = np.array([apc.time for apc in self.fiber.apc])
+            print(1)
+
+            times[np.where(times == 0)] = float('Inf')
+
+            node = np.argmin(times)
+
+            if node <= 1 or node >= len(times - 2):
+                raise RuntimeError("End excitation occurred.")
+
+            # find number of local minima in the aploc_data
+            n_local_minima = len(argrelextrema(times, np.less)[0])
+
+            if n_local_minima > 1:
+                warnings.warn('Found multiple activation sites.')
+            return True
+        else:
+            return False
+
+    def threshsim(
+        self,
+        stimamp,
+        check_threshold=ThresholdCondition.ACTIVATION,
+        ap_detect_location=0.9,
+        istim_delay=0,
+        *args,
+        **kwargs,
+    ):
+        """Run a simulation with a given stimulus amplitude and check for threshold.
+
+        :param stimamp: the stimulus amplitude
+        :param check_threshold: the condition to check for threshold
+        :param ap_detect_location: the location to detect action potentials
+        :param istim_delay: the delay of the stimulus
+        :param args: additional arguments to pass to the run_sim method
+        :param kwargs: additional keyword arguments to pass to the run_sim method
+        :return: True if threshold is reached, False otherwise
+        :raises NotImplementedError: if threshold condition is not implemented
+        """
+        if check_threshold == ThresholdCondition.ACTIVATION:
+            n_aps, aptime = self.run_sim(stimamp, exit_func=self.supra_exit, *args, **kwargs)
+            return self.threshold_checker(self.fiber, ap_detect_location=ap_detect_location), aptime
+        elif check_threshold == ThresholdCondition.BLOCK:
+            n_aps, aptime = self.run_sim(stimamp, *args, **kwargs)
+            return (
+                self.threshold_checker(
+                    self.fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
+                ),
+                aptime,
+            )
+        else:
+            raise NotImplementedError("Only activation and block thresholds are supported.")
+
     def run_sim(
         self,
         stimamp: float,
         ap_detect_location: float = 0.9,
-        check_threshold: str = None,
-        check_threshold_interval=10,
-        istim_delay: float = 0,
-    ):  # noqa: C901
+        exit_func=lambda: False,
+        exit_func_interval=100,
+    ):
         """Run a simulation for a single stimulation amplitude.
 
         :param stimamp: amplitude to be applied to extracellular stimulation
-        :param check_threshold: condition to check for threshold (activation or block) or None
-        :param check_threshold_interval: interval to check if threshold is reached and if so, exit ("activation" only)
         :param ap_detect_location: location to detect action potentials (percent along fiber)
-        :param istim_delay: delay before searching for block threshold
+        :param exit_func: function to call to check if simulation should be exited
+        :param exit_func_interval: interval to call exit_func
         :raises ValueError: if waveform length is not equal to number of time steps
-        :raises RuntimeError: If end excitation is detected
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
         print('Running:', stimamp)
@@ -251,45 +314,18 @@ class Stimulation:
 
             h.fadvance()
 
-            if (
-                check_threshold == ThresholdCondition.ACTIVATION
-                and i % check_threshold_interval == 0
-                and self.threshold_checker(self.fiber)
-            ):
-                # check for end excitation
-                times = np.array([apc.time for apc in self.fiber.apc])
-                print(1)
-
-                times[np.where(times == 0)] = float('Inf')
-
-                node = np.argmin(times)
-
-                if node <= 1 or node >= len(times - 2):
-                    raise RuntimeError("End excitation occurred.")
-
-                # find number of local minima in the aploc_data
-                n_local_minima = len(argrelextrema(times, np.less)[0])
-
-                if n_local_minima > 1:
-                    warnings.warn('Found multiple activation sites.')
-
+            if i % exit_func_interval == 100 and exit_func():
+                break
+            if self.exit_t and h.t >= self.exit_t:
                 break
 
-        # Done with simulation
-        if not check_threshold:
-            return self.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
-        elif check_threshold == ThresholdCondition.ACTIVATION:
-            return self.threshold_checker(self.fiber, ap_detect_location=ap_detect_location)
-        elif check_threshold == ThresholdCondition.BLOCK:
-            return self.threshold_checker(
-                self.fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
-            )
+        return self.ap_checker(self.fiber, ap_detect_location=ap_detect_location)
 
     @staticmethod
     def ap_checker(
         fiber: _Fiber,
         ap_detect_location: float = 0.9,
-    ) -> int:
+    ) -> tuple[int, float]:
         """Check to see if an action potential occurred at the end of a run.
 
         # remove this function and check in the respective functions
@@ -300,7 +336,7 @@ class Stimulation:
         """
         # Determine user-specified location along axon to check for action potential
         node_index = int((fiber.nodecount - 1) * ap_detect_location)
-        return fiber.apc[node_index].n
+        return fiber.apc[node_index].n, fiber.apc[node_index].time
 
     @staticmethod
     def threshold_checker(
