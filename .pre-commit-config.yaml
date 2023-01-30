@@ -37,6 +37,12 @@ repos:
         additional_dependencies:
           - docformatter[tomli]
         args: ["--in-place", "--config", "./pyproject.toml"]
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.13.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies:
+          - black==22.12.0
   # format yaml, json
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.0
