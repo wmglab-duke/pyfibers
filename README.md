@@ -20,17 +20,24 @@ pip install wmglab-neuron
 Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `Stimulation` class, or in your own custom simulation setup.
 ```python
 # create fiber
-fiber = FiberBuilder.generate(fiber_model=FiberModel.MRG_DISCRETE, n_fiber_coords=133, temperature=37, diameter=5.7)
+fiber = FiberBuilder.generate(
+    fiber_model=FiberModel.MRG_DISCRETE,
+    n_fiber_coords=133,
+    temperature=37,
+    diameter=5.7,
+)
 ```
 ### Running a Simulatiion
 Once you have a fiber object, you can create a `Stimulation` instance. Provide a list of potential values along the fiber sections, and a time varying waveform.
 ```python
 # Create instance of Stimulation class
-stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
+stimulation = Stimulation(
+    fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop
+)
 
 # run threshold search
 amp, _ = stimulation.find_threshold()
-print(f'Threshold for 5.7 micron fiber: {amp} (mA)')
+print(f"Threshold for 5.7 micron fiber: {amp} (mA)")
 ```
 For more examples, see the documentation.
 
