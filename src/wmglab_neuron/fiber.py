@@ -134,12 +134,19 @@ class MRGFiber(_Fiber):
 
         :param n_fiber_coords: number of fiber coordinates
         :param length: desired length of fiber [um] (mutually exclusive with n_fiber_coords)
+        :raises ValueError: if an invalid fiber diameter is passed in
         :return: Fiber object
         """
         fiber_parameters = self.fiber_parameters
         # Determine geometrical parameters for fiber based on fiber model
         if self.fiber_model == FiberModel.MRG_DISCRETE:
-            diameter_index = fiber_parameters['diameters'].index(self.diameter)
+            try:
+                diameter_index = fiber_parameters['diameters'].index(self.diameter)
+            except IndexError:
+                raise ValueError(
+                    "Diameter chosen not valid for FiberModel.MRG_DISCRETE. "
+                    "Choose from {fiber_parameters['diameters']}"
+                )
             paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
             axon_diam = fiber_parameters['axonDs'][diameter_index]
             node_diam = fiber_parameters['nodeDs'][diameter_index]
@@ -152,6 +159,8 @@ class MRGFiber(_Fiber):
             node_diam = fiber_parameters['nodeD'](self.diameter)
             axon_diam = fiber_parameters['axonD'](self.diameter)
             self.delta_z = fiber_parameters['delta_z'](self.diameter)
+            if self.diameter < 2 or self.diameter > 16:
+                raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
 
         if length is not None:
             n_fiber_coords = math.floor(length / self.delta_z) * 11 + 1
@@ -468,6 +477,9 @@ class _HomogeneousFiber(_Fiber):
         :param kwargs: keyword arguments to pass to modelfunc
         :return: Fiber object
         """
+        if self.diameter < 0.2 or self.diameter > 1.6:
+            warnings.warn('Diameter chosen is outside of physiological range for C-fibers (0.2-1.6 um)')
+
         # Determine geometrical parameters for fiber based on fiber model
         self.delta_z = self.fiber_parameters['delta_zs']
 
