@@ -83,6 +83,34 @@ class _Fiber:
         self.v_rest = self.fiber_parameters['v_rest']
         self.myelinated = self.fiber_parameters['myelinated']
 
+    def __str__(self):
+        """Return a string representation of the fiber."""  # noqa: DAR201
+        return (
+            f"{self.fiber_model.name} fiber with diameter {self.diameter} μm and length {self.length:.2f} μm "
+            f"\n\tnodecount: {self.nodecount}, section count: {len(self.sections)}"
+        )
+
+    def __repr__(self):
+        """Return a string representation of the fiber."""  # noqa: DAR201
+        # TODO: make this more informative for developers
+        return self.__str__()
+
+    def __len__(self):
+        """Return the number of nodes in the fiber."""  # noqa: DAR201
+        return self.nodecount
+
+    def __getitem__(self, item):
+        """Return the section at the given index."""  # noqa: DAR201, DAR101
+        return self.nodes[item]
+
+    def __iter__(self):
+        """Return an iterator over the nodes in the fiber."""  # noqa: DAR201
+        return iter(self.nodes)
+
+    def __contains__(self, item):
+        """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
+        return item in self.sections
+
     def resample_potentials(self, potentials, potential_coords, center: bool = False):
         """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
 
