@@ -225,7 +225,7 @@ class Stimulation:
             n_local_minima = len(argrelextrema(times, np.less)[0])
 
             if n_local_minima > 1:
-                warnings.warn('Found multiple activation sites.')
+                warnings.warn('Found multiple activation sites.', RuntimeWarning, stacklevel=2)
             return True
         else:
             return False
