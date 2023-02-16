@@ -39,8 +39,7 @@ class FiberBuilder:
         """
         assert (length is not None) or (n_fiber_coords is not None), "Must specify either length or n_fiber_coords"
         assert (length is None) or (n_fiber_coords is None), "Can't specify both length and n_fiber_coords"
-        # TODO: error if bad params such as weird fiber diameters are passed in.
-        #  Maybe provide recommended range in the documentation?
+        # todo: maybe stop passing model, find a cleaner way to implement this factory
         if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
             fiberclass = MRGFiber(fiber_model, *args, **kwargs)
         elif fiber_model == FiberModel.RATTAY:
@@ -456,7 +455,6 @@ class MRGFiber(_Fiber):
 
     def set_save_gating(self):
         """Record gating parameters (h, m, mp, s) for myelinated fiber types."""
-        # Set up recording vectors for h, m, mp, and s gating parameters all along the axon
         self.gating = {"h": [], "m": [], "mp": [], "s": []}
         if self.passive_end_nodes:
             nodelist = self.nodes[1:-1]
@@ -479,7 +477,7 @@ class MRGFiber(_Fiber):
 
 
 class _HomogeneousFiber(_Fiber):
-    """Initialize Homogeneous (all nodes are identical) class.
+    """Initialize Homogeneous (all sections are identical) class.
 
     :param fiber_model: name of fiber model type
     :param args: arguments to pass to the base class
@@ -505,11 +503,8 @@ class _HomogeneousFiber(_Fiber):
         :param kwargs: keyword arguments to pass to modelfunc
         :return: Fiber object
         """
-        if self.diameter < 0.2 or self.diameter > 1.6:
-            warnings.warn('Diameter chosen is outside of physiological range for C-fibers (0.2-1.6 um)')
-
         # Determine geometrical parameters for fiber based on fiber model
-        self.delta_z = self.fiber_parameters['delta_zs']
+        self.delta_z = self.fiber_parameters['delta_zs']  # TODO: ability to specify section length
 
         # Determine number of nodecount
         self.nodecount = int(n_fiber_coords) if length is None else math.floor(length / self.delta_z)
@@ -687,7 +682,7 @@ class SchildFiber(_HomogeneousFiber):
 
 
 class TigerholmFiber(_HomogeneousFiber):
-    """TigerholmFiber model."""
+    """Tigerholm Fiber model."""
 
     def __init__(self, fiber_model: FiberModel, *args, **kwargs):
         """Initialize UnmyelinatedFiber class.
@@ -698,7 +693,7 @@ class TigerholmFiber(_HomogeneousFiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
         if self.passive_end_nodes:
-            warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber')
+            warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes = False
 
     def generate(self, n_fiber_coords: int, length: float):  # noqa D102
@@ -746,13 +741,7 @@ class TigerholmFiber(_HomogeneousFiber):
         node.gbar_kdrTiger = 0.018002
 
     def balance(self):
-        """Balance membrane currents for Tigerholm model.
-
-        :raises ValueError: if the model is not Tigerholm
-        """
-        if not self.fiber_model == FiberModel.TIGERHOLM:
-            raise ValueError('balance() is only valid for Tigerholm model')
-
+        """Balance membrane currents for Tigerholm model."""
         v_rest = self.v_rest
         for s in self.sections:
             if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:
