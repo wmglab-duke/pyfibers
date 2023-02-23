@@ -26,7 +26,7 @@ time_stop = 50
 model = FiberModel.MRG_INTERPOLATION
 
 # create fiber
-fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
+fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount)
 
 # Create instance of Stimulation class
 stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
