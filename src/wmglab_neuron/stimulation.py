@@ -45,6 +45,7 @@ class Stimulation:
         self.dt = dt
         self.tstop = tstop
         self.istim = None
+        self.istim_record = None
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
         self.exit_t = None
@@ -79,6 +80,7 @@ class Stimulation:
         intracellular_stim.freq = freq
         intracellular_stim.amp = amp
         self.istim = intracellular_stim
+        self.istim_record = h.Vector().record(self.istim._ref_i)
         return self
 
     def initialize_extracellular(self):
@@ -359,10 +361,3 @@ class Stimulation:
             return fiber.apc[node_index].time <= istim_delay
         else:
             return bool(fiber.apc[node_index].n)
-
-    def record_istim(self, istim):
-        """Record applied intracellular stimulation (nA).
-
-        :param istim: instance of intracellular stimulation object
-        """
-        self.istim = h.Vector().record(istim._ref_i)
