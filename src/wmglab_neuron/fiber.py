@@ -26,19 +26,19 @@ class FiberBuilder:
     """
 
     @staticmethod
-    def generate(fiber_model: FiberModel, *args, n_fiber_coords: int = None, length: float = None, **kwargs):
+    def generate(fiber_model: FiberModel, *args, n_sections: int = None, length: float = None, **kwargs):
         """Generate a fiber model in NEURON.
 
         :param fiber_model: fiber model to use
         :param args: arguments to pass to the fiber model class
-        :param n_fiber_coords: number of fiber coordinates to use
+        :param n_sections: number of fiber coordinates to use
         :param length: length of the fiber
         :param kwargs: keyword arguments to pass to the fiber model class
         :raises ValueError: if the fiber model is not supported
         :return: generated instance of fiber model class
         """
-        assert (length is not None) or (n_fiber_coords is not None), "Must specify either length or n_fiber_coords"
-        assert (length is None) or (n_fiber_coords is None), "Can't specify both length and n_fiber_coords"
+        assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
+        assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
         # todo: maybe stop passing model, find a cleaner way to implement this factory
         if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
             fiberclass = MRGFiber(fiber_model, *args, **kwargs)
@@ -53,7 +53,7 @@ class FiberBuilder:
         else:
             raise ValueError("Fiber Model not valid")
 
-        return fiberclass.generate(n_fiber_coords, length)
+        return fiberclass.generate(n_sections, length)
 
 
 class _Fiber:
@@ -156,11 +156,11 @@ class MRGFiber(_Fiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
-    def generate(self, n_fiber_coords: int, length: float):
+    def generate(self, n_sections: int, length: float):
         """Build fiber model sections with NEURON.
 
-        :param n_fiber_coords: number of fiber coordinates
-        :param length: desired length of fiber [um] (mutually exclusive with n_fiber_coords)
+        :param n_sections: number of fiber coordinates
+        :param length: desired length of fiber [um] (mutually exclusive with n_sections)
         :raises ValueError: if an invalid fiber diameter is passed in
         :return: Fiber object
         """
@@ -190,10 +190,14 @@ class MRGFiber(_Fiber):
                 raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
 
         if length is not None:
-            n_fiber_coords = math.floor(length / self.delta_z) * 11 + 1
+            n_sections = math.floor(length / self.delta_z) * 11 + 1
+        else:
+            assert (n_sections - 1) % 11 == 0, (
+                "n_sections must be 1 + 11n where n is an integer one less than the " "number of nodes of Ranvier."
+            )
 
         # Determine number of nodecount
-        self.nodecount = int(1 + (n_fiber_coords - 1) / 11)
+        self.nodecount = int(1 + (n_sections - 1) / 11)
 
         # Create fiber sections
         self.create_sections(
@@ -493,11 +497,11 @@ class _HomogeneousFiber(_Fiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
-    def generate_homogeneous(self, n_fiber_coords: int, length: float, modelfunc, *args, **kwargs):
+    def generate_homogeneous(self, n_sections: int, length: float, modelfunc, *args, **kwargs):
         """Build fiber model sections with NEURON.
 
-        :param n_fiber_coords: number of fiber coordinates from COMSOL
-        :param length: length of fiber [um] (mutually exclusive with n_fiber_coords)
+        :param n_sections: number of fiber coordinates from COMSOL
+        :param length: length of fiber [um] (mutually exclusive with n_sections)
         :param modelfunc: function to generate fiber model (mechanisms and attributes)
         :param args: arguments to pass to modelfunc
         :param kwargs: keyword arguments to pass to modelfunc
@@ -507,7 +511,7 @@ class _HomogeneousFiber(_Fiber):
         self.delta_z = self.fiber_parameters['delta_zs']  # TODO: ability to specify section length
 
         # Determine number of nodecount
-        self.nodecount = int(n_fiber_coords) if length is None else math.floor(length / self.delta_z)
+        self.nodecount = int(n_sections) if length is None else math.floor(length / self.delta_z)
 
         # Create fiber sections
         self.sectionbuilder(modelfunc, *args, **kwargs)
@@ -589,8 +593,8 @@ class RattayFiber(_HomogeneousFiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
-    def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_rattay)
+    def generate(self, n_sections: int, length: float):  # noqa D102
+        return self.generate_homogeneous(n_sections, length, self.create_rattay)
 
     @staticmethod
     def create_rattay(node):
@@ -618,8 +622,8 @@ class SchildFiber(_HomogeneousFiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
-    def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_schild, celsius=self.temperature)
+    def generate(self, n_sections: int, length: float):  # noqa D102
+        return self.generate_homogeneous(n_sections, length, self.create_schild, celsius=self.temperature)
 
     @staticmethod
     def create_schild(node, celsius, model97=False):
@@ -696,8 +700,8 @@ class TigerholmFiber(_HomogeneousFiber):
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes = False
 
-    def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_tigerholm, celsius=self.temperature)
+    def generate(self, n_sections: int, length: float):  # noqa D102
+        return self.generate_homogeneous(n_sections, length, self.create_tigerholm, celsius=self.temperature)
 
     @staticmethod
     def create_tigerholm(node, celsius):
@@ -771,8 +775,8 @@ class SundtFiber(_HomogeneousFiber):
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
 
-    def generate(self, n_fiber_coords: int, length: float):  # noqa D102
-        return self.generate_homogeneous(n_fiber_coords, length, self.create_sundt)
+    def generate(self, n_sections: int, length: float):  # noqa D102
+        return self.generate_homogeneous(n_sections, length, self.create_sundt)
 
     @staticmethod
     def create_sundt(node):

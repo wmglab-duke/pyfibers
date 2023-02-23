@@ -17,7 +17,7 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7):
 
     # create curve of potentials
     potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-    fiber = FiberBuilder.generate(diameter=diameter, fiber_model=model, temperature=37, n_fiber_coords=nodecount)
+    fiber = FiberBuilder.generate(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -36,7 +36,7 @@ def get_amp_responses(model, stimamps, save=False):
     nodecount = 133
     # create curve of potentials
     potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-    fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_fiber_coords=133)
+    fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_sections=133)
 
     if save:
         fiber.set_save_gating()

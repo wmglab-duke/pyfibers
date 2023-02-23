@@ -18,11 +18,12 @@ pip install wmglab-neuron
 ## Usage
 ### Creating a fiber model
 Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `Stimulation` class, or in your own custom simulation setup.
+
 ```python
 # create fiber
 fiber = FiberBuilder.generate(
     fiber_model=FiberModel.MRG_DISCRETE,
-    n_fiber_coords=133,
+    n_sections=133,
     temperature=37,
     diameter=5.7,
 )
