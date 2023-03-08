@@ -633,6 +633,8 @@ class SchildFiber(_HomogeneousFiber):
         :param node: NEURON section
         :param model97: True for Schild 1997 model, False for Schild 1994 model
         """
+        R = 8314  # noqa: N806 # molar gas constant
+        F = 96500  # noqa: N806 # faraday's constant
         node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
         node.insert('kd')
         node.insert('ka')
@@ -653,18 +655,18 @@ class SchildFiber(_HomogeneousFiber):
             node.insert('nas')
 
         # Ionic concentrations
-        node.cao0_ca_ion = 2.0  # [mM] Initial Cao Concentration
-        node.cai0_ca_ion = 0.000117  # [mM] Initial Cai Concentrations
+        h.cao0_ca_ion = 2.0  # [mM] Initial Cao Concentration
+        h.cai0_ca_ion = 0.000117  # [mM] Initial Cai Concentrations
         node.ko = 5.4  # [mM] External K Concentration
         node.ki = 145.0  # [mM] Internal K Concentration
-        node.kstyle = ion_style("k_ion", 1, 2, 0, 0, 0)  # Allows ek to be calculated manually
-        node.ek = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
+        ion_style("k_ion", 1, 2, 0, 0, 0, sec=node)  # Allows ek to be calculated manually
+        node.ek = ((R * (celsius + 273.15)) / F) * np.log10(
             node.ko / node.ki
         )  # Manual Calculation of ek in order to use Schild F and R values
         node.nao = 154  # [mM] External Na Concentration
         node.nai = 8.9  # [mM] Internal Na Concentration
-        node.nastyle = ion_style("na_ion", 1, 2, 0, 0, 0)  # Allows ena to be calculated manually
-        node.ena = ((node.R * (celsius + 273.15)) / node.F) * np.log10(
+        ion_style("na_ion", 1, 2, 0, 0, 0, sec=node)  # Allows ena to be calculated manually
+        node.ena = ((R * (celsius + 273.15)) / F) * np.log10(
             node.nao / node.nai
         )  # Manual Calculation of ena in order to use Schild F and R values
         if model97:
@@ -679,8 +681,6 @@ class SchildFiber(_HomogeneousFiber):
             node.gbar_can = 0.000521743
             node.gbar_cat = 0.00018261
             node.gbna_leak = 1.8261e-05
-        node.R = 8314
-        node.F = 96500
         node.Ra = 100
         node.cm = 1.326291192
 
