@@ -99,7 +99,7 @@ class _Fiber:
         return self.nodecount
 
     def __getitem__(self, item):
-        """Return the section at the given index."""  # noqa: DAR201, DAR101
+        """Return the node at the given index."""  # noqa: DAR201, DAR101
         return self.nodes[item]
 
     def __iter__(self):
@@ -109,6 +109,14 @@ class _Fiber:
     def __contains__(self, item):
         """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
         return item in self.sections
+
+    def loc(self, loc):
+        """Return the node at the given location (Using the same convention as NEURON).
+
+        :param loc: location in the fiber (from 0 to 1)
+        :return: node at the given location
+        """
+        return self.nodes[int(loc * (self.nodecount - 1))]
 
     def resample_potentials(self, potentials, potential_coords, center: bool = False):
         """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
