@@ -53,6 +53,7 @@ class Stimulation:
             fiber.coordinates
         ), 'Number of fiber coordinates does not match number of potentials'
         self.potentials = potentials
+        self.time = h.Vector().record(h._ref_t)
 
     def add_intracellular_stim(
         self,
