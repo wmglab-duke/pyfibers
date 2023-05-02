@@ -16,3 +16,5 @@ src/MOD_Files/nrnmech.dll
 *.mod
 *.c
 nrnmech.dll
+
+.ipynb_checkpoints
