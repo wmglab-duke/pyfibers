@@ -151,6 +151,21 @@ class _Fiber:
         else:
             self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self.nodes]
 
+    def point_source_potentials(self, x: float, y: float, z: float, i0: float, sigma: float):
+        """Calculate extracellular potentials at all fiber coordinates due to a point source.
+
+        :param x: x-coordinate of point source [um]
+        :param y: y-coordinate of point source [um]
+        :param z: z-coordinate of point source [um]
+        :param i0: current of point source [mA]
+        :param sigma: conductivity of extracellular medium [S/m]
+        :return: potentials at all fiber coordinates [mV]
+        """
+        # Calculate distance from point source to each fiber coordinate
+        r = np.sqrt((0 - x) ** 2 + (0 - y) ** 2 + (self.coordinates - z) ** 2)
+        # Calculate potentials at each fiber coordinate
+        return i0 / (4 * np.pi * sigma * r)
+
 
 class MRGFiber(_Fiber):
     """Implementation of the MRG fiber model."""
