@@ -11,8 +11,8 @@ import numpy as np
 from neuron import h
 from scipy.signal import argrelextrema
 
-from src.wmglab_neuron import FiberModel, _Fiber
-from src.wmglab_neuron.enums import BoundsSearchMode, TerminationMode, ThresholdCondition
+from wmglab_neuron import FiberModel, _Fiber
+from wmglab_neuron.enums import BoundsSearchMode, TerminationMode, ThresholdCondition
 
 h.load_file('stdrun.hoc')
 

@@ -9,7 +9,7 @@ https://github.com/wmglab-duke/ascent
 import numpy as np
 from scipy.stats import norm
 
-from src.wmglab_neuron import FiberBuilder, FiberModel, Stimulation
+from wmglab_neuron import FiberBuilder, FiberModel, Stimulation
 
 
 def get_activation_threshold(model, nodecount=133, diameter=5.7):

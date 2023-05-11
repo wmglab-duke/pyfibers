@@ -8,9 +8,8 @@ from scipy.stats import norm
 
 sys.path.append(r'C:\nrn\lib\python')
 
-from src.wmglab_neuron import FiberBuilder, FiberModel, Stimulation  # noqa: E402
+from wmglab_neuron import FiberBuilder, FiberModel, Stimulation  # noqa: E402
 
-# TODO: remove the sys.path.append (installation should add to python path) and the noqa: E402
 nodecount = 133
 # create curve of potentials
 potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
@@ -37,8 +36,7 @@ fiber.set_save_vm()
 # run threshold search
 amp, ap = stimulation.find_threshold()
 
-# print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
-
+print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
 # run a finite amp
 ap, time = stimulation.run_sim(-1)

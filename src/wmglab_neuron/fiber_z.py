@@ -1,5 +1,5 @@
 """Parameters for creating fiber models."""
-from src.wmglab_neuron import FiberModel
+from wmglab_neuron import FiberModel
 
 FiberTypeParameters = {  # TODO: this needs comments
     FiberModel.MRG_DISCRETE: {

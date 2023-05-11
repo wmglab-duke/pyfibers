@@ -90,11 +90,10 @@ pytest:
   script:
     - pip install -r requirements.txt
     - pip install pytest pytest-cov
-    - cd src/MOD && nrnivmodl && cd ../..
-    - cp -r src/MOD/x86_64 x86_64
+    - pip install .
+    - wmglab_neuron_install
     - export PYTHONPATH=$HOME/local/lib/python
     - apt-get update && apt-get -y install libgl1
-    - pwd
     - pytest --cov=src/ tests/
     - coverage xml
 
@@ -103,6 +102,7 @@ test_docs:
   script:
     - pip install -U sphinx mock sphinx-rtd-theme
     - pip install -Ur docs/rtd_requirements.txt
+    - pip install .
     - cd docs/source; sphinx-build -W -b html . ../../public
   rules:
     - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
@@ -112,6 +112,7 @@ pages:
   script:
     - pip install -U sphinx mock sphinx-rtd-theme
     - pip install -Ur docs/rtd_requirements.txt
+    - pip install .
     - cd docs/source; sphinx-build -W -b html . ../../public
   artifacts:
     paths:
