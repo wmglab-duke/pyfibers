@@ -11,10 +11,14 @@ We have implemented the following models:
 - RATTAY
 
 ## Installation
-Install the package using the command
-```
-pip install wmglab-neuron
-```
+*Note that these instructions are temporary for development*
+1. Install NEURON and add to PATH
+2. Clone the package to your machine
+3. Install the package using pip
+   - Open anaconda prompt
+   - Navigate to the repo root directory
+   - `pip install .`
+4. To compile the mod files, in anaconda prompt, run the command `wmglab_neuron_install` (Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there.)
 ## Usage
 ### Creating a fiber model
 Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `Stimulation` class, or in your own custom simulation setup.

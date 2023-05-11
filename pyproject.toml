@@ -16,6 +16,9 @@ homepage = ""
 documentation = ""
 changelog = ""
 
+[project.scripts]
+wmglab_neuron_install = "wmglab_neuron.install:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

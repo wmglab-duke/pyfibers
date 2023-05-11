@@ -10,7 +10,7 @@ import warnings
 import numpy as np
 from neuron import h
 
-from src.wmglab_neuron import FiberModel, FiberTypeParameters
+from wmglab_neuron import FiberModel, FiberTypeParameters
 
 Section = h.Section
 SectionList = h.SectionList

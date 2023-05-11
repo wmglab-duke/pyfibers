@@ -65,6 +65,7 @@ repos:
           - flake8-docstrings
           - flake8-rst-docstrings
           - flake8-blind-except
+          - flake8-requirements
           - pep8-naming
           - darglint
   # format and lint markdown
