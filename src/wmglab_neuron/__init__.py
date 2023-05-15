@@ -12,6 +12,10 @@ from contextlib import suppress
 from neuron import h
 import neuron
 
+import importlib.metadata
+
+__version__ = importlib.metadata.version(__package__ or __name__)
+
 MOD_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'MOD')
 
 with suppress(RuntimeError):
