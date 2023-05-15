@@ -107,7 +107,7 @@ class Stimulation:
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
         max_iterations=100,
-        exit_t_scale: float = 2,
+        exit_t_shift: float = 5,
         **kwargs,
     ):
         """Binary search to find threshold amplitudes.
@@ -124,7 +124,7 @@ class Stimulation:
         :param stimamp_top: the upper-bound stimulation amplitude first tested in a binary search for thresholds
         :param stimamp_bottom: the lower-bound stimulation amplitude first tested in a binary search for thresholds
         :param max_iterations: the maximum number of iterations for finding search bounds
-        :param exit_t_scale: multiplier for detected action potential time to exit subthreshold stimulation
+        :param exit_t_shift: shift (in ms) for detected action potential time to exit subthreshold stimulation
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
         :raises ValueError: If stimamp bottom and stimamp top have different signs
@@ -135,7 +135,7 @@ class Stimulation:
             raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
         if stimamp_top * stimamp_bottom < 0:
             raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
-        assert exit_t_scale > 1, 'exit_t_scale must be greater than 1'
+        assert exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         # Determine searching parameters for binary search bounds
         rel_increment = round(bounds_search_step / 100, 4)
         abs_increment = round(bounds_search_step, 4)
@@ -150,8 +150,8 @@ class Stimulation:
         iterations = 0
         while iterations < max_iterations:
             iterations += 1
-            if supra_top and exit_t_scale:
-                self.exit_t = t * exit_t_scale
+            if supra_top and exit_t_shift:
+                self.exit_t = t + exit_t_shift
             if not supra_bot and supra_top:  # found search bounds
                 break
             elif supra_bot and not supra_top:
@@ -196,8 +196,9 @@ class Stimulation:
             if tolerance < thresh_resoln:
                 if not suprathreshold:
                     stimamp = stimamp_prev
-                # Run one more time at threshold to save user-specified variables
-                n_aps, _ = self.threshsim(stimamp, **kwargs)
+                # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
+                n_aps, aptime = self.run_sim(stimamp, **kwargs)
+                assert self.threshold_checker(self.fiber, **kwargs)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp

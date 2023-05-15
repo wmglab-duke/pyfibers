@@ -8,5 +8,5 @@ Welcome to wmglab-neuron's documentation!
    :maxdepth: 2
 
    autodoc/index
-   examples
+   tutorials/index
    custom

@@ -34,10 +34,7 @@ release = 'alpha'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-    'myst_parser',
-    'sphinx.ext.autodoc',
-]
+extensions = ['myst_parser', 'sphinx.ext.autodoc', 'nbsphinx', 'sphinx_copybutton', 'sphinx_rtd_dark_mode']
 
 MOCK_MODULES = ['numpy', 'pandas']
 
@@ -75,3 +72,5 @@ html_show_sphinx = False
 # -- Options for extensions -------------------------------------------------
 
 myst_heading_anchors = 4
+
+default_dark_mode = False

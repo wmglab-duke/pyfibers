@@ -1,4 +1,4 @@
-autodoc
+api
 ========
 
 .. toctree::

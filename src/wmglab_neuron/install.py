@@ -27,7 +27,7 @@ def main():
         )
     # Run nrnivmodl
     try:
-        subprocess.check_call(["nrnivmodl"])
+        subprocess.check_call(shutil.which('nrnivmodl'))
     except subprocess.CalledProcessError:
         raise RuntimeError("NEURON compilation command (nrnivmodl) failed. Please check the output for errors.")
 
