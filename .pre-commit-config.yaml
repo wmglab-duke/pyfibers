@@ -7,30 +7,36 @@ repos:
       # checking for syntax
       - id: check-yaml
       - id: check-toml
-      - id: check-json
-      # simple formatting
+      - id:
+          check-json
+          # simple formatting
       - id: requirements-txt-fixer
       - id: end-of-file-fixer
       - id: trailing-whitespace
-      - id: check-added-large-files
-      # checks for unresolved merge conflicts
-      - id: check-merge-conflict
-  # sort python imports
+      - id:
+          check-added-large-files
+          # checks for unresolved merge conflicts
+      - id:
+          check-merge-conflict
+          # sort python imports
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
-      - id: isort
-  # format f strings
+      - id:
+          isort
+          # format f strings
   - repo: https://github.com/ikamensh/flynt/
     rev: "0.77"
     hooks:
-      - id: flynt
-  # strip output from notebooks
+      - id:
+          flynt
+          # strip output from notebooks
   - repo: https://github.com/kynan/nbstripout
     rev: 0.6.0
     hooks:
-      - id: nbstripout
-  # format python code
+      - id:
+          nbstripout
+          # format python code
   - repo: https://github.com/psf/black
     rev: 23.1.0
     hooks:
@@ -44,21 +50,22 @@ repos:
       - id: docformatter
         additional_dependencies:
           - docformatter[tomli]
-        args: ["--in-place", "--config", "./pyproject.toml"]
+        args: [--in-place, --config, ./pyproject.toml]
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.13.0
     hooks:
       - id: blacken-docs
         additional_dependencies:
           - black==22.12.0
-  # format yaml, json
+            # format yaml, json
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.0.0-alpha.6
     hooks:
       - id: prettier
         exclude_types: [python, markdown]
-        args: ["--print-width", "100"]
-  # lint python code
+        args:
+          [--print-width, "100"]
+          # lint python code
   - repo: https://github.com/pycqa/flake8
     rev: 5.0.4
     hooks:
@@ -76,7 +83,7 @@ repos:
           - flake8-requirements
           - pep8-naming
           - darglint
-  # lint notebooks
+            # lint notebooks
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.7.0
     hooks:
@@ -95,15 +102,23 @@ repos:
           - flake8-requirements
           - pep8-naming
           - darglint
-  # format and lint markdown
+            # format and lint markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.33.0
     hooks:
       - id: markdownlint-fix
-        args: ["--disable", "md013,md034,md033,md036"]
-  # check config files
+        args:
+          [--disable, "md013,md034,md033,md036"]
+          # check config files
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.22.0
     hooks:
       - id: check-gitlab-ci
-      - id: check-readthedocs
+      - id:
+          check-readthedocs
+          #format toml and yaml
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.9.0
+    hooks:
+      - id: pretty-format-toml
+        args: [--autofix]
