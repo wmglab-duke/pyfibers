@@ -41,14 +41,4 @@ FiberTypeParameters = {  # TODO: this needs comments
         "delta_zs": 8.333,
         "v_rest": -70,  # millivolts
     },
-    FiberModel.SCHILD97: {
-        "myelinated": False,
-        "delta_zs": 8.333,
-        "v_rest": -48,  # millivolts
-    },
-    FiberModel.SCHILD94: {
-        "myelinated": False,
-        "delta_zs": 8.333,
-        "v_rest": -48,  # millivolts
-    },
 }

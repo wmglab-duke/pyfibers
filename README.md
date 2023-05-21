@@ -5,7 +5,6 @@ This package implements biophysical models of axons in the NEURON simulation env
 
 We have implemented the following models:
 - MRG
-- SCHILD
 - SUNDT
 - TIGERHOLM
 - RATTAY

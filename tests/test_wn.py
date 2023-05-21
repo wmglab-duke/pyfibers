@@ -91,10 +91,3 @@ def test_gating():
     assert np.isclose(fiber.gating['m'][6][200], 0.9999924898989334)
     assert np.isclose(fiber.gating['mp'][6][200], 0.9999961847550823)
     assert np.isclose(fiber.gating['s'][6][200], 0.9090909090909091)
-
-
-# def test_schild94():
-#     assert np.isclose(get_activation_threshold(FiberModel.SCHILD94), float)
-
-# def test_schild97():
-#     assert np.isclose(get_activation_threshold(FiberModel.SCHILD97), float)
