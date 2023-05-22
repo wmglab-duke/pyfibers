@@ -29,6 +29,8 @@ class Stimulation:
         tstop: float = 50,
         t_init_ss: float = -200,
         dt_init_ss: float = 10,
+        pad_waveform: bool = True,
+        truncate_waveform: bool = True,
     ):
         """Initialize Stimulation class.
 
@@ -39,6 +41,8 @@ class Stimulation:
         :param tstop: time bounds_search_step for simulation [seconds]
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
         :param dt_init_ss: the time bounds_search_step used to reach steady state [ms]
+        :param pad_waveform: if true, extend waveform until it is of length tstop/dt
+        :param truncate_waveform: if true, truncate waveform until it is of length tstop/dt
         """
         self.fiber = fiber
         self.waveform = waveform
@@ -54,6 +58,33 @@ class Stimulation:
         ), 'Number of fiber coordinates does not match number of potentials'
         self.potentials = potentials
         self.time = h.Vector().record(h._ref_t)
+        self._prep_waveform(pad_waveform, truncate_waveform)
+
+    def _prep_waveform(self, pad, truncate):
+        """Prepare waveform for simulation.
+
+        :param pad: if true, extend waveform until it is of length tstop/dt
+        :param truncate: if true, truncate waveform until it is of length tstop/dt
+        :raises AssertionError: if waveform length is not equal to number of time steps
+        """
+        if pad and (self.tstop / self.dt > len(self.waveform)):
+            # extend waveform until it is of length tstop/dt
+            print(f"Padding waveform {len(self.waveform)*self.dt} ms to {self.tstop} ms (with 0's)")
+            if self.waveform[-1] != 0:
+                warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
+            self.waveform = np.hstack([self.waveform, [0] * int(self.tstop / self.dt - len(self.waveform))])
+
+        if truncate and (self.tstop / self.dt < len(self.waveform)):
+            # truncate waveform until it is of length tstop/dt
+            print(f"Truncating waveform {len(self.waveform)*self.dt} ms to {self.tstop} ms")
+            if any(self.waveform[int(self.tstop / self.dt) :]):
+                warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
+            self.waveform = self.waveform[: int(self.tstop / self.dt - len(self.waveform))]
+
+        # check that waveform length is equal to number of time steps
+        assert (
+            len(self.waveform) == self.tstop / self.dt
+        ), f'Waveform length does not match number of time steps {self.tstop/self.dt}'
 
     def add_intracellular_stim(
         self,
@@ -281,7 +312,6 @@ class Stimulation:
         :param ap_detect_location: location to detect action potentials (percent along fiber)
         :param exit_func: function to call to check if simulation should be exited
         :param exit_func_interval: interval to call exit_func
-        :raises ValueError: if waveform length is not equal to number of time steps
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
         print('Running:', stimamp)
@@ -307,11 +337,6 @@ class Stimulation:
         h.celsius = self.fiber.temperature  # Set simulation temperature
 
         # Begin simulation
-        if len(self.waveform) != self.tstop / self.dt:
-            raise ValueError(
-                f"Waveform length ({len(self.waveform)}) not equal to "
-                f"the number of time steps (t_stop*dt={self.tstop / self.dt})."
-            )
         for i, amp in enumerate(self.waveform):
             scaled_stim = [stimamp * amp * x for x in self.potentials]
             self.update_extracellular(scaled_stim)
