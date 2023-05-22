@@ -19,7 +19,7 @@ ion_style = h.ion_style
 h.load_file('stdrun.hoc')
 
 
-class FiberBuilder:
+class FiberBuilder:  # noqa: PIE798 remove upon merge with scaledstim branch
     """Builds a fiber model in NEURON.
 
     Used to select the correct class for the fiber model.
@@ -297,7 +297,7 @@ class MRGFiber(_Fiber):
             self.sections.append(section)
 
         # Connect the axon sections
-        for i in range(0, nsegments - 1):
+        for i in range(nsegments - 1):
             self.sections[i + 1].connect(self.sections[i])
 
         return self
@@ -583,13 +583,13 @@ class _HomogeneousFiber(_Fiber):
         :param kwargs: keyword arguments to pass to modelnodefunc
         """
         self.sections = []
-        for i in range(0, self.nodecount):
+        for i in range(self.nodecount):
             name = f"node {i}"
             if self.passive_end_nodes and (i == 0 or i == self.nodecount - 1):
                 self.nodebuilder(self.passive_node)(self.v_rest, name=name)
             else:
                 self.nodebuilder(modelnodefunc)(*args, name=name, **kwargs)
-        for i in range(0, self.nodecount - 1):
+        for i in range(self.nodecount - 1):
             self.sections[i + 1].connect(self.sections[i])
 
         self.nodes = self.sections
