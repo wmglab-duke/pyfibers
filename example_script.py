@@ -1,4 +1,7 @@
-"""Example use case of wmglab_neuron."""
+"""Example use case of wmglab_neuron.
+
+NOTE this is for development only
+"""
 
 import sys
 
@@ -13,7 +16,6 @@ from wmglab_neuron import FiberBuilder, FiberModel, Stimulation  # noqa: E402
 nodecount = 133
 # create curve of potentials
 potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-
 plt.plot(potentials)
 # create biphasic square wave
 waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
