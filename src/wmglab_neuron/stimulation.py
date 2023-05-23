@@ -105,7 +105,7 @@ class Stimulation:
         :param ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
         :return: instance of Stimulation class
         """
-        intracellular_stim = h.trainIClamp(self.fiber.nodes[ind](0.5))
+        intracellular_stim = h.trainIClamp(self.fiber.nodes[ind](0.5))  # change to loc()?
         intracellular_stim.delay = delay
         intracellular_stim.PW = pw
         intracellular_stim.train = dur
