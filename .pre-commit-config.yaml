@@ -51,7 +51,7 @@ repos:
           - black[jupyter]
         types_or: [python, pyi, jupyter]
   - repo: https://github.com/PyCQA/docformatter
-    rev: v1.5.1
+    rev: v1.5.1 # maintain at 1.5.1 to avoid errors
     hooks:
       - id: docformatter
         additional_dependencies:
@@ -73,7 +73,7 @@ repos:
           [--print-width, "100"]
           # lint python code
   - repo: https://github.com/pycqa/flake8
-    rev: 5.0.4
+    rev: 5.0.4 # maintain at 5.0.4 until eradicate supports v6
     hooks:
       - id: flake8
         additional_dependencies:
@@ -86,6 +86,9 @@ repos:
           - flake8-docstrings
           - flake8-rst-docstrings
           - flake8-blind-except
+          - flake8-requirements
+          # - flake8-function-order
+          - flake8-deprecated
           - flake8-requirements
           - pep8-naming
           - darglint

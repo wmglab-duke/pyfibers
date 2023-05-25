@@ -18,13 +18,24 @@ We have implemented the following models:
    - Navigate to the repo root directory
    - `pip install .`
 4. To compile the mod files, in anaconda prompt, run the command `wmglab_neuron_install` (Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there.)
+### Migrating from v0.0.1 to v0.0.2
+1. Change all usages and imports of the Stimulation class to ScaledStim.
+  - `from wmglab_neuron import ScaledStim`
+  - `stimulation = ScaledStim(args)`
+2. Remove potentials from instantiation of Stimulation, instead add to the relevant fiber (`fiber.potentials=potentials`)
+3. Remove fiber as an argument to instantiation of Stimulation, instead pass the fiber when calling:
+  - run_sim() (`stimulation.run_sim(stimamp,fiber)`)
+  - find_threshold(`stimulation.find_threshold(fiber)`).
+4. Replace imports of FiberBuilder and calls of FiberBuilder.generate() with the "build_fiber" function.
+  - `from wmglab_neuron import build_fiber`
+  - `fiber = build_fiber(args)`
 ## Usage
 ### Creating a fiber model
-Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `Stimulation` class, or in your own custom simulation setup.
+Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `ScaledStim` class, or in your own custom simulation setup.
 
 ```python
 # create fiber
-fiber = FiberBuilder.generate(
+fiber = build_fiber(
     fiber_model=FiberModel.MRG_DISCRETE,
     n_sections=133,
     temperature=37,
@@ -32,15 +43,16 @@ fiber = FiberBuilder.generate(
 )
 ```
 ### Running a Simulatiion
-Once you have a fiber object, you can create a `Stimulation` instance. Provide a list of potential values along the fiber sections, and a time varying waveform.
+Once you have a fiber object, you can create a `ScaledStim` instance. Provide a list of potentials to accompany the fiber and a time-varying waveform.
 ```python
-# Create instance of Stimulation class
-stimulation = Stimulation(
-    fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop
+# Create instance of ScaledStim class
+fiber.potentials = potential_values
+stimulation = ScaledStim(
+    waveform=waveform, dt=time_step, tstop=time_stop
 )
 
 # run threshold search
-amp, _ = stimulation.find_threshold()
+amp, _ = stimulation.find_threshold(fiber)
 print(f"Threshold for 5.7 micron fiber: {amp} (mA)")
 ```
 For more examples, see the documentation.

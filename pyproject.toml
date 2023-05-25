@@ -12,7 +12,7 @@ license = {file = "LICENSE"}
 name = "wmglab-neuron"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.0.1"
+version = "0.0.2"
 
 [project.scripts]
 wmglab_neuron_install = "wmglab_neuron.install:main"
@@ -34,6 +34,7 @@ directory = "coverage_html_report"
 exclude_also = [
   # Don't complain about missing debug-only code:
   "def __repr__",
+  "def __str__",
   # Don't complain if tests don't hit defensive assertion code:
   "raise AssertionError",
   "raise NotImplementedError",
