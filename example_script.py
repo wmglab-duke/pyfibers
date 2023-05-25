@@ -11,12 +11,18 @@ from scipy.stats import norm
 
 sys.path.append(r'C:\nrn\lib\python')
 
-from wmglab_neuron import FiberBuilder, FiberModel, Stimulation  # noqa: E402
+from wmglab_neuron import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
 nodecount = 133
+
+model = FiberModel.MRG_INTERPOLATION
+
+# create fiber
+fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount)
+
 # create curve of potentials
-potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-plt.plot(potentials)
+fiber.potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
+plt.plot(fiber.potentials)
 # create biphasic square wave
 waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -24,21 +30,16 @@ waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 time_step = 0.001
 time_stop = 50
 
-model = FiberModel.MRG_INTERPOLATION
-
-# create fiber
-fiber = FiberBuilder.generate(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount)
-
-# Create instance of Stimulation class
-stimulation = Stimulation(fiber, waveform=waveform, potentials=potentials, dt=time_step, tstop=time_stop)
+# Create instance of ScaledStim class
+stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
 fiber.set_save_gating()
 fiber.set_save_vm()
 
 # run threshold search
-amp, ap = stimulation.find_threshold()
+amp, ap = stimulation.find_threshold(fiber)
 
 print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
 # run a finite amp
-ap, time = stimulation.run_sim(-1)
+ap, time = stimulation.run_sim(-1, fiber)

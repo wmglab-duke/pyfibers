@@ -19,43 +19,41 @@ ion_style = h.ion_style
 h.load_file('stdrun.hoc')
 
 
-class FiberBuilder:  # noqa: PIE798 remove upon merge with scaledstim branch
-    """Builds a fiber model in NEURON.
+def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: float = None, **kwargs):
+    """Generate a fiber model in NEURON.
 
-    Used to select the correct class for the fiber model.
+    :param fiber_model: fiber model to use
+    :param args: arguments to pass to the fiber model class
+    :param n_sections: number of fiber coordinates to use
+    :param length: length of the fiber
+    :param kwargs: keyword arguments to pass to the fiber model class
+    :raises ValueError: if the fiber model is not supported
+    :return: generated instance of fiber model class
     """
+    assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
+    assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
+    # todo: maybe stop passing model, find a cleaner way to implement this factory
+    # https://codereview.stackexchange.com/questions/269572/factory-pattern-using-enum
+    if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
+        fiberclass = MRGFiber(fiber_model, *args, **kwargs)
+    elif fiber_model == FiberModel.RATTAY:
+        fiberclass = RattayFiber(fiber_model, *args, **kwargs)
+    elif fiber_model == FiberModel.TIGERHOLM:
+        fiberclass = TigerholmFiber(fiber_model, *args, **kwargs)
+    elif fiber_model == FiberModel.SUNDT:
+        fiberclass = SundtFiber(fiber_model, *args, **kwargs)
+    else:
+        raise ValueError("Fiber Model not valid")
 
-    @staticmethod
-    def generate(fiber_model: FiberModel, *args, n_sections: int = None, length: float = None, **kwargs):
-        """Generate a fiber model in NEURON.
+    fiberclass.generate(n_sections, length)
 
-        :param fiber_model: fiber model to use
-        :param args: arguments to pass to the fiber model class
-        :param n_sections: number of fiber coordinates to use
-        :param length: length of the fiber
-        :param kwargs: keyword arguments to pass to the fiber model class
-        :raises ValueError: if the fiber model is not supported
-        :return: generated instance of fiber model class
-        """
-        assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
-        assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
-        # todo: maybe stop passing model, find a cleaner way to implement this factory
-        if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
-            fiberclass = MRGFiber(fiber_model, *args, **kwargs)
-        elif fiber_model == FiberModel.RATTAY:
-            fiberclass = RattayFiber(fiber_model, *args, **kwargs)
-        elif fiber_model == FiberModel.TIGERHOLM:
-            fiberclass = TigerholmFiber(fiber_model, *args, **kwargs)
-        elif fiber_model == FiberModel.SUNDT:
-            fiberclass = SundtFiber(fiber_model, *args, **kwargs)
-        else:
-            raise ValueError("Fiber Model not valid")
+    assert len(fiberclass) == fiberclass.nodecount, "Node count does not match number of nodes"
 
-        return fiberclass.generate(n_sections, length)
+    return fiberclass
 
 
 class _Fiber:
-    def __init__(
+    def __init__(  # TODO update tests
         self, diameter: float, fiber_model: FiberModel, temperature: float = 37, passive_end_nodes: bool = True
     ):
         """Initialize Fiber class.
@@ -75,6 +73,7 @@ class _Fiber:
         self.nodes = []
         self.coordinates = None
         self.length = None
+        self.potentials = None
 
         self.fiber_parameters = FiberTypeParameters[fiber_model]
         self.v_rest = self.fiber_parameters['v_rest']
@@ -83,8 +82,8 @@ class _Fiber:
     def __str__(self):
         """Return a string representation of the fiber."""  # noqa: DAR201
         return (
-            f"{self.fiber_model.name} fiber with diameter {self.diameter} μm and length {self.length:.2f} μm "
-            f"\n\tnodecount: {self.nodecount}, section count: {len(self.sections)}"
+            f"{self.fiber_model.name} fiber of diameter {self.diameter} μm and length {self.length:.2f} μm "
+            f"\n\tnode count: {len(self)}, section count: {len(self.sections)}"
         )
 
     def __repr__(self):
@@ -94,7 +93,8 @@ class _Fiber:
 
     def __len__(self):
         """Return the number of nodes in the fiber."""  # noqa: DAR201
-        return self.nodecount
+        assert self.nodecount == len(self.nodes), "Node count does not match number of nodes"
+        return len(self.nodes)
 
     def __getitem__(self, item):
         """Return the node at the given index."""  # noqa: DAR201, DAR101
@@ -114,31 +114,52 @@ class _Fiber:
         :param loc: location in the fiber (from 0 to 1)
         :return: node at the given location
         """
-        return self.nodes[int(loc * (self.nodecount - 1))]
+        return self.nodes[self.loc_index(loc)]
 
-    def resample_potentials(self, potentials, potential_coords, center: bool = False):
+    def loc_index(self, loc):
+        """Return the index of the node at the given location (Using the same convention as NEURON).
+
+        :param loc: location in the fiber (from 0 to 1)
+        :return: index of the node at the given location
+        """
+        return int(loc * (len(self) - 1))
+
+    def resample_potentials(self, potentials, potential_coords, center: bool = False, inplace=False):
         """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
 
         :param potentials: high-res potentials
         :param potential_coords: coordinates of high-res potentials
         :param center: if True, center the potentials around the fiber midpoint
+        :param inplace: if True, replace the potentials in the fiber with the resampled potentials
         :return: resampled potentials
         """
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
+
         if not center:
             potential_coords = potential_coords - potential_coords[0]
             target_coords = self.coordinates
         else:
             target_coords = self.coordinates - (self.coordinates[0] + self.coordinates[-1]) / 2
             potential_coords = potential_coords - (potential_coords[0] + potential_coords[-1]) / 2
-        return np.interp(target_coords, potential_coords, potentials)
+
+        newpotentials = np.interp(target_coords, potential_coords, potentials)
+
+        assert (np.amax(potential_coords) >= np.amax(target_coords)) and (
+            np.amin(potential_coords) <= np.amin(target_coords)
+        ), "Potential coordinates must span the fiber"
+
+        if inplace:
+            self.potentials = newpotentials
+            assert len(self.potentials) == len(self.coordinates), "Potentials and coordinates must be the same length"
+
+        return newpotentials
 
     def apcounts(self, thresh: float = -30):
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
         :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
         """
-        self.apc = [h.APCount(node(0.5)) for node in self.nodes]
+        self.apc = [h.APCount(node(0.5)) for node in self]
         for apc in self.apc:
             apc.thresh = thresh
 
@@ -147,7 +168,7 @@ class _Fiber:
         if self.passive_end_nodes:
             self.vm = [None] + [h.Vector().record(node(0.5)._ref_v) for node in self.nodes[1:-1]] + [None]
         else:
-            self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self.nodes]
+            self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
 
     def point_source_potentials(self, x: float, y: float, z: float, i0: float, sigma: float):
         """Calculate extracellular potentials at all fiber coordinates due to a point source.
@@ -575,6 +596,13 @@ class _HomogeneousFiber(_Fiber):
 
         return wrapper
 
+    @staticmethod
+    def passive_node(node, v_rest):
+        node.insert('pas')
+        node.g_pas = 0.0001
+        node.e_pas = v_rest
+        node.Ra = 1e10
+
     def sectionbuilder(self, modelnodefunc, *args, **kwargs):
         """Create and connect NEURON sections for an unmyelinated fiber.
 
@@ -593,13 +621,6 @@ class _HomogeneousFiber(_Fiber):
             self.sections[i + 1].connect(self.sections[i])
 
         self.nodes = self.sections
-
-    @staticmethod
-    def passive_node(node, v_rest):
-        node.insert('pas')
-        node.g_pas = 0.0001
-        node.e_pas = v_rest
-        node.Ra = 1e10
 
 
 class RattayFiber(_HomogeneousFiber):
