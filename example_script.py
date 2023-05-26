@@ -37,7 +37,7 @@ fiber.set_save_gating()
 fiber.set_save_vm()
 
 # run threshold search
-amp, ap = stimulation.find_threshold(fiber)
+amp, ap = stimulation.find_threshold(fiber, stimamp_top=-1, stimamp_bottom=-0.1)
 
 print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
