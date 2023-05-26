@@ -32,6 +32,7 @@ def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: 
     """
     assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
     assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
+
     # todo: maybe stop passing model, find a cleaner way to implement this factory
     # https://codereview.stackexchange.com/questions/269572/factory-pattern-using-enum
     if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
@@ -552,7 +553,13 @@ class _HomogeneousFiber(_Fiber):
         # Determine geometrical parameters for fiber based on fiber model
         self.delta_z = self.fiber_parameters['delta_zs']  # TODO: ability to specify section length
 
-        # Determine number of nodecount
+        if self.diameter > 2:
+            warnings.warn(
+                f"C fibers are typically <=2 um in diameter, received D={self.diameter}. Proceed with caution.",
+                stacklevel=2,
+            )
+
+            # Determine number of nodecount
         self.nodecount = int(n_sections) if length is None else math.floor(length / self.delta_z)
 
         # Create fiber sections
