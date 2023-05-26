@@ -15,71 +15,8 @@ from wmglab_neuron import BoundsSearchMode, FiberModel, ScaledStim, TerminationM
 # TODO Change all c fiber model to 1 um
 
 
-def test_bad_fiber_model():
-    """Test that a bad fiber model raises an error."""
-    with pytest.raises(ValueError):
-        build_fiber(diameter=5.7, fiber_model='bad_model', temperature=37, n_sections=133)
-
-
-def magic_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperature=37, n_sections=133):
+def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperature=37, n_sections=133):
     return build_fiber(diameter=diameter, fiber_model=fiber_model, temperature=temperature, n_sections=n_sections)
-
-
-def test_len():
-    assert len(magic_fiber()) == (133 - 1) / 11 + 1
-
-
-def test_getitem():
-    fiber = magic_fiber()
-    assert fiber[0] is fiber.nodes[0]
-
-
-def test_iter():
-    fiber = magic_fiber()
-    for i, node in enumerate(fiber):
-        assert node is fiber.nodes[i]
-
-
-def test_contains():
-    fiber = magic_fiber()
-    assert fiber.nodes[0] in fiber
-    assert fiber.sections[1] in fiber
-
-
-def test_loc():
-    fiber = magic_fiber()
-    assert fiber.loc(0) is fiber.nodes[0]
-    assert fiber.loc(1) is fiber.nodes[-1]
-    assert fiber.loc(0.5) is fiber.nodes[6]
-
-
-def test_end_excitation():
-    fiber = magic_fiber()
-    fiber.potentials = norm.pdf(np.linspace(-1, 1, 133), 0, 0.5) * 100
-    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
-    time_step = 0.001
-    time_stop = 5
-    stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
-    stimulation.run_sim(0, fiber)  # TODO why do I need to run this for correct result
-    with pytest.raises(AssertionError):
-        stimulation.find_threshold(fiber)
-
-
-def test_pointsource():
-    fiber = magic_fiber()
-    fiber.potentials = fiber.point_source_potentials(0, 100, 3000, 1, 1)
-    assert np.isclose(fiber.potentials[66], 0.000753537379490885)
-
-
-def test_waveform_pad_truncate():
-    fiber = magic_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
-    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
-    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert len(stimulation.waveform) == 5000
-
-    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
-    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert len(stimulation.waveform) == 5000
 
 
 def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
@@ -130,8 +67,91 @@ def get_amp_responses(model, stimamps, save=False):
     return aps, fiber
 
 
+def test_bad_fiber_model():
+    """Test that a bad fiber model raises an error."""
+    with pytest.raises(ValueError):
+        build_fiber(diameter=5.7, fiber_model='bad_model', temperature=37, n_sections=133)
+
+
+def test_len():
+    assert len(get_fiber()) == (133 - 1) / 11 + 1
+
+
+def test_getitem():
+    fiber = get_fiber()
+    assert fiber[0] is fiber.nodes[0]
+
+
+def test_iter():
+    fiber = get_fiber()
+    for i, node in enumerate(fiber):
+        assert node is fiber.nodes[i]
+
+
+def test_contains():
+    fiber = get_fiber()
+    assert fiber.nodes[0] in fiber
+    assert fiber.sections[1] in fiber
+
+
+def test_loc():
+    fiber = get_fiber()
+    assert fiber.loc(0) is fiber.nodes[0]
+    assert fiber.loc(1) is fiber.nodes[-1]
+    assert fiber.loc(0.5) is fiber.nodes[6]
+
+
+def test_end_excitation():
+    fiber = get_fiber()
+    fiber.potentials = norm.pdf(np.linspace(-1, 1, 133), 0, 0.5) * 100
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+    time_step = 0.001
+    time_stop = 5
+    stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
+    stimulation.run_sim(0, fiber)  # TODO why do I need to run this for correct result
+    with pytest.raises(AssertionError):
+        stimulation.find_threshold(fiber)
+
+
+def test_pointsource():
+    fiber = get_fiber()
+    fiber.potentials = fiber.point_source_potentials(0, 100, 3000, 1, 1)
+    assert np.isclose(fiber.potentials[66], 0.000753537379490885)
+
+
+def test_waveform_pad_truncate():
+    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
+    assert len(stimulation.waveform) == 5000
+
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
+    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
+    assert len(stimulation.waveform) == 5000
+
+
 def test_mrg_discrete():
     assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), -0.023414306640625)
+
+
+def test_geometric_mean():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.MRG_INTERPOLATION, bisection_mean='geometric'), -0.023501400846134893
+    )
+
+
+def test_both_subthreshold():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-0.01, stimamp_bottom=-0.001),
+        -0.023512489759687515,
+    )
+
+
+def test_both_suprathreshold():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-1, stimamp_bottom=-0.1),
+        -0.02351225891204326,
+    )
 
 
 def test_mrg_interp():

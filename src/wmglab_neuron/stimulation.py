@@ -279,7 +279,7 @@ class ScaledStim:
             if bisection_mean == 'arithmetic':
                 stimamp = (stimamp_bottom + stimamp_top) / 2
             elif bisection_mean == 'geometric':
-                stimamp = (stimamp_bottom * stimamp_top) ** (1 / 2)
+                stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** (1 / 2)
             else:
                 raise ValueError(f'bisection_mean must be arithmetic or geometric, not {bisection_mean}')
 
