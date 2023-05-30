@@ -89,12 +89,12 @@ pytest:
   stage: test
   script:
     - pip install -r requirements.txt
-    - pip install pytest pytest-cov
+    - pip install pytest pytest-cov pytest-sugar
     - pip install .
     - wmglab_neuron_install
     - export PYTHONPATH=$HOME/local/lib/python
     - apt-get update && apt-get -y install libgl1
-    - pytest --cov=wmglab_neuron tests/ --cov-report term --cov-report xml:coverage.xml
+    - pytest -v --cov=wmglab_neuron tests/ --cov-report term --cov-report xml:coverage.xml --force-sugar 
     - coverage xml
     - coverage report -m
     - coverage html
