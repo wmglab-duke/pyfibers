@@ -67,14 +67,14 @@ class ScaledStim:
         """
         if pad and (self.tstop / self.dt > len(self.waveform)):
             # extend waveform until it is of length tstop/dt
-            print(f"Padding waveform {len(self.waveform)*self.dt} ms to {self.tstop} ms (with 0's)")
+            print(f"Padding waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms (with 0's)")
             if self.waveform[-1] != 0:
                 warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
             self.waveform = np.hstack([self.waveform, [0] * int(self.tstop / self.dt - len(self.waveform))])
 
         if truncate and (self.tstop / self.dt < len(self.waveform)):
             # truncate waveform until it is of length tstop/dt
-            print(f"Truncating waveform {len(self.waveform)*self.dt} ms to {self.tstop} ms")
+            print(f"Truncating waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms")
             if any(self.waveform[int(self.tstop / self.dt) :]):
                 warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
             self.waveform = self.waveform[: int(self.tstop / self.dt - len(self.waveform))]
@@ -82,12 +82,12 @@ class ScaledStim:
         # check that waveform length is equal to number of time steps
         assert (
             len(self.waveform) == self.tstop / self.dt
-        ), f'Waveform length does not match number of time steps {self.tstop/self.dt}'
+        ), f'Waveform length does not match number of time steps {self.tstop / self.dt}'
 
     def __str__(self):
         """Return string representation of ScaledStim class."""  # noqa: DAR201
         return (
-            f'ScaledStim: {self.dt*self.tstop} ms (dt={self.dt} ms)'
+            f'ScaledStim: {self.dt * self.tstop} ms (dt={self.dt} ms)'
             f' (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)'
             f' istim_params={self.istim_params}'
         )
@@ -438,12 +438,16 @@ class ScaledStim:
             if self.exit_t and h.t >= self.exit_t:
                 break
 
-        return self.ap_checker(fiber, ap_detect_location=ap_detect_location)
+        # get precision from the number of decimal places in self.dt
+        precision = len(str(self.dt).split('.')[1])
+
+        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
 
     @staticmethod
     def ap_checker(
         fiber: _Fiber,
         ap_detect_location: float = 0.9,
+        precision: int = 3,
     ) -> tuple[int, float]:
         """Check to see if an action potential occurred at the end of a run.
 
@@ -451,11 +455,13 @@ class ScaledStim:
 
         :param fiber: instance of fiber class
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :param precision: number of decimal places to round to
         :return: number of action potentials that occurred
         """
         # Determine user-specified location along axon to check for action potential
         detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
-        return detect_apc.n, detect_apc.time  # TODO return none for time if no AP
+        detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
+        return detect_apc.n, detect_time
 
     @staticmethod
     def threshold_checker(
