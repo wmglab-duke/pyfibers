@@ -63,6 +63,10 @@ class _Fiber:
         :param temperature: temperature of model [degrees celsius]
         :param passive_end_nodes: if True, set passive properties at the end nodes
         """
+        self.gating = {}
+        self.apc = []
+        self.vm = []
+        self.gating_variables = {}
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
@@ -170,6 +174,23 @@ class _Fiber:
         else:
             self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
 
+    def set_save_gating(self):
+        """Record gating parameters for axon nodes."""
+        assert self.gating_variables, "Gating variables not defined for this fiber type"
+
+        if self.passive_end_nodes:
+            nodelist = self.nodes[1:-1]
+        else:
+            nodelist = self.nodes
+
+        self.gating = {}
+        for name, var in self.gating_variables.items():
+            self.gating[name] = []
+            for node in nodelist:
+                self.gating[name].append(h.Vector().record(getattr(node(0.5), f"_ref_{var}")))
+            if self.passive_end_nodes:
+                self.gating[name] = [None] + self.gating[name] + [None]
+
     def point_source_potentials(self, x: float, y: float, z: float, i0: float, sigma: float):
         """Calculate extracellular potentials at all fiber coordinates due to a point source.
 
@@ -197,6 +218,12 @@ class MRGFiber(_Fiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        self.gating_variables = {
+            "h": "h_inf_axnode_myel",
+            "m": "m_inf_axnode_myel",
+            "mp": "mp_inf_axnode_myel",
+            "s": "s_inf_axnode_myel",
+        }
 
     def generate(self, n_sections: int, length: float):
         """Build fiber model sections with NEURON.
@@ -498,28 +525,6 @@ class MRGFiber(_Fiber):
             node.xg[0] = 1e10  # short circuit
 
         return node
-
-    def set_save_gating(self):
-        """Record gating parameters (h, m, mp, s) for myelinated fiber types."""
-        self.gating = {"h": [], "m": [], "mp": [], "s": []}
-        if self.passive_end_nodes:
-            nodelist = self.nodes[1:-1]
-        else:
-            nodelist = self.nodes
-        for node in nodelist:
-            h_node = h.Vector().record(node(0.5)._ref_h_inf_axnode_myel)
-            m_node = h.Vector().record(node(0.5)._ref_m_inf_axnode_myel)
-            mp_node = h.Vector().record(node(0.5)._ref_mp_inf_axnode_myel)
-            s_node = h.Vector().record(node(0.5)._ref_s_inf_axnode_myel)
-            self.gating['h'].append(h_node)
-            self.gating['m'].append(m_node)
-            self.gating['mp'].append(mp_node)
-            self.gating['s'].append(s_node)
-        if self.passive_end_nodes:
-            self.gating['h'] = [None] + self.gating['h'] + [None]
-            self.gating['m'] = [None] + self.gating['m'] + [None]
-            self.gating['mp'] = [None] + self.gating['mp'] + [None]
-            self.gating['s'] = [None] + self.gating['s'] + [None]
 
 
 class _HomogeneousFiber(_Fiber):
