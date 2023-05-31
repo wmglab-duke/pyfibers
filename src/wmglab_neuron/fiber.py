@@ -203,7 +203,7 @@ class _Fiber:
         :return: potentials at all fiber coordinates [mV]
         """
         # Calculate distance from point source to each fiber coordinate
-        r = np.sqrt((0 - x) ** 2 + (0 - y) ** 2 + (self.coordinates - z) ** 2)
+        r = 1e-3 * np.sqrt((0 - x) ** 2 + (0 - y) ** 2 + (self.coordinates - z) ** 2)
         # Calculate potentials at each fiber coordinate
         return i0 / (4 * np.pi * sigma * r)
 

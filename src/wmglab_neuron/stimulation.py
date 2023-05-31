@@ -301,7 +301,7 @@ class ScaledStim:
                 assert self.threshold_checker(
                     fiber, **kwargs
                 ), 'Threshold stimulation did not generate an action potential'
-                assert not self.end_excitation_checker(fiber), 'End excitation occurred.'
+                self.end_excitation_checker(fiber)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -318,16 +318,19 @@ class ScaledStim:
         """
         if self.threshold_checker(fiber):
             # check for end excitation
-            assert not self.end_excitation_checker(fiber, multi_site_check=False), 'End excitation occurred.'
+            self.end_excitation_checker(fiber, multi_site_check=False)
             return True
         else:
             return False
 
-    def end_excitation_checker(self, fiber, multi_site_check=True):
+    @staticmethod
+    def end_excitation_checker(fiber, multi_site_check=True, fail_on_end_excitation=True):
         """Check for end excitation.
 
         :param fiber: Fiber object to check for end excitation
         :param multi_site_check: If True, warn if multiple activation sites are detected
+        :param fail_on_end_excitation: If True, raise error if end excitation is detected
+        :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is True
         :return: True if end excitation occurs, error otherwise
         """
         # get times of apc
@@ -341,7 +344,12 @@ class ScaledStim:
         if len(init_nodes) > 1 and multi_site_check:
             warnings.warn('Found multiple activation sites.', RuntimeWarning, stacklevel=2)
 
-        return np.any(init_nodes <= 1) or np.any(init_nodes >= len(times - 2))
+        end_excitation = np.any(init_nodes <= 1) or np.any(init_nodes >= len(times - 2))
+
+        if end_excitation and fail_on_end_excitation:
+            raise RuntimeError('End excitation occurred.')
+        else:
+            return end_excitation
 
     def threshsim(
         self,
