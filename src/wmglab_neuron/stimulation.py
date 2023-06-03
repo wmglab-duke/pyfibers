@@ -297,6 +297,8 @@ class ScaledStim:
                 if not suprathreshold:
                     stimamp = stimamp_prev
                 # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
+                if 'istim_delay' in kwargs:
+                    kwargs.pop('istim_delay')  # remove istim_delay if present
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
                 assert self.threshold_checker(
                     fiber, **kwargs
