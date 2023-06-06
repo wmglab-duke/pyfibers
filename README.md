@@ -47,9 +47,7 @@ Once you have a fiber object, you can create a `ScaledStim` instance. Provide a 
 ```python
 # Create instance of ScaledStim class
 fiber.potentials = potential_values
-stimulation = ScaledStim(
-    waveform=waveform, dt=time_step, tstop=time_stop
-)
+stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
 # run threshold search
 amp, _ = stimulation.find_threshold(fiber)
