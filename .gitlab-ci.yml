@@ -1,11 +1,3 @@
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
-
-# Official language image. Look for the different tagged releases at:
-# https://hub.docker.com/r/library/python/tags/
-
 default:
   image: python:3.10
 
@@ -28,7 +20,7 @@ variables:
 # If you want to also cache the installed packages, you have to install
 # them in a virtualenv and cache it as well.
 
-stages: # List of stages for jobs, and their order of execution
+stages:
   - lint
   - test
   - deploy
@@ -39,7 +31,7 @@ cache:
     - venv/
 
 before_script:
-  - python --version # For debugging
+  - python --version
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
@@ -68,36 +60,16 @@ docstring_check:
     - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
     - flake8 --select=D,DAR,RST src
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+  #only check docstrings if main or merging with main
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-#Here should check that no DevelopmentError is thrown in repo
-#dev_check:
-#  stage: lint
-#  script:
-#    - ( ! grep "raise DevelopmentError" --include \*.py -r . )
-#    - pip install flake8 flake8-fixme
-#    - flake8 --select=T100,T101,T102 src
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
-#    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-#NOTE: will need to add building python package to this
-
-# Run tests
-pytest:
+tox_py310_w_cov:
   stage: test
   script:
-    - pip install -r requirements.txt
-    - pip install pytest pytest-cov pytest-sugar
-    - pip install .
-    - wmglab_neuron_install
-    - export PYTHONPATH=$HOME/local/lib/python
-    - apt-get update && apt-get -y install libgl1
-    - pytest -v --cov=wmglab_neuron tests/ --cov-report term --cov-report xml:coverage.xml --force-sugar 
-    - coverage xml
-    - coverage report -m
-    - coverage html
+    - pip install tox
+    - tox -l
+    - tox -e py310-neuron{8},coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
@@ -106,39 +78,43 @@ pytest:
         path: coverage.xml
     paths:
       - coverage_html_report/
+
+tox_py39:
+  script:
+    - pip install tox
+    - tox -e py39-neuron{8}
+  image: python:3.9
+
+tox_py311:
+  script:
+    - pip install tox
+    - tox -e py311-neuron{8}
+  image: python:3.11
+
+# Define the build_docs script as an anchor
+.build_docs: &build_docs
+  - apt-get update && apt-get -y install libgl1
+  - pip install -r requirements.txt
+  - pip install .
+  - wmglab_neuron_install
+  - pip install -U sphinx mock sphinx-rtd-theme
+  - pip install -Ur docs/rtd_requirements.txt
+  - apt-get install -y pandoc
+  - pip install --upgrade pip ipython ipykernel
+  - ipython kernel install --name "python3" --user
+  - cd docs/source; sphinx-build -W -b html . ../../public
+
 test_docs:
   stage: test
   script:
-    - pip install -U sphinx mock sphinx-rtd-theme
-    - pip install -Ur docs/rtd_requirements.txt
-    - apt-get update
-    - apt-get install -y pandoc
-    - pip install -r requirements.txt
-    - pip install .
-    - pip install --upgrade pip ipython ipykernel
-    - ipython kernel install --name "python3" --user
-    - wmglab_neuron_install
-    - export PYTHONPATH=$HOME/local/lib/python
-    - apt-get update && apt-get -y install libgl1
-    - cd docs/source; sphinx-build -W -b html . ../../public
+    - *build_docs
   rules:
-    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+    - if: '$CI_COMMIT_BRANCH != "$CI_DEFAULT_BRANCH"'
 
 pages:
   stage: deploy
   script:
-    - pip install -U sphinx mock sphinx-rtd-theme
-    - pip install -Ur docs/rtd_requirements.txt
-    - apt-get update
-    - apt-get install -y pandoc
-    - pip install -r requirements.txt
-    - pip install .
-    - pip install --upgrade pip ipython ipykernel
-    - ipython kernel install --name "python3" --user
-    - wmglab_neuron_install
-    - export PYTHONPATH=$HOME/local/lib/python
-    - apt-get update && apt-get -y install libgl1
-    - cd docs/source; sphinx-build -W -b html . ../../public
+    - *build_docs
   artifacts:
     paths:
       - public
