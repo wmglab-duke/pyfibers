@@ -26,8 +26,7 @@ with suppress(RuntimeError):
 
 # load all python files
 from .enums import FiberModel, BoundsSearchMode, TerminationMode, ThresholdCondition  # noqa: E402
-from .fiber_z import FiberTypeParameters  # noqa: E402
 from .fiber import build_fiber, _Fiber  # noqa: E402
 from .stimulation import ScaledStim  # noqa: E402
 
-__all__ = ['build_fiber', '_Fiber', 'ScaledStim', 'FiberModel', 'FiberTypeParameters']
+__all__ = ['build_fiber', '_Fiber', 'ScaledStim', 'FiberModel']

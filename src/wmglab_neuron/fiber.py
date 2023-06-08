@@ -10,7 +10,7 @@ import warnings
 import numpy as np
 from neuron import h
 
-from wmglab_neuron import FiberModel, FiberTypeParameters
+from wmglab_neuron import FiberModel
 
 Section = h.Section
 SectionList = h.SectionList
@@ -79,10 +79,6 @@ class _Fiber:
         self.coordinates = None
         self.length = None
         self.potentials = None
-
-        self.fiber_parameters = FiberTypeParameters[fiber_model]
-        self.v_rest = self.fiber_parameters['v_rest']
-        self.myelinated = self.fiber_parameters['myelinated']
 
     def __str__(self):
         """Return a string representation of the fiber."""  # noqa: DAR201
@@ -225,39 +221,18 @@ class MRGFiber(_Fiber):
             "mp": "mp_inf_axnode_myel",
             "s": "s_inf_axnode_myel",
         }
+        self.myelinated = True
+        self.v_rest = -80  # millivolts
 
     def generate(self, n_sections: int, length: float):
         """Build fiber model sections with NEURON.
 
         :param n_sections: number of fiber coordinates
         :param length: desired length of fiber [um] (mutually exclusive with n_sections)
-        :raises ValueError: if an invalid fiber diameter is passed in
         :return: Fiber object
         """
-        fiber_parameters = self.fiber_parameters
         # Determine geometrical parameters for fiber based on fiber model
-        if self.fiber_model == FiberModel.MRG_DISCRETE:
-            try:
-                diameter_index = fiber_parameters['diameters'].index(self.diameter)
-            except IndexError:
-                raise ValueError(
-                    "Diameter chosen not valid for FiberModel.MRG_DISCRETE. "
-                    "Choose from {fiber_parameters['diameters']}"
-                )
-            paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
-            axon_diam = fiber_parameters['axonDs'][diameter_index]
-            node_diam = fiber_parameters['nodeDs'][diameter_index]
-            nl = fiber_parameters['nls'][diameter_index]
-            self.delta_z = fiber_parameters['delta_zs'][diameter_index]
-
-        elif self.fiber_model == FiberModel.MRG_INTERPOLATION:
-            paranodal_length_2 = fiber_parameters['paranodal_length_2'](self.diameter)
-            nl = fiber_parameters['nl'](self.diameter)
-            node_diam = fiber_parameters['nodeD'](self.diameter)
-            axon_diam = fiber_parameters['axonD'](self.diameter)
-            self.delta_z = fiber_parameters['delta_z'](self.diameter)
-            if self.diameter < 2 or self.diameter > 16:
-                raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
+        axon_diam, nl, node_diam, paranodal_length_2 = self.get_mrg_params()
 
         if length is not None:
             n_sections = math.floor(length / self.delta_z) * 11 + 1
@@ -293,6 +268,61 @@ class MRGFiber(_Fiber):
         ), f"Fiber length is not correct. Expected {expected} but got {self.length}"
 
         return self
+
+    def get_mrg_params(self):
+        """Get geometrical parameters for MRG fiber model.
+
+        :raises ValueError: if an invalid fiber diameter is passed in
+        :return: geometrical parameters for MRG fiber model
+        """
+        fiber_parameters_all = {  # TODO: this needs comments
+            FiberModel.MRG_DISCRETE: {
+                "node_length": 1.0,
+                "paranodal_length_1": 3.0,
+                "diameters": [1.0, 2.0, 5.7, 7.3, 8.7, 10.0, 11.5, 12.8, 14.0, 15.0, 16.0],
+                "delta_zs": [100, 200, 500, 750, 1000, 1150, 1250, 1350, 1400, 1450, 1500],
+                "paranodal_length_2s": [5, 10, 35, 38, 40, 46, 50, 54, 56, 58, 60],
+                "gs": [None, None, 0.605, 0.63, 0.661, 0.69, 0.7, 0.719, 0.739, 0.767, 0.791],
+                "axonDs": [0.8, 1.6, 3.4, 4.6, 5.8, 6.9, 8.1, 9.2, 10.4, 11.5, 12.7],
+                "nodeDs": [0.7, 1.4, 1.9, 2.4, 2.8, 3.3, 3.7, 4.2, 4.7, 5.0, 5.5],
+                "nls": [15, 30, 80, 100, 110, 120, 130, 135, 140, 145, 150],
+            },
+            FiberModel.MRG_INTERPOLATION: {
+                "node_length": 1.0,
+                "paranodal_length_1": 3.0,
+                "paranodal_length_2": lambda d: -0.1652 * d**2 + 6.354 * d - 0.2862,
+                "delta_z": lambda d: -8.215 * d**2 + 272.4 * d - 780.2 if d >= 5.643 else 81.08 * d + 37.84,
+                "nl": lambda d: -0.4749 * d**2 + 16.85 * d - 0.7648,
+                "nodeD": lambda d: 0.01093 * d**2 + 0.1008 * d + 1.099,
+                "axonD": lambda d: 0.02361 * d**2 + 0.3673 * d + 0.7122,
+            },
+        }
+
+        if self.fiber_model == FiberModel.MRG_DISCRETE:
+            fiber_parameters = fiber_parameters_all[FiberModel.MRG_DISCRETE]
+            try:
+                diameter_index = fiber_parameters['diameters'].index(self.diameter)
+            except IndexError:
+                raise ValueError(
+                    "Diameter chosen not valid for FiberModel.MRG_DISCRETE. "
+                    "Choose from {fiber_parameters['diameters']}"
+                )
+            paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
+            axon_diam = fiber_parameters['axonDs'][diameter_index]
+            node_diam = fiber_parameters['nodeDs'][diameter_index]
+            nl = fiber_parameters['nls'][diameter_index]
+            self.delta_z = fiber_parameters['delta_zs'][diameter_index]
+
+        elif self.fiber_model == FiberModel.MRG_INTERPOLATION:
+            fiber_parameters = fiber_parameters_all[FiberModel.MRG_INTERPOLATION]
+            paranodal_length_2 = fiber_parameters['paranodal_length_2'](self.diameter)
+            nl = fiber_parameters['nl'](self.diameter)
+            node_diam = fiber_parameters['nodeD'](self.diameter)
+            axon_diam = fiber_parameters['axonD'](self.diameter)
+            self.delta_z = fiber_parameters['delta_z'](self.diameter)
+            if self.diameter < 2 or self.diameter > 16:
+                raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
+        return axon_diam, nl, node_diam, paranodal_length_2
 
     def create_sections(
         self,
@@ -544,6 +574,7 @@ class _HomogeneousFiber(_Fiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        self.v_rest = None
 
     def generate_homogeneous(self, n_sections: int, length: float, modelfunc, *args, **kwargs):
         """Build fiber model sections with NEURON.
@@ -555,9 +586,6 @@ class _HomogeneousFiber(_Fiber):
         :param kwargs: keyword arguments to pass to modelfunc
         :return: Fiber object
         """
-        # Determine geometrical parameters for fiber based on fiber model
-        self.delta_z = self.fiber_parameters['delta_zs']  # TODO: ability to specify section length
-
         if self.diameter > 2:
             warnings.warn(
                 f"C fibers are typically <=2 um in diameter, received D={self.diameter}. Proceed with caution.",
@@ -646,6 +674,9 @@ class RattayFiber(_HomogeneousFiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        self.myelinated = False
+        self.delta_z = 8.333  # microns
+        self.v_rest = -70  # millivolts
 
     def generate(self, n_sections: int, length: float):  # noqa D102
         return self.generate_homogeneous(n_sections, length, self.create_rattay)
@@ -675,6 +706,10 @@ class TigerholmFiber(_HomogeneousFiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        self.myelinated = False
+        self.delta_z = 8.333  # microns
+        self.v_rest = -55  # millivolts
+
         if self.passive_end_nodes:
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes = False
@@ -753,6 +788,9 @@ class SundtFiber(_HomogeneousFiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        self.myelinated = False
+        self.delta_z = 8.333  # microns
+        self.v_rest = -60  # millivolts
 
     def generate(self, n_sections: int, length: float):  # noqa D102
         return self.generate_homogeneous(n_sections, length, self.create_sundt)
