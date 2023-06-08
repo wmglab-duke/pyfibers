@@ -1,7 +1,7 @@
 Note add badges
 
 # wmglab-neuron
-This package implements biophysical models of axons in the NEURON simulation environment using Python. You can run simulations of stimulation of axons, with the ability to search for activation and block thresholds. You can also add your own fiber models or custom simulations.
+This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols.
 
 We have implemented the following models:
 - MRG
@@ -17,7 +17,9 @@ We have implemented the following models:
    - Open anaconda prompt
    - Navigate to the repo root directory
    - `pip install .`
-4. To compile the mod files, in anaconda prompt, run the command `wmglab_neuron_install` (Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there.)
+4. To compile the mod files, in Anaconda prompt, run the command `wmglab_neuron_install`
+   - Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
+   - After a few seconds, your terminal window should say "Successfully installed wmglab-neuron-\<Major>.\<Minor>.\<Patch>".
 ### Migrating from v0.0.1 to v0.0.2
 1. Change all usages and imports of the Stimulation class to ScaledStim.
   - `from wmglab_neuron import ScaledStim`
@@ -31,10 +33,12 @@ We have implemented the following models:
   - `fiber = build_fiber(args)`
 ## Usage
 ### Creating a fiber model
-Use the FiberBuilder class to create fiber object. This fiber object consists of NEURON sections with the proper mechanisms applied, which can then be run in simulations using our provided `ScaledStim` class, or in your own custom simulation setup.
+Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup.
 
 ```python
 # create fiber
+from wmglab_neuron import build_fiber
+
 fiber = build_fiber(
     fiber_model=FiberModel.MRG_DISCRETE,
     n_sections=133,
@@ -44,6 +48,7 @@ fiber = build_fiber(
 ```
 ### Running a Simulatiion
 Once you have a fiber object, you can create a `ScaledStim` instance. Provide a list of potentials to accompany the fiber and a time-varying waveform.
+A `ScaledStim` instance requires the following arguments: fiber object (see previous step), a list of extracellular potential values at the midpoint of each fiber section, and a time varying waveform.
 ```python
 # Create instance of ScaledStim class
 fiber.potentials = potential_values
@@ -56,11 +61,11 @@ print(f"Threshold for 5.7 micron fiber: {amp} (mA)")
 For more examples, see the documentation.
 
 ## Contributing
-If you have a contribution which you feel would be of value, please open a Pull Request.
+If you develop additional functionality that would be generally useful to our users, please open a Pull Request for us to review.
 
 ## Authors and acknowledgment
-Based on the original paper by authors
-Developed by Elie, Daniel, and Eric
+   - Developed at Duke University by Elie Farrah, Daniel Marshall, and Eric Musselman
+   - Please see: \<Paper REF Forthcoming>
 
 ## License
 See LICENSE

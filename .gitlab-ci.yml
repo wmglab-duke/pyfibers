@@ -60,7 +60,7 @@ docstring_check:
     - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
     - flake8 --select=D,DAR,RST src
   rules:
-  #only check docstrings if main or merging with main
+    #only check docstrings if main or merging with main
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 

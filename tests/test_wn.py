@@ -8,9 +8,10 @@ https://github.com/wmglab-duke/ascent
 
 import numpy as np
 import pytest  # noqa: I900
+import scipy.signal as sg
 from scipy.stats import norm
 
-from wmglab_neuron import BoundsSearchMode, FiberModel, ScaledStim, TerminationMode, build_fiber
+from wmglab_neuron import BoundsSearchMode, FiberModel, ScaledStim, TerminationMode, ThresholdCondition, build_fiber
 
 # TODO Change all c fiber model to 1 um
 
@@ -203,3 +204,31 @@ def test_gating():
     assert np.isclose(fiber.gating['m'][6][200], 0.9999924898989334)
     assert np.isclose(fiber.gating['mp'][6][200], 0.9999961847550823)
     assert np.isclose(fiber.gating['s'][6][200], 0.9090909090909091)
+
+
+def test_block_threshold():
+    time_step = 0.0005  # ms
+    time_stop = 50  # ms
+    frequency = 20  # khz (because our time units are ms)
+    # create time vector to make waveform with sg
+    t = np.arange(0, time_stop, time_step)  # ms
+    waveform = sg.square(2 * np.pi * frequency * t)
+
+    n_sections = 265
+
+    fiber = build_fiber(FiberModel.MRG_INTERPOLATION, diameter=10, n_sections=n_sections)
+    fiber.set_save_vm()
+    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 0.01)
+
+    # Create new stimulation object
+    stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
+
+    stimulation.set_intracellular_stim(delay=10, pw=0.5, dur=40, freq=100, amp=1, ind=2)
+
+    amp, _ = stimulation.find_threshold(fiber, stimamp_top=-3, istim_delay=10, condition=ThresholdCondition.BLOCK)
+
+    assert np.isclose(amp, -2.7897656250000002)
+
+    n, t = stimulation.run_sim(0, fiber)
+
+    assert n == 4.0 and np.isclose(t, 40.5215)
