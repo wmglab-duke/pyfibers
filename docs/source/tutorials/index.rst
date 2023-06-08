@@ -9,3 +9,4 @@ tutorials
    3_analysis
    4_resampling_potentials
    5_block_threshold
+   6_parallelism
