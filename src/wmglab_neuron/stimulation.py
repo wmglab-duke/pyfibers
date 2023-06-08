@@ -376,7 +376,7 @@ class ScaledStim:
         :raises NotImplementedError: if threshold condition is not implemented
         """
         if check_threshold == ThresholdCondition.ACTIVATION:
-            n_aps, aptime = self.run_sim(stimamp, fiber, exit_func=self.supra_exit, *args, **kwargs)
+            n_aps, aptime = self.run_sim(stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, *args, **kwargs)
             return self.threshold_checker(fiber, ap_detect_location=ap_detect_location), aptime
         elif check_threshold == ThresholdCondition.BLOCK:
             n_aps, aptime = self.run_sim(stimamp, fiber, *args, **kwargs)
@@ -396,6 +396,7 @@ class ScaledStim:
         ap_detect_location: float = 0.9,
         exit_func=lambda x: False,
         exit_func_interval=100,
+        use_exit_t=False,
     ):
         """Run a simulation for a single stimulation amplitude.
 
@@ -404,6 +405,7 @@ class ScaledStim:
         :param ap_detect_location: location to detect action potentials (percent along fiber)
         :param exit_func: function to call to check if simulation should be exited
         :param exit_func_interval: interval to call exit_func
+        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
         print('Running:', stimamp)
@@ -445,7 +447,7 @@ class ScaledStim:
 
             if i % exit_func_interval == 0 and exit_func(fiber):
                 break
-            if self.exit_t and h.t >= self.exit_t:
+            if use_exit_t and self.exit_t and h.t >= self.exit_t:
                 break
 
         # get precision from the number of decimal places in self.dt
