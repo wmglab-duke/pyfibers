@@ -50,29 +50,29 @@ class ScaledStim:
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
         self.exit_t = None
+        self.pad = pad_waveform
+        self.truncate = truncate_waveform
         try:
             self.time = h.Vector().record(h._ref_t)
         except RuntimeError:
             raise RuntimeError(
                 'Could not set up time recording vector. Maybe you haven\'t created any ' 'sections/fibers yet?'
             )
-        self._prep_waveform(pad_waveform, truncate_waveform)
+        self._prep_waveform()
 
-    def _prep_waveform(self, pad, truncate):
+    def _prep_waveform(self):
         """Prepare waveform for simulation.
 
-        :param pad: if true, extend waveform until it is of length tstop/dt
-        :param truncate: if true, truncate waveform until it is of length tstop/dt
         :raises AssertionError: if waveform length is not equal to number of time steps
         """
-        if pad and (self.tstop / self.dt > len(self.waveform)):
+        if self.pad and (self.tstop / self.dt > len(self.waveform)):
             # extend waveform until it is of length tstop/dt
             print(f"Padding waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms (with 0's)")
             if self.waveform[-1] != 0:
                 warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
             self.waveform = np.hstack([self.waveform, [0] * int(self.tstop / self.dt - len(self.waveform))])
 
-        if truncate and (self.tstop / self.dt < len(self.waveform)):
+        if self.truncate and (self.tstop / self.dt < len(self.waveform)):
             # truncate waveform until it is of length tstop/dt
             print(f"Truncating waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms")
             if any(self.waveform[int(self.tstop / self.dt) :]):
@@ -124,7 +124,7 @@ class ScaledStim:
         if ind is not None:
             intracellular_stim = h.trainIClamp(fiber[ind](0.5))
         else:
-            intracellular_stim = h.trainIClamp(fiber.loc(loc))
+            intracellular_stim = h.trainIClamp(fiber.loc(loc)(0.5))
         intracellular_stim.delay = delay
         intracellular_stim.PW = pw
         intracellular_stim.train = dur
@@ -228,6 +228,12 @@ class ScaledStim:
             raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
         if stimamp_top * stimamp_bottom < 0:
             raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
+        if self.istim is not None and condition == ThresholdCondition.ACTIVATION:
+            warnings.warn(
+                "Intracellular stimulation is enabled for this ScaledStim instance, are you sure you want "
+                "to search for activation threshold?",
+                stacklevel=2,
+            )
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         self.exit_t = None
         # Determine searching parameters for binary search bounds
@@ -408,6 +414,7 @@ class ScaledStim:
         :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
         :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
         """
+        self._prep_waveform()
         print('Running:', stimamp)
 
         assert fiber.potentials is not None, 'No fiber potentials found'

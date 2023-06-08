@@ -8,3 +8,4 @@ tutorials
    2_activation_threshold
    3_analysis
    4_resampling_potentials
+   5_block_threshold
