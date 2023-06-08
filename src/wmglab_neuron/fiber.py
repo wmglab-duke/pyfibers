@@ -48,6 +48,8 @@ def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: 
 
     fiberclass.generate(n_sections, length)
 
+    fiberclass.potentials = np.zeros(len(fiberclass.coordinates))
+
     assert len(fiberclass) == fiberclass.nodecount, "Node count does not match number of nodes"
 
     return fiberclass
