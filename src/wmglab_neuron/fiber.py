@@ -1,25 +1,28 @@
 """The copyrights of this software are owned by Duke University."""
 
+from __future__ import annotations
+
 import math
+import typing
 import warnings
+from typing import Callable, TypedDict
 
 import numpy as np
 from neuron import h
+from numpy import ndarray
 
 from wmglab_neuron import FiberModel
-
-Section = h.Section
-SectionList = h.SectionList
-ion_style = h.ion_style
 
 h.load_file('stdrun.hoc')
 
 
-def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: float = None, **kwargs):
+def build_fiber(
+    fiber_model: FiberModel, diameter: float, n_sections: int = None, length: float = None, **kwargs
+) -> _Fiber:
     """Generate a fiber model in NEURON.
 
     :param fiber_model: fiber model to use
-    :param args: arguments to pass to the fiber model class
+    :param diameter: fiber diameter [um]
     :param n_sections: number of fiber coordinates to use
     :param length: length of the fiber
     :param kwargs: keyword arguments to pass to the fiber model class
@@ -31,14 +34,15 @@ def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: 
 
     # todo: maybe stop passing model, find a cleaner way to implement this factory
     # https://codereview.stackexchange.com/questions/269572/factory-pattern-using-enum
+    fiberclass: MRGFiber | RattayFiber | TigerholmFiber | SundtFiber
     if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
-        fiberclass = MRGFiber(fiber_model, *args, **kwargs)
+        fiberclass = MRGFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.RATTAY:
-        fiberclass = RattayFiber(fiber_model, *args, **kwargs)
+        fiberclass = RattayFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.TIGERHOLM:
-        fiberclass = TigerholmFiber(fiber_model, *args, **kwargs)
+        fiberclass = TigerholmFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.SUNDT:
-        fiberclass = SundtFiber(fiber_model, *args, **kwargs)
+        fiberclass = SundtFiber(fiber_model, diameter, **kwargs)
     else:
         raise ValueError("Fiber Model not valid")
 
@@ -53,8 +57,12 @@ def build_fiber(fiber_model: FiberModel, *args, n_sections: int = None, length: 
 
 class _Fiber:
     def __init__(  # TODO update tests
-        self, diameter: float, fiber_model: FiberModel, temperature: float = 37, passive_end_nodes: bool = True
-    ):
+        self: _Fiber,
+        fiber_model: FiberModel,
+        diameter: float,
+        temperature: float = 37,
+        passive_end_nodes: bool = True,
+    ) -> None:
         """Initialize Fiber class.
 
         :param diameter: fiber diameter [um]
@@ -62,52 +70,52 @@ class _Fiber:
         :param temperature: temperature of model [degrees celsius]
         :param passive_end_nodes: if True, set passive properties at the end nodes
         """
-        self.gating = {}
-        self.apc = []
-        self.vm = []
-        self.gating_variables = {}
+        self.gating: dict[str, h.Vector] = {}
+        self.gating_variables: dict[str, str] = {}
+        self.vm: list = []
+        self.apc: list = []
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
         self.passive_end_nodes = passive_end_nodes
-        self.nodecount = None
-        self.delta_z = None
-        self.sections = []
-        self.nodes = []
-        self.coordinates = None
-        self.length = None
-        self.potentials = None
+        self.nodecount: int = None
+        self.delta_z: float = None
+        self.sections: list = []
+        self.nodes: list = []
+        self.coordinates: ndarray = np.array([])
+        self.length: float = None
+        self.potentials: ndarray = np.array([])
 
-    def __str__(self):
+    def __str__(self: _Fiber) -> str:
         """Return a string representation of the fiber."""  # noqa: DAR201
         return (
             f"{self.fiber_model.name} fiber of diameter {self.diameter} μm and length {self.length:.2f} μm "
             f"\n\tnode count: {len(self)}, section count: {len(self.sections)}"
         )
 
-    def __repr__(self):
+    def __repr__(self: _Fiber) -> str:
         """Return a string representation of the fiber."""  # noqa: DAR201
         # TODO: make this more informative for developers
         return self.__str__()
 
-    def __len__(self):
+    def __len__(self: _Fiber) -> int:
         """Return the number of nodes in the fiber."""  # noqa: DAR201
         assert self.nodecount == len(self.nodes), "Node count does not match number of nodes"
         return len(self.nodes)
 
-    def __getitem__(self, item):
+    def __getitem__(self: _Fiber, item: int) -> h.Section:
         """Return the node at the given index."""  # noqa: DAR201, DAR101
         return self.nodes[item]
 
-    def __iter__(self):
+    def __iter__(self: _Fiber) -> typing.Iterator[h.Section]:
         """Return an iterator over the nodes in the fiber."""  # noqa: DAR201
         return iter(self.nodes)
 
-    def __contains__(self, item):
+    def __contains__(self: _Fiber, item: h.Section) -> bool:
         """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
         return item in self.sections
 
-    def loc(self, loc):
+    def loc(self: _Fiber, loc: float) -> h.Section:
         """Return the node at the given location (Using the same convention as NEURON).
 
         :param loc: location in the fiber (from 0 to 1)
@@ -115,7 +123,7 @@ class _Fiber:
         """
         return self.nodes[self.loc_index(loc)]
 
-    def loc_index(self, loc):
+    def loc_index(self: _Fiber, loc: float) -> int:
         """Return the index of the node at the given location (Using the same convention as NEURON).
 
         :param loc: location in the fiber (from 0 to 1)
@@ -123,7 +131,13 @@ class _Fiber:
         """
         return int(loc * (len(self) - 1))
 
-    def resample_potentials(self, potentials, potential_coords, center: bool = False, inplace=False):
+    def resample_potentials(
+        self: _Fiber,
+        potentials: np.ndarray,
+        potential_coords: np.ndarray,
+        center: bool = False,
+        inplace: bool = False,
+    ) -> np.ndarray:
         """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
 
         :param potentials: high-res potentials
@@ -153,7 +167,7 @@ class _Fiber:
 
         return newpotentials
 
-    def apcounts(self, thresh: float = -30):
+    def apcounts(self: _Fiber, thresh: float = -30) -> None:
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
         :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
@@ -162,14 +176,14 @@ class _Fiber:
         for apc in self.apc:
             apc.thresh = thresh
 
-    def set_save_vm(self):
+    def set_save_vm(self: _Fiber) -> None:
         """Record membrane voltage (mV) along the axon."""
         if self.passive_end_nodes:
             self.vm = [None] + [h.Vector().record(node(0.5)._ref_v) for node in self.nodes[1:-1]] + [None]
         else:
             self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
 
-    def set_save_gating(self):
+    def set_save_gating(self: _Fiber) -> None:
         """Record gating parameters for axon nodes."""
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
@@ -186,7 +200,7 @@ class _Fiber:
             if self.passive_end_nodes:
                 self.gating[name] = [None] + self.gating[name] + [None]
 
-    def point_source_potentials(self, x: float, y: float, z: float, i0: float, sigma: float):
+    def point_source_potentials(self: _Fiber, x: float, y: float, z: float, i0: float, sigma: float) -> ndarray:
         """Calculate extracellular potentials at all fiber coordinates due to a point source.
 
         :param x: x-coordinate of point source [um]
@@ -205,14 +219,14 @@ class _Fiber:
 class MRGFiber(_Fiber):
     """Implementation of the MRG fiber model."""
 
-    def __init__(self, fiber_model: FiberModel, *args, **kwargs):
+    def __init__(self: MRGFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
 
         :param fiber_model: name of fiber model type
-        :param args: arguments to pass to the base class
+        :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_inf_axnode_myel",
             "m": "m_inf_axnode_myel",
@@ -222,7 +236,7 @@ class MRGFiber(_Fiber):
         self.myelinated = True
         self.v_rest = -80  # millivolts
 
-    def generate(self, n_sections: int, length: float):
+    def generate(self: MRGFiber, n_sections: int, length: float) -> _Fiber:
         """Build fiber model sections with NEURON.
 
         :param n_sections: number of fiber coordinates
@@ -255,7 +269,7 @@ class MRGFiber(_Fiber):
         # get the coordinates at the center of each section, each section is a different length
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
-        self.coordinates = np.cumsum((start_coords + end_coords) / 2)  # center of each section
+        self.coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # center of each section
 
         self.length = self.coordinates[-1] - self.coordinates[0]  # actual length of fiber
 
@@ -267,70 +281,97 @@ class MRGFiber(_Fiber):
 
         return self
 
-    def get_mrg_params(self):
+    def get_mrg_params(self: MRGFiber) -> tuple[float, float, float, float]:
         """Get geometrical parameters for MRG fiber model.
 
         :raises ValueError: if an invalid fiber diameter is passed in
         :return: geometrical parameters for MRG fiber model
         """
-        fiber_parameters_all = {  # TODO: this needs comments
-            FiberModel.MRG_DISCRETE: {
+
+        class MRGDiscreteParameters(TypedDict):
+            node_length: float
+            paranodal_length_1: float
+            diameters: list[float]
+            delta_zs: list[int]
+            paranodal_length_2s: list[int]
+            gs: list[None | float]
+            axon_diams: list[float]
+            node_diams: list[float]
+            nls: list[int]
+
+        class MRGInterpolationParameters(TypedDict):
+            node_length: float
+            paranodal_length_1: float
+            paranodal_length_2: Callable[[float], float]
+            delta_z: Callable[[float], float]
+            nl: Callable[[float], float]
+            node_diam: Callable[[float], float]
+            axon_diam: Callable[[float], float]
+
+        class FiberParameters(TypedDict):
+            MRG_DISCRETE: MRGDiscreteParameters
+            MRG_INTERPOLATION: MRGInterpolationParameters
+
+        fiber_parameters_all: FiberParameters = {  # TODO: needs comments
+            "MRG_DISCRETE": {
                 "node_length": 1.0,
                 "paranodal_length_1": 3.0,
                 "diameters": [1.0, 2.0, 5.7, 7.3, 8.7, 10.0, 11.5, 12.8, 14.0, 15.0, 16.0],
                 "delta_zs": [100, 200, 500, 750, 1000, 1150, 1250, 1350, 1400, 1450, 1500],
                 "paranodal_length_2s": [5, 10, 35, 38, 40, 46, 50, 54, 56, 58, 60],
                 "gs": [None, None, 0.605, 0.63, 0.661, 0.69, 0.7, 0.719, 0.739, 0.767, 0.791],
-                "axonDs": [0.8, 1.6, 3.4, 4.6, 5.8, 6.9, 8.1, 9.2, 10.4, 11.5, 12.7],
-                "nodeDs": [0.7, 1.4, 1.9, 2.4, 2.8, 3.3, 3.7, 4.2, 4.7, 5.0, 5.5],
+                "axon_diams": [0.8, 1.6, 3.4, 4.6, 5.8, 6.9, 8.1, 9.2, 10.4, 11.5, 12.7],
+                "node_diams": [0.7, 1.4, 1.9, 2.4, 2.8, 3.3, 3.7, 4.2, 4.7, 5.0, 5.5],
                 "nls": [15, 30, 80, 100, 110, 120, 130, 135, 140, 145, 150],
             },
-            FiberModel.MRG_INTERPOLATION: {
+            "MRG_INTERPOLATION": {
                 "node_length": 1.0,
                 "paranodal_length_1": 3.0,
                 "paranodal_length_2": lambda d: -0.1652 * d**2 + 6.354 * d - 0.2862,
                 "delta_z": lambda d: -8.215 * d**2 + 272.4 * d - 780.2 if d >= 5.643 else 81.08 * d + 37.84,
                 "nl": lambda d: -0.4749 * d**2 + 16.85 * d - 0.7648,
-                "nodeD": lambda d: 0.01093 * d**2 + 0.1008 * d + 1.099,
-                "axonD": lambda d: 0.02361 * d**2 + 0.3673 * d + 0.7122,
+                "node_diam": lambda d: 0.01093 * d**2 + 0.1008 * d + 1.099,
+                "axon_diam": lambda d: 0.02361 * d**2 + 0.3673 * d + 0.7122,
             },
         }
+        paranodal_length_2: float | int
+        nl: float | int
 
         if self.fiber_model == FiberModel.MRG_DISCRETE:
-            fiber_parameters = fiber_parameters_all[FiberModel.MRG_DISCRETE]
+            fiber_param_discrete = fiber_parameters_all["MRG_DISCRETE"]
             try:
-                diameter_index = fiber_parameters['diameters'].index(self.diameter)
+                diameter_index = fiber_param_discrete['diameters'].index(self.diameter)
             except IndexError:
                 raise ValueError(
                     "Diameter chosen not valid for FiberModel.MRG_DISCRETE. "
                     "Choose from {fiber_parameters['diameters']}"
                 )
-            paranodal_length_2 = fiber_parameters['paranodal_length_2s'][diameter_index]
-            axon_diam = fiber_parameters['axonDs'][diameter_index]
-            node_diam = fiber_parameters['nodeDs'][diameter_index]
-            nl = fiber_parameters['nls'][diameter_index]
-            self.delta_z = fiber_parameters['delta_zs'][diameter_index]
+            paranodal_length_2 = fiber_param_discrete['paranodal_length_2s'][diameter_index]
+            axon_diam = fiber_param_discrete['axon_diams'][diameter_index]
+            node_diam = fiber_param_discrete['node_diams'][diameter_index]
+            nl = fiber_param_discrete['nls'][diameter_index]
+            self.delta_z = fiber_param_discrete['delta_zs'][diameter_index]
 
         elif self.fiber_model == FiberModel.MRG_INTERPOLATION:
-            fiber_parameters = fiber_parameters_all[FiberModel.MRG_INTERPOLATION]
-            paranodal_length_2 = fiber_parameters['paranodal_length_2'](self.diameter)
-            nl = fiber_parameters['nl'](self.diameter)
-            node_diam = fiber_parameters['nodeD'](self.diameter)
-            axon_diam = fiber_parameters['axonD'](self.diameter)
-            self.delta_z = fiber_parameters['delta_z'](self.diameter)
+            fiber_param_interp = fiber_parameters_all["MRG_INTERPOLATION"]
+            paranodal_length_2 = fiber_param_interp['paranodal_length_2'](self.diameter)
+            nl = fiber_param_interp['nl'](self.diameter)
+            node_diam = fiber_param_interp['node_diam'](self.diameter)
+            axon_diam = fiber_param_interp['axon_diam'](self.diameter)
+            self.delta_z = fiber_param_interp['delta_z'](self.diameter)
             if self.diameter < 2 or self.diameter > 16:
                 raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
         return axon_diam, nl, node_diam, paranodal_length_2
 
     def create_sections(
-        self,
+        self: MRGFiber,
         stin_diam: float,
         node_diam: float,
         mysa_diam: float,
         flut_diam: float,
         flut_length: float,
-        nl: int,
-    ):
+        nl: float,
+    ) -> MRGFiber:
         """Create and connect NEURON sections for a myelinated fiber type.
 
         :param stin_diam: diameter of internodal fiber segment (STIN) [um]
@@ -380,15 +421,15 @@ class MRGFiber(_Fiber):
         return self
 
     def create_mysa(
-        self,
+        self: MRGFiber,
         i: int,
         paralength1: float,
         rhoa: float,
         para_diam_1: float,
         mycm: float,
         mygm: float,
-        nl: int,
-    ):
+        nl: float,
+    ) -> h.Section:
         """Create a single MYSA segment for MRG_DISCRETE fiber type.
 
         :param i: index of fiber segment
@@ -398,13 +439,13 @@ class MRGFiber(_Fiber):
         :param mycm: lamella membrane capacitance [uF/cm2]
         :param mygm: lamella membrane conductance [uF/cm2]
         :param nl: number of myelin lemella
-        :return: nrn.Section
+        :return: nrn.h.Section
         """
         space_p1 = 0.002  # Thickness of periaxonal space in MYSA sections [um]
         # periaxonal space resistivity for MYSA segment [Mohms/cm]
         rpn1 = (rhoa * 0.01) / (math.pi * ((((para_diam_1 / 2) + space_p1) ** 2) - ((para_diam_1 / 2) ** 2)))
 
-        mysa = Section(name='mysa ' + str(i))
+        mysa = h.Section(name='mysa ' + str(i))
         mysa.nseg = 1
         mysa.diam = self.diameter
         mysa.L = paralength1
@@ -422,7 +463,7 @@ class MRGFiber(_Fiber):
         return mysa
 
     def create_flut(
-        self,
+        self: MRGFiber,
         i: int,
         paralength2: float,
         rhoa: float,
@@ -430,7 +471,7 @@ class MRGFiber(_Fiber):
         mycm: float,
         mygm: float,
         nl: float,
-    ):
+    ) -> h.Section:
         """Create a single FLUT segment for MRG_DISCRETE fiber type.
 
         :param i: index of fiber segment
@@ -440,13 +481,13 @@ class MRGFiber(_Fiber):
         :param mycm: lamella membrane capacitance [uF/cm2]
         :param mygm: lamella membrane conductance [uF/cm2]
         :param nl: number of myelin lemella
-        :return: nrn.Section
+        :return: nrn.h.Section
         """
         space_p2 = 0.004  # Thickness of periaxonal space in FLUT sections [um]
         # periaxonal space resistivity for of paranode fiber segment (FLUT) [Mohms/cm]
         rpn2 = (rhoa * 0.01) / (math.pi * ((((para_diam_2 / 2) + space_p2) ** 2) - ((para_diam_2 / 2) ** 2)))
 
-        flut = Section(name='flut ' + str(i))
+        flut = h.Section(name='flut ' + str(i))
         flut.nseg = 1
         flut.diam = self.diameter
         flut.L = paralength2
@@ -464,15 +505,15 @@ class MRGFiber(_Fiber):
         return flut
 
     def create_stin(
-        self,
+        self: MRGFiber,
         i: int,
         interlength: float,
         rhoa: float,
         axon_diam: float,
         mycm: float,
         mygm: float,
-        nl: int,
-    ):
+        nl: float,
+    ) -> h.Section:
         """Create a STIN segment for MRG_DISCRETE fiber type.
 
         :param i: index of fiber segment
@@ -482,13 +523,13 @@ class MRGFiber(_Fiber):
         :param mycm: lamella membrane capacitance [uF/cm2]
         :param mygm: lamella membrane conductance [uF/cm2]
         :param nl: number of myelin lemella
-        :return: nrn.Section
+        :return: nrn.h.Section
         """
         space_i = 0.004  # Thickness of periaxonal space in STIN sections [um]
         # periaxonal space resistivity for internodal fiber segment (STIN) [Mohms/cm]
         rpx = (rhoa * 0.01) / (math.pi * ((((axon_diam / 2) + space_i) ** 2) - ((axon_diam / 2) ** 2)))
 
-        stin = Section(name='stin ' + str(i))
+        stin = h.Section(name='stin ' + str(i))
         stin.nseg = 1
         stin.diam = self.diameter
         stin.L = interlength
@@ -506,15 +547,15 @@ class MRGFiber(_Fiber):
         return stin
 
     def create_node(
-        self,
+        self: MRGFiber,
         index: int,
         node_diam: float,
         nodelength: float,
         rhoa: float,
         mycm: float,
         mygm: float,
-        nl: int,
-    ):
+        nl: float,
+    ) -> h.Section:
         """Create a node of Ranvier for MRG_DISCRETE fiber type.
 
         :param index: index of fiber segment
@@ -524,13 +565,13 @@ class MRGFiber(_Fiber):
         :param mycm: lamella membrane capacitance [uF/cm2]
         :param mygm: lamella membrane conductance [uF/cm2]
         :param nl: number of myelin lemella
-        :return: nrn.Section
+        :return: nrn.h.Section
         """
         space_p1 = 0.002  # Thickness of periaxonal space in MYSA sections [um]
         # periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
         rpn0 = (rhoa * 0.01) / (math.pi * ((((node_diam / 2) + space_p1) ** 2) - ((node_diam / 2) ** 2)))
 
-        node = Section(name='node ' + str(index))
+        node = h.Section(name='node ' + str(index))
         node.nseg = 1
         node.diam = node_diam
         node.L = nodelength
@@ -557,24 +598,21 @@ class MRGFiber(_Fiber):
 
 
 class _HomogeneousFiber(_Fiber):
-    """Initialize Homogeneous (all sections are identical) class.
+    """Initialize Homogeneous (all sections are identical) class."""
 
-    :param fiber_model: name of fiber model type
-    :param args: arguments to pass to the base class
-    :param kwargs: keyword arguments to pass to the base class
-    """
-
-    def __init__(self, fiber_model: FiberModel, *args, **kwargs):
+    def __init__(self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
         """Initialize UnmyelinatedFiber class.
 
         :param fiber_model: name of fiber model type
-        :param args: arguments to pass to the base class
+        :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, *args, **kwargs)
-        self.v_rest = None
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        self.v_rest: int = None
 
-    def generate_homogeneous(self, n_sections: int, length: float, modelfunc, *args, **kwargs):
+    def generate_homogeneous(
+        self: _HomogeneousFiber, n_sections: int, length: float, modelfunc: Callable, *args, **kwargs
+    ) -> _Fiber:
         """Build fiber model sections with NEURON.
 
         :param n_sections: number of fiber coordinates from COMSOL
@@ -611,15 +649,15 @@ class _HomogeneousFiber(_Fiber):
 
         return self
 
-    def nodebuilder(self, nodefunc):
+    def nodebuilder(self: _HomogeneousFiber, nodefunc: Callable) -> Callable:
         """Generate a node and apply the specific model described by nodefunc.
 
         :param nodefunc: function to build node
-        :return: nrn.Section
+        :return: nrn.h.Section
         """
 
-        def wrapper(*args, name='node', **kwargs):
-            node = Section(name=name)
+        def wrapper(*args, name: str = 'node', **kwargs) -> None:
+            node = h.Section(name=name)
             self.sections.append(node)
 
             node.diam = self.diameter
@@ -635,13 +673,13 @@ class _HomogeneousFiber(_Fiber):
         return wrapper
 
     @staticmethod
-    def passive_node(node, v_rest):
+    def passive_node(node: h.Section, v_rest: int) -> None:
         node.insert('pas')
         node.g_pas = 0.0001
         node.e_pas = v_rest
         node.Ra = 1e10
 
-    def sectionbuilder(self, modelnodefunc, *args, **kwargs):
+    def sectionbuilder(self: _HomogeneousFiber, modelnodefunc: Callable, *args, **kwargs) -> None:
         """Create and connect NEURON sections for an unmyelinated fiber.
 
         :param modelnodefunc: function to build node mechanisms and attributes
@@ -664,23 +702,23 @@ class _HomogeneousFiber(_Fiber):
 class RattayFiber(_HomogeneousFiber):
     """Rattay fiber model."""
 
-    def __init__(self, fiber_model: FiberModel, *args, **kwargs):
+    def __init__(self: RattayFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
         """Initialize UnmyelinatedFiber class.
 
         :param fiber_model: name of fiber model type
-        :param args: arguments to pass to the base class
+        :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.myelinated = False
         self.delta_z = 8.333  # microns
         self.v_rest = -70  # millivolts
 
-    def generate(self, n_sections: int, length: float):  # noqa D102
+    def generate(self: RattayFiber, n_sections: int, length: float) -> _Fiber:  # noqa D102
         return self.generate_homogeneous(n_sections, length, self.create_rattay)
 
     @staticmethod
-    def create_rattay(node):
+    def create_rattay(node: h.Section) -> None:
         """Create a RATTAY node.
 
         :param node: NEURON section
@@ -696,14 +734,14 @@ class RattayFiber(_HomogeneousFiber):
 class TigerholmFiber(_HomogeneousFiber):
     """Tigerholm Fiber model."""
 
-    def __init__(self, fiber_model: FiberModel, *args, **kwargs):
+    def __init__(self: TigerholmFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
         """Initialize UnmyelinatedFiber class.
 
         :param fiber_model: name of fiber model type
-        :param args: arguments to pass to the base class
+        :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.myelinated = False
         self.delta_z = 8.333  # microns
         self.v_rest = -55  # millivolts
@@ -712,11 +750,11 @@ class TigerholmFiber(_HomogeneousFiber):
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes = False
 
-    def generate(self, n_sections: int, length: float):  # noqa D102
+    def generate(self: TigerholmFiber, n_sections: int, length: float) -> _Fiber:  # noqa D102
         return self.generate_homogeneous(n_sections, length, self.create_tigerholm, celsius=self.temperature)
 
     @staticmethod
-    def create_tigerholm(node, celsius):
+    def create_tigerholm(node: h.Section, celsius: int) -> None:
         """Create a TIGERHOLM node.
 
         :param celsius: model temperature [celsius]
@@ -756,7 +794,7 @@ class TigerholmFiber(_HomogeneousFiber):
         node.smalla_nakpump = -0.0047891
         node.gbar_kdrTiger = 0.018002
 
-    def balance(self):
+    def balance(self: TigerholmFiber) -> None:
         """Balance membrane currents for Tigerholm model."""
         v_rest = self.v_rest
         for s in self.sections:
@@ -778,23 +816,23 @@ class TigerholmFiber(_HomogeneousFiber):
 class SundtFiber(_HomogeneousFiber):
     """Sundt fiber model."""
 
-    def __init__(self, fiber_model: FiberModel, *args, **kwargs):
+    def __init__(self: SundtFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
         """Initialize UnmyelinatedFiber class.
 
-        :param fiber_model: name of fiber model type
-        :param args: arguments to pass to the base class
+        :param fiber_model: enum of fiber model type
+        :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, *args, **kwargs)
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.myelinated = False
         self.delta_z = 8.333  # microns
         self.v_rest = -60  # millivolts
 
-    def generate(self, n_sections: int, length: float):  # noqa D102
+    def generate(self: SundtFiber, n_sections: int, length: float) -> _Fiber:  # noqa D102
         return self.generate_homogeneous(n_sections, length, self.create_sundt)
 
     @staticmethod
-    def create_sundt(node):
+    def create_sundt(node: h.Section) -> None:
         """Create a SUNDT node.
 
         :param node: NEURON section

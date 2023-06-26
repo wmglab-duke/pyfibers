@@ -59,12 +59,21 @@ wrap-summaries = 0
 line-length = 120
 
 [tool.isort]
+add_imports = ["from __future__ import annotations"]
+append_only = true
 ensure_newline_before_comments = true
 force_grid_wrap = 0
 include_trailing_comma = true
 line_length = 120
 multi_line_output = 3
 use_parentheses = true
+
+[tool.mypy]
+# exclude docs directory
+exclude = ["docs", "tests"]
+ignore_missing_imports = true
+implicit_optional = true
+no_strict_optional = true
 
 [tool.rstcheck]
 ignore_directives = [
