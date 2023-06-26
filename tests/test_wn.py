@@ -6,6 +6,8 @@ source code can be found on the following GitHub repository:
 https://github.com/wmglab-duke/ascent
 """
 
+from __future__ import annotations
+
 import numpy as np
 import pytest  # noqa: I900
 import scipy.signal as sg

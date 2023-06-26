@@ -1,4 +1,6 @@
 """Install script for wmglab_neuron."""
+from __future__ import annotations
+
 import os
 import shutil
 import subprocess

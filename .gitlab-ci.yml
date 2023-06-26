@@ -64,6 +64,12 @@ docstring_check:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+mypy:
+  stage: lint
+  script:
+    - pip install mypy
+    - mypy src
+
 tox_py310_w_cov:
   stage: test
   script:

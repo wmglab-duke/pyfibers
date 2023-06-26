@@ -1,8 +1,12 @@
 """Defines ScaledStim class."""
+from __future__ import annotations
+
 import warnings
+from typing import Callable
 
 import numpy as np
 from neuron import h
+from numpy import bool_
 from scipy.signal import argrelextrema
 
 from wmglab_neuron import FiberModel, _Fiber
@@ -15,7 +19,7 @@ class ScaledStim:
     """Manage stimulation of NEURON simulations."""
 
     def __init__(
-        self,
+        self: ScaledStim,
         waveform: list[int],
         dt: float = 0.001,
         tstop: float = 50,
@@ -23,7 +27,7 @@ class ScaledStim:
         dt_init_ss: float = 10,
         pad_waveform: bool = True,
         truncate_waveform: bool = True,
-    ):
+    ) -> None:
         """Initialize ScaledStim class.
 
         :param waveform: list of amplitudes at each time bounds_search_step of the simulation
@@ -35,15 +39,15 @@ class ScaledStim:
         :param truncate_waveform: if true, truncate waveform until it is of length tstop/dt
         :raises RuntimeError: if called before any sections/fibers are created
         """
-        self.istim_params = None
-        self.waveform = waveform
+        self.istim_params: dict[str, float] = {}
+        self.waveform: np.typing.NDArray[np.float64] = np.array(waveform)
         self.dt = dt
         self.tstop = tstop
-        self.istim = None
+        self.istim: h.trainIClamp = None
         self.istim_record = None
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
-        self.exit_t = None
+        self.exit_t: float = None
         self.pad = pad_waveform
         self.truncate = truncate_waveform
         try:
@@ -54,7 +58,7 @@ class ScaledStim:
             )
         self._prep_waveform()
 
-    def _prep_waveform(self):
+    def _prep_waveform(self: ScaledStim) -> None:
         """Prepare waveform for simulation.
 
         :raises AssertionError: if waveform length is not equal to number of time steps
@@ -78,7 +82,7 @@ class ScaledStim:
             len(self.waveform) == self.tstop / self.dt
         ), f'Waveform length does not match number of time steps {self.tstop / self.dt}'
 
-    def __str__(self):
+    def __str__(self: ScaledStim) -> str:
         """Return string representation of ScaledStim class."""  # noqa: DAR201
         return (
             f'ScaledStim: {self.dt * self.tstop} ms (dt={self.dt} ms)'
@@ -86,13 +90,13 @@ class ScaledStim:
             f' istim_params={self.istim_params}'
         )
 
-    def __repr__(self):
+    def __repr__(self: ScaledStim) -> str:
         """Return a string representation of the ScaledStim."""  # noqa: DAR201
         # TODO: make this more informative for developers
         return self.__str__()
 
     def _add_istim(
-        self,
+        self: ScaledStim,
         fiber: _Fiber,
         delay: float = 0,
         pw: float = 0,
@@ -101,7 +105,7 @@ class ScaledStim:
         amp: float = 0,
         ind: int = None,
         loc: float = None,
-    ):
+    ) -> ScaledStim:
         """Create instance of trainIClamp for intracellular stimulation.
 
         :param fiber: instance of _Fiber class to add intracellular stimulation to
@@ -129,15 +133,15 @@ class ScaledStim:
         return self
 
     def set_intracellular_stim(
-        self,
-        delay: float = 0,
-        pw: float = 0,
-        dur: float = 0,
-        freq: float = 0,
-        amp: float = 0,
+        self: ScaledStim,
+        delay: float,
+        pw: float,
+        dur: float,
+        freq: float,
+        amp: float,
         ind: int = None,
         loc: float = None,
-    ):
+    ) -> None:
         """Set intracellular stimulation parameters.
 
         :param delay: the delay from the start of the simulation to the onset of the intracellular stimulation [ms]
@@ -159,10 +163,8 @@ class ScaledStim:
             'loc': loc,
         }
 
-    # TODO dicuss if default should be nonzero
-
     @staticmethod
-    def initialize_extracellular(fiber):
+    def initialize_extracellular(fiber: _Fiber) -> None:
         """Set extracellular stimulation values to zero along entire fiber.
 
         :param fiber: instance of _Fiber class to initialize extracellular stimulation for
@@ -171,7 +173,7 @@ class ScaledStim:
             section(0.5).e_extracellular = 0
 
     @staticmethod
-    def update_extracellular(fiber, e_stims: list[float]):
+    def update_extracellular(fiber: _Fiber, e_stims: list[float]) -> None:
         """Update the applied extracellular stimulation all along the fiber length.
 
         :param fiber: instance of _Fiber class to apply extracellular stimulation to
@@ -181,7 +183,7 @@ class ScaledStim:
             section(0.5).e_extracellular = e_stims[x]
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
-        self,
+        self: ScaledStim,
         fiber: _Fiber,
         condition: str = ThresholdCondition.ACTIVATION,
         bounds_search_mode: str = BoundsSearchMode.PERCENT_INCREMENT,
@@ -190,11 +192,11 @@ class ScaledStim:
         termination_tolerance: float = 1,
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
-        max_iterations=100,
+        max_iterations: int = 100,
         exit_t_shift: float = 5,
-        bisection_mean='arithmetic',
+        bisection_mean: str = 'arithmetic',
         **kwargs,
-    ):
+    ) -> tuple[float, float]:
         """Binary search to find threshold amplitudes.
 
         :param fiber: instance of _Fiber class to apply stimulation to
@@ -229,7 +231,7 @@ class ScaledStim:
                 stacklevel=2,
             )
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
-        self.exit_t = None
+        self.exit_t = float('Inf')
         # Determine searching parameters for binary search bounds
         rel_increment = round(bounds_search_step / 100, 4)
         abs_increment = round(bounds_search_step, 4)
@@ -246,8 +248,8 @@ class ScaledStim:
             iterations += 1
             if supra_top and exit_t_shift:
                 self.exit_t = t + exit_t_shift
-            if not supra_bot and supra_top:  # found search bounds
-                break
+            if not supra_bot and supra_top:  # noqa: R508
+                break  # found search bounds
             elif supra_bot and not supra_top:
                 raise RuntimeError(
                     "stimamp_bottom was found to be supra-threshold, "
@@ -312,7 +314,7 @@ class ScaledStim:
 
         return stimamp, n_aps
 
-    def supra_exit(self, fiber):
+    def supra_exit(self: ScaledStim, fiber: _Fiber) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
 
         :param fiber: Fiber object to check for threshold
@@ -322,11 +324,12 @@ class ScaledStim:
             # check for end excitation
             self.end_excitation_checker(fiber, multi_site_check=False)
             return True
-        else:
-            return False
+        return False
 
     @staticmethod
-    def end_excitation_checker(fiber, multi_site_check=True, fail_on_end_excitation=True):
+    def end_excitation_checker(
+        fiber: _Fiber, multi_site_check: bool = True, fail_on_end_excitation: bool = True
+    ) -> bool_:
         """Check for end excitation.
 
         :param fiber: Fiber object to check for end excitation
@@ -350,19 +353,18 @@ class ScaledStim:
 
         if end_excitation and fail_on_end_excitation:
             raise RuntimeError('End excitation occurred.')
-        else:
-            return end_excitation
+        return end_excitation
 
     def threshsim(
-        self,
-        stimamp,
-        fiber,
-        check_threshold=ThresholdCondition.ACTIVATION,
-        ap_detect_location=0.9,
-        istim_delay=0,
+        self: ScaledStim,
+        stimamp: float,
+        fiber: _Fiber,
+        check_threshold: ThresholdCondition = ThresholdCondition.ACTIVATION,
+        ap_detect_location: float = 0.9,
+        istim_delay: int = 0,
         *args,
         **kwargs,
-    ):
+    ) -> tuple[int, float]:
         """Run a simulation with a given stimulus amplitude and check for threshold.
 
         :param stimamp: the stimulus amplitude
@@ -375,8 +377,10 @@ class ScaledStim:
         :return: True if threshold is reached, False otherwise
         :raises NotImplementedError: if threshold condition is not implemented
         """
-        if check_threshold == ThresholdCondition.ACTIVATION:
-            n_aps, aptime = self.run_sim(stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, *args, **kwargs)
+        if check_threshold == ThresholdCondition.ACTIVATION:  # noqa: R505
+            n_aps, aptime = self.run_sim(
+                stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, *args, **kwargs
+            )  # type: ignore
             return self.threshold_checker(fiber, ap_detect_location=ap_detect_location), aptime
         elif check_threshold == ThresholdCondition.BLOCK:
             n_aps, aptime = self.run_sim(stimamp, fiber, *args, **kwargs)
@@ -387,17 +391,17 @@ class ScaledStim:
                 aptime,
             )
         else:
-            raise NotImplementedError("Only activation and block thresholds are supported.")
+            raise NotImplementedError(f'{check_threshold} is not implemented')
 
     def run_sim(
-        self,
+        self: ScaledStim,
         stimamp: float,
         fiber: _Fiber,
         ap_detect_location: float = 0.9,
-        exit_func=lambda x: False,
-        exit_func_interval=100,
-        use_exit_t=False,
-    ):
+        exit_func: Callable = lambda x: False,
+        exit_func_interval: int = 100,
+        use_exit_t: bool = False,
+    ) -> tuple[float, float]:
         """Run a simulation for a single stimulation amplitude.
 
         :param stimamp: amplitude to be applied to extracellular stimulation
@@ -416,7 +420,7 @@ class ScaledStim:
             fiber.coordinates
         ), 'Number of fiber coordinates does not match number of potentials'
 
-        def steady_state():
+        def steady_state() -> None:
             """Allow system to reach steady-state by using a large dt before simulation."""
             h.t = self.t_init_ss  # Start before t=0
             h.dt = self.dt_init_ss  # Large dt
@@ -436,8 +440,8 @@ class ScaledStim:
 
         self.initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
         steady_state()  # Allow system to reach steady-state before simulation
-        if self.istim_params is not None:  # add istim train if specified
-            self._add_istim(fiber, **self.istim_params)
+        if self.istim_params:  # add istim train if specified
+            self._add_istim(fiber, **self.istim_params)  # type: ignore
 
         # Begin simulation
         for i, amp in enumerate(self.waveform):
@@ -494,6 +498,5 @@ class ScaledStim:
         # Determine user-specified location along axon to check for action potential
         detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
         if block:
-            return detect_apc.time <= istim_delay
-        else:
-            return bool(detect_apc.n)
+            return detect_apc.time <= istim_delay  # check for block
+        return bool(detect_apc.n)  # otherwise check for activation
