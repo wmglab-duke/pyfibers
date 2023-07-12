@@ -37,3 +37,11 @@ class TerminationMode(Enum):
 
     PERCENT_DIFFERENCE = 0
     ABSOLUTE_DIFFERENCE = 1
+
+
+@unique
+class BisectionMean(Enum):
+    """Termination modes."""
+
+    GEOMETRIC = 0
+    ARITHMETIC = 1

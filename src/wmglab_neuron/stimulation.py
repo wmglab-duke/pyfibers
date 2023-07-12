@@ -10,7 +10,7 @@ from numpy import bool_
 from scipy.signal import argrelextrema
 
 from wmglab_neuron import FiberModel, _Fiber
-from wmglab_neuron.enums import BoundsSearchMode, TerminationMode, ThresholdCondition
+from wmglab_neuron.enums import BisectionMean, BoundsSearchMode, TerminationMode, ThresholdCondition
 
 h.load_file('stdrun.hoc')
 
@@ -185,16 +185,16 @@ class ScaledStim:
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
         self: ScaledStim,
         fiber: _Fiber,
-        condition: str = ThresholdCondition.ACTIVATION,
-        bounds_search_mode: str = BoundsSearchMode.PERCENT_INCREMENT,
+        condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
+        bounds_search_mode: BoundsSearchMode = BoundsSearchMode.PERCENT_INCREMENT,
         bounds_search_step: float = 10,
-        termination_mode: str = TerminationMode.PERCENT_DIFFERENCE,
+        termination_mode: TerminationMode = TerminationMode.PERCENT_DIFFERENCE,
         termination_tolerance: float = 1,
         stimamp_top: float = -1,
         stimamp_bottom: float = -0.01,
         max_iterations: int = 100,
         exit_t_shift: float = 5,
-        bisection_mean: str = 'arithmetic',
+        bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
         **kwargs,
     ) -> tuple[float, float]:
         """Binary search to find threshold amplitudes.
@@ -278,9 +278,9 @@ class ScaledStim:
             stimamp_prev = stimamp_top
 
             # calculate new stimamp
-            if bisection_mean == 'arithmetic':
+            if bisection_mean == BisectionMean.ARITHMETIC:
                 stimamp = (stimamp_bottom + stimamp_top) / 2
-            elif bisection_mean == 'geometric':
+            elif bisection_mean == BisectionMean.GEOMETRIC:
                 stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** (1 / 2)
             else:
                 raise ValueError(f'bisection_mean must be arithmetic or geometric, not {bisection_mean}')

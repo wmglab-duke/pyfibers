@@ -13,7 +13,15 @@ import pytest  # noqa: I900
 import scipy.signal as sg
 from scipy.stats import norm
 
-from wmglab_neuron import BoundsSearchMode, FiberModel, ScaledStim, TerminationMode, ThresholdCondition, build_fiber
+from wmglab_neuron import (
+    BisectionMean,
+    BoundsSearchMode,
+    FiberModel,
+    ScaledStim,
+    TerminationMode,
+    ThresholdCondition,
+    build_fiber,
+)
 
 # TODO Change all c fiber model to 1 um
 
@@ -139,7 +147,8 @@ def test_mrg_discrete():
 
 def test_geometric_mean():
     assert np.isclose(
-        get_activation_threshold(FiberModel.MRG_INTERPOLATION, bisection_mean='geometric'), -0.023501400846134893
+        get_activation_threshold(FiberModel.MRG_INTERPOLATION, bisection_mean=BisectionMean.GEOMETRIC),
+        -0.023501400846134893,
     )
 
 
