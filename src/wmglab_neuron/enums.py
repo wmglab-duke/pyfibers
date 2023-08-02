@@ -13,6 +13,8 @@ class FiberModel(Enum):
     SUNDT = 2
     TIGERHOLM = 3
     RATTAY = 4
+    SCHILD97 = 5
+    SCHILD94 = 6
 
 
 @unique
