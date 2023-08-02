@@ -51,6 +51,30 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # T
     return amp
 
 
+def get_activation_threshold_ps(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
+    """Get activation threshold.
+
+    Using point source
+    """
+
+    # create curve of potentials
+    fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
+    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 0.01)
+
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+
+    # parameters
+    time_step = 0.001
+    time_stop = 50
+    stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
+
+    stimulation.run_sim(0, fiber)  # TODO why do I need to run this first for correct result
+
+    amp, ap = stimulation.find_threshold(fiber, **kwargs)
+
+    return amp
+
+
 def get_amp_responses(model, stimamps, save=False):
     """Get activation threshold."""
     nodecount = 133
@@ -198,6 +222,18 @@ def test_rattay():
 
 def test_sundt():
     assert np.isclose(get_activation_threshold(FiberModel.SUNDT, diameter=0.2, nodecount=665), -0.6867578125)
+
+
+def test_schild94():
+    assert np.isclose(
+        get_activation_threshold_ps(FiberModel.SCHILD94, diameter=1, nodecount=265, stimamp_top=-50), -17.828701171875
+    )
+
+
+def test_schild97():
+    assert np.isclose(
+        get_activation_threshold_ps(FiberModel.SCHILD97, diameter=1, nodecount=265, stimamp_top=-50), -43.1654296875
+    )
 
 
 def test_finite_amps():
