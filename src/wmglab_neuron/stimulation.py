@@ -320,11 +320,7 @@ class ScaledStim:
         :param fiber: Fiber object to check for threshold
         :return: True if threshold is reached, False otherwise
         """
-        if self.threshold_checker(fiber):
-            # check for end excitation
-            self.end_excitation_checker(fiber, multi_site_check=False)
-            return True
-        return False
+        return self.threshold_checker(fiber)
 
     @staticmethod
     def end_excitation_checker(
@@ -486,7 +482,7 @@ class ScaledStim:
         block: bool = False,
         ap_detect_location: float = 0.9,
         istim_delay: float = 0,
-    ) -> int:
+    ) -> bool:
         """Check if stimulation was above or below threshold.
 
         :param fiber: instance of fiber class
