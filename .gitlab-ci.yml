@@ -73,7 +73,7 @@ mypy:
 tox_py310_w_cov:
   stage: test
   script:
-    - pip install tox
+    - pip install "tox<=4.8.0"
     - tox -l
     - tox -e py310-neuron{8},coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
@@ -87,13 +87,13 @@ tox_py310_w_cov:
 
 tox_py39:
   script:
-    - pip install tox
+    - pip install "tox<=4.8.0"
     - tox -e py39-neuron{8}
   image: python:3.9
 
 tox_py311:
   script:
-    - pip install tox
+    - pip install "tox<=4.8.0"
     - tox -e py311-neuron{8}
   image: python:3.11
 
