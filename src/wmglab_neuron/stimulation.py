@@ -370,7 +370,7 @@ class ScaledStim:
         :param istim_delay: the delay of the stimulus
         :param args: additional arguments to pass to the run_sim method
         :param kwargs: additional keyword arguments to pass to the run_sim method
-        :return: True if threshold is reached, False otherwise
+        :return: Number of detected aps and time of last detected ap
         :raises NotImplementedError: if threshold condition is not implemented
         """
         if check_threshold == ThresholdCondition.ACTIVATION:  # noqa: R505
@@ -406,7 +406,7 @@ class ScaledStim:
         :param exit_func: function to call to check if simulation should be exited
         :param exit_func_interval: interval to call exit_func
         :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
-        :return: number of detected aps if check_threshold is None, else True if supra-threshold, else False
+        :return: number of detected aps and time of last detected ap
         """
         self._prep_waveform()
         print('Running:', stimamp)
