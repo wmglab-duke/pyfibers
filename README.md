@@ -16,8 +16,11 @@ We have implemented the following models:
 3. Install the package using pip
    - Open anaconda prompt
    - Navigate to the repo root directory
+   - `pip install -r requirements.txt` (check that dependencies are installed successfully)
    - `pip install .`
 4. To compile the mod files, in Anaconda prompt, run the command `wmglab_neuron_install`
+   - Careful! Make sure that there is not another NEURON installation in your path (this could happen, for example, if you were adding one to your path in your `.bash_profile`). To check, you can run `which nrnivmodl`, and the path that it prints should be to your python installation of NEURON.
+   - Note: You cannot run compilation on DCC Desktop nodes, as there are libraries needed which are not available there. Make sure you are on a login node when running this command.
    - Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
    - After a few seconds, your terminal window should say "Successfully installed wmglab-neuron-\<Major>.\<Minor>.\<Patch>".
 ### Migrating from v0.0.1 to v0.0.2
