@@ -32,6 +32,10 @@ We have implemented the following models:
   - `from wmglab_neuron import build_fiber`
   - `fiber = build_fiber(args)`
 ## Usage
+See the Documentation for detailed information on usage:
+- [Tutorials](https://wmglab.pages.oit.duke.edu/wmglab-neuron/tutorials/index.html) on various operations.
+- [API Documentation](https://wmglab.pages.oit.duke.edu/wmglab-neuron/autodoc/index.html) on function/class arguments and outputs.
+
 ### Creating a fiber model
 Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup.
 
