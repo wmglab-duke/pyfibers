@@ -59,7 +59,7 @@ def get_activation_threshold_ps(model, nodecount=133, diameter=5.7, **kwargs):  
 
     # create curve of potentials
     fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
-    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 0.01)
+    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 10)
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -214,7 +214,7 @@ def test_block_threshold():
 
     fiber = build_fiber(FiberModel.MRG_INTERPOLATION, diameter=10, n_sections=n_sections)
     fiber.set_save_vm()
-    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 0.01)
+    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 10)
 
     # Create new stimulation object
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
