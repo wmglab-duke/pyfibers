@@ -202,20 +202,52 @@ class _Fiber:
             if self.passive_end_nodes:
                 self.gating[name] = [None] + self.gating[name] + [None]
 
-    def point_source_potentials(self: _Fiber, x: float, y: float, z: float, i0: float, sigma: float) -> ndarray:
+    def point_source_potentials(
+        self: _Fiber,
+        x: float,
+        y: float,
+        z: float,
+        i0: float,
+        sigma: float | tuple,
+        inplace: bool = False,
+    ) -> np.ndarray:
         """Calculate extracellular potentials at all fiber coordinates due to a point source.
 
         :param x: x-coordinate of point source [um]
         :param y: y-coordinate of point source [um]
         :param z: z-coordinate of point source [um]
         :param i0: current of point source [mA]
-        :param sigma: conductivity of extracellular medium [S/m]
+        :param sigma: conductivity of extracellular medium [S/m].
+            Float for isotropic, tuple of length 3 (x,y,z) for anisotropic
+        :param inplace: whether to update self.potentials in-place, defaults to False
         :return: potentials at all fiber coordinates [mV]
         """
-        # Calculate distance from point source to each fiber coordinate
-        r = 1e-3 * np.sqrt((0 - x) ** 2 + (0 - y) ** 2 + (self.coordinates - z) ** 2)
-        # Calculate potentials at each fiber coordinate
-        return i0 / (4 * np.pi * sigma * r)
+        # Calculate distance between source and sections
+        xs = ys = np.zeros(len(self.coordinates))
+        xs = x - xs
+        ys = y - ys
+        zs = z - self.coordinates
+        # convert to meters
+        xs *= 1e-6
+        ys *= 1e-6
+        zs *= 1e-6
+
+        if isinstance(sigma, (float, int)):
+            # Isotropic case
+            potentials = i0 / (4 * np.pi * sigma * np.sqrt(xs**2 + ys**2 + zs**2))
+        else:  # TODO double check that this is correct
+            # Anisotropic case
+            sigma_x, sigma_y, sigma_z = sigma
+            potentials = i0 / (
+                4
+                * np.pi
+                * np.sqrt(sigma_y * sigma_z * xs**2 + sigma_x * sigma_z * ys**2 + sigma_x * sigma_y * zs**2)
+            )
+
+        if inplace:
+            self.potentials = potentials
+
+        return potentials
 
 
 class MRGFiber(_Fiber):

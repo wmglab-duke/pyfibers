@@ -57,7 +57,7 @@ def test_loc():
 def test_pointsource():
     fiber = get_fiber()
     fiber.potentials = fiber.point_source_potentials(0, 100, 3000, 1, 1)
-    assert np.isclose(fiber.potentials[66], 0.753537379490885)
+    assert np.isclose(fiber.potentials[66], 753.537379490885)
 
 
 def test_waveform_pad_truncate():
