@@ -162,7 +162,7 @@ def test_absolutes():
 
 
 def test_tigerholm():
-    assert np.isclose(get_activation_threshold(FiberModel.TIGERHOLM), -1.2818437500000002)
+    assert np.isclose(get_activation_threshold(FiberModel.TIGERHOLM), -1.2780625000000003)
 
 
 def test_rattay():
@@ -196,10 +196,10 @@ def test_vm():
 
 def test_gating():
     _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
-    assert np.isclose(fiber.gating['h'][6][200], 0.0014151250180505406)
-    assert np.isclose(fiber.gating['m'][6][200], 0.9999924898989334)
-    assert np.isclose(fiber.gating['mp'][6][200], 0.9999961847550823)
-    assert np.isclose(fiber.gating['s'][6][200], 0.9090909090909091)
+    assert np.isclose(fiber.gating['h'][6][200], 0.03841755485289423)
+    assert np.isclose(fiber.gating['m'][6][200], 0.9999924888915432)
+    assert np.isclose(fiber.gating['mp'][6][200], 0.9215463325919616)
+    assert np.isclose(fiber.gating['s'][6][200], 0.1049331279857998)
 
 
 def test_block_threshold():

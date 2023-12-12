@@ -262,10 +262,10 @@ class MRGFiber(_Fiber):
         """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
-            "h": "h_inf_axnode_myel",
-            "m": "m_inf_axnode_myel",
-            "mp": "mp_inf_axnode_myel",
-            "s": "s_inf_axnode_myel",
+            "h": "h_axnode_myel",
+            "m": "m_axnode_myel",
+            "mp": "mp_axnode_myel",
+            "s": "s_axnode_myel",
         }
         self.myelinated = True
         self.v_rest = -80  # millivolts
@@ -809,7 +809,7 @@ class TigerholmFiber(_HomogeneousFiber):
         node.insert('extrapump')
 
         node.gbar_kna = 0.00042
-        node.Ra = 35.5
+        node.Ra = 35.4
         node.cm = 1
         node.celsiusT_ks = celsius
         node.celsiusT_kf = celsius
