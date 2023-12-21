@@ -305,13 +305,12 @@ class MRGFiber(_Fiber):
         end_coords = np.array([section.L for section in self.sections])  # end of each section
         self.coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # center of each section
 
-        self.length = self.coordinates[-1] - self.coordinates[0]  # actual length of fiber
-
-        expected = self.delta_z * (self.nodecount - 1)  # expected length of fiber
+        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
 
         assert np.isclose(
-            self.length, expected
-        ), f"Fiber length is not correct. Expected {expected} but got {self.length}"
+            self.coordinates[-1] - self.coordinates[0],  # center to center length
+            self.delta_z * (self.nodecount - 1),  # expected length of fiber
+        ), "Fiber length is not correct."
 
         return self
 
@@ -673,13 +672,12 @@ class _HomogeneousFiber(_Fiber):
             np.cumsum([section.L for section in self.sections]) - self.sections[0].L / 2
         )  # end of each section
 
-        self.length = self.coordinates[-1] - self.coordinates[0]  # actual length of fiber
-
-        expected = self.delta_z * (self.nodecount - 1)  # expected length of fiber
+        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
 
         assert np.isclose(
-            self.length, expected
-        ), f"Fiber length is not correct. Expected {expected} but got {self.length}"
+            self.coordinates[-1] - self.coordinates[0],  # center to center length
+            self.delta_z * (self.nodecount - 1),  # expected length of fiber
+        ), "Fiber length is not correct."
 
         return self
 

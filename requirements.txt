@@ -1,7 +1,0 @@
-matplotlib
-multiprocess
-neuron
-numpy
-pandas
-scipy
-seaborn
