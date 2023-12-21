@@ -3,16 +3,43 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
+authors = [{name = "Daniel Marshall"}, {name = "Elie Farah"}, {name = "Eric Musselman"}]
 classifiers = [
-  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
   "Operating System :: OS Independent"
 ]
-description = ""
+dependencies = [
+  "matplotlib",
+  "multiprocess",
+  "neuron",
+  "numpy",
+  "pandas",
+  "scipy",
+  "seaborn"
+]
+description = "Modeling stimulation of peripheral nerve fibers"
 license = {file = "LICENSE"}
 name = "wmglab-neuron"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "0.0.3"
+version = "0.0.3"  # This is the only place version should be hard coded
+
+[project.optional-dependencies]
+dev = [
+  "mock==4.0.*",
+  "pre-commit==2.20.*",
+  "pytest==7.1.*",
+  "pytest-cov==3.0.*",
+  "pytest-sugar",
+  "sphinx==4.5.*",
+  "sphinx-rtd-theme",
+  "myst-parser",
+  "nbsphinx",
+  "sphinx-copybutton",
+  "sphinx-rtd-dark-mode"
+]
 
 [project.scripts]
 wmglab_neuron_install = "wmglab_neuron.install:main"

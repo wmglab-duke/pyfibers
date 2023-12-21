@@ -63,23 +63,24 @@ class ScaledStim:
 
         :raises AssertionError: if waveform length is not equal to number of time steps
         """
-        if self.pad and (self.tstop / self.dt > len(self.waveform)):
+        n_timestep = int(self.tstop / self.dt)
+        if self.pad and (n_timestep > len(self.waveform)):
             # extend waveform until it is of length tstop/dt
             print(f"Padding waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms (with 0's)")
             if self.waveform[-1] != 0:
                 warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
-            self.waveform = np.hstack([self.waveform, [0] * int(self.tstop / self.dt - len(self.waveform))])
+            self.waveform = np.hstack([self.waveform, [0] * (n_timestep - len(self.waveform))])
 
-        if self.truncate and (self.tstop / self.dt < len(self.waveform)):
+        if self.truncate and (n_timestep < len(self.waveform)):
             # truncate waveform until it is of length tstop/dt
             print(f"Truncating waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms")
-            if any(self.waveform[int(self.tstop / self.dt) :]):
+            if any(self.waveform[n_timestep:]):
                 warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
-            self.waveform = self.waveform[: int(self.tstop / self.dt - len(self.waveform))]
+            self.waveform = self.waveform[: n_timestep - len(self.waveform)]
 
         # check that waveform length is equal to number of time steps
         assert (
-            len(self.waveform) == self.tstop / self.dt
+            len(self.waveform) == n_timestep
         ), f'Waveform length does not match number of time steps {self.tstop / self.dt}'
 
     def __str__(self: ScaledStim) -> str:
@@ -119,10 +120,11 @@ class ScaledStim:
         :return: instance of ScaledStim class
         """
         assert (ind is None) != (loc is None), 'Must specify either ind or loc, but not both'
+        ind = ind or fiber.loc_index(loc)
+        if (ind == 0 or ind == len(fiber.sections) - 1) and fiber.passive_end_nodes is True:
+            warnings.warn('You are trying to intracellularly stimulate a passive end node.', stacklevel=2)
         if ind is not None:
             intracellular_stim = h.trainIClamp(fiber[ind](0.5))
-        else:
-            intracellular_stim = h.trainIClamp(fiber.loc(loc)(0.5))
         intracellular_stim.delay = delay
         intracellular_stim.PW = pw
         intracellular_stim.train = dur
@@ -230,6 +232,12 @@ class ScaledStim:
                 "to search for activation threshold?",
                 stacklevel=2,
             )
+        if self.istim is None and condition == ThresholdCondition.BLOCK:
+            warnings.warn(
+                "Intracellular stimulation is not enabled for this ScaledStim instance, are you sure you want "
+                "to search for block threshold?",
+                stacklevel=2,
+            )
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         self.exit_t = float('Inf')
         # Determine searching parameters for binary search bounds
@@ -245,9 +253,14 @@ class ScaledStim:
         # Determine upper- and lower-bounds for simulation
         iterations = 0
         while iterations < max_iterations:
+            print(f'Search bounds: top={round(stimamp_top,3)}, bottom={round(stimamp_bottom,3)}')
             iterations += 1
             if supra_top and exit_t_shift:
                 self.exit_t = t + exit_t_shift
+                print(
+                    f'Found AP at {t} ms, all future runs of this threshold search will exit at {self.exit_t} ms. '
+                    'Can be changed by setting exit_t_shift.'
+                )
             if not supra_bot and supra_top:  # noqa: R508
                 break  # found search bounds
             elif supra_bot and not supra_top:
@@ -274,7 +287,9 @@ class ScaledStim:
         else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
         # Now that bounds are set, enter bisection search
+        print('Beginning bisection search')
         while True:
+            print(f'Search bounds: top={round(stimamp_top,3)}, bottom={round(stimamp_bottom,3)}')
             stimamp_prev = stimamp_top
 
             # calculate new stimamp
@@ -298,6 +313,8 @@ class ScaledStim:
             if tolerance < thresh_resoln:
                 if not suprathreshold:
                     stimamp = stimamp_prev
+                print('Threshold found at stimamp =', round(stimamp, 3))
+                print('Validating threshold...')
                 # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
                 if 'istim_delay' in kwargs:
                     kwargs.pop('istim_delay')  # remove istim_delay if present
@@ -409,9 +426,11 @@ class ScaledStim:
         :return: number of detected aps and time of last detected ap
         """
         self._prep_waveform()
-        print('Running:', stimamp)
+        print('Running:', round(stimamp, 3))
 
         assert fiber.potentials is not None, 'No fiber potentials found'
+        if np.all(fiber.potentials == 0):
+            warnings.warn('All fiber potentials are zero.', RuntimeWarning, stacklevel=2)
         assert len(fiber.potentials) == len(
             fiber.coordinates
         ), 'Number of fiber coordinates does not match number of potentials'
@@ -495,4 +514,10 @@ class ScaledStim:
         detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
         if block:
             return detect_apc.time <= istim_delay  # check for block
+        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
+            warnings.warn(
+                "APs detected at locations other than the set detection location. "
+                "This could mean your stimamp is high enough for virual anode block.",
+                stacklevel=2,
+            )
         return bool(detect_apc.n)  # otherwise check for activation
