@@ -493,6 +493,14 @@ class ScaledStim:
         # Determine user-specified location along axon to check for action potential
         detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
         detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
+        if detect_time:
+            assert detect_time > 0, 'Action potentials at t<=0 should be impossible'
+        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
+            warnings.warn(
+                "APs detected at locations other than the set detection location. "
+                "This could mean your stimamp is high enough for virtual anode block.",
+                stacklevel=2,
+            )
         return detect_apc.n, detect_time
 
     @staticmethod
@@ -514,10 +522,4 @@ class ScaledStim:
         detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
         if block:
             return detect_apc.time <= istim_delay  # check for block
-        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
-            warnings.warn(
-                "APs detected at locations other than the set detection location. "
-                "This could mean your stimamp is high enough for virual anode block.",
-                stacklevel=2,
-            )
         return bool(detect_apc.n)  # otherwise check for activation
