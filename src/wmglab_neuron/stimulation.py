@@ -392,7 +392,7 @@ class ScaledStim:
         """
         if check_threshold == ThresholdCondition.ACTIVATION:  # noqa: R505
             n_aps, aptime = self.run_sim(
-                stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, *args, **kwargs
+                stimamp, fiber, *args, exit_func=self.supra_exit, use_exit_t=True, **kwargs
             )  # type: ignore
             return self.threshold_checker(fiber, ap_detect_location=ap_detect_location), aptime
         elif check_threshold == ThresholdCondition.BLOCK:
