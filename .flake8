@@ -1,8 +1,9 @@
 [flake8]
-# Black compatibility
-ignore = E203, W503,
-         #suppress annotation for *args and **kwargs, eventually consider removing
-         ANN002, ANN003
+ignore =
+    # Black compatibility
+    E203, W503,
+    #suppress annotation for *args and **kwargs, eventually consider removing
+    ANN002, ANN003
 docstring-style: SPHINX
 max-line-length = 120
 max-complexity = 18
