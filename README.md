@@ -11,7 +11,7 @@ We have implemented the following models:
 
 ## Installation
 *Note that these instructions are temporary for development*
-1. Install NEURON and add to PATH
+1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
 2. Clone the package to your machine
 3. Switch to the current stable branch (currently v0.0.2, only use main if you are sure you need it.)
 4. Install the package using pip
