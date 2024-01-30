@@ -239,9 +239,7 @@ class _Fiber:
             # Anisotropic case
             sigma_x, sigma_y, sigma_z = sigma
             potentials = i0 / (
-                4
-                * np.pi
-                * np.sqrt(sigma_y * sigma_z * xs**2 + sigma_x * sigma_z * ys**2 + sigma_x * sigma_y * zs**2)
+                4 * np.pi * np.sqrt(sigma_y * sigma_z * xs**2 + sigma_x * sigma_z * ys**2 + sigma_x * sigma_y * zs**2)
             )
 
         if inplace:
