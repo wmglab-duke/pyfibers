@@ -2,6 +2,7 @@
 
 NOTE this is for development only
 """
+
 from __future__ import annotations
 
 import sys
