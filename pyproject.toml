@@ -25,7 +25,7 @@ license = {file = "LICENSE"}
 name = "wmglab-neuron"
 readme = "README.md"
 requires-python = ">=3.9"
-version = "0.0.3"  # This is the only place version should be hard coded
+version = "0.0.dev4"  # This is the only place version should be hard coded
 
 [project.optional-dependencies]
 dev = [
