@@ -11,9 +11,10 @@ We have implemented the following models:
 
 ## Installation
 *Note that these instructions are temporary for development*
+*Currently, it is recommended that you use NEURON v8.2.3 and Python 3.11*
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
 2. Clone the package to your machine
-3. Switch to the current stable branch (currently v0.0.2, only use main if you are sure you need it.)
+3. Switch to the current stable branch (currently v0.0.3, only use main if you are sure you need it.)
 4. Install the package using pip
    - Open anaconda prompt
    - Navigate to the repo root directory
@@ -27,17 +28,6 @@ We have implemented the following models:
    - Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
    - After a few seconds, your terminal window should say "Successfully installed wmglab-neuron-\<Major>.\<Minor>.\<Patch>".
 
-### Migrating from v0.0.1 to v0.0.2
-1. Change all usages and imports of the Stimulation class to ScaledStim.
-  - `from wmglab_neuron import ScaledStim`
-  - `stimulation = ScaledStim(args)`
-2. Remove potentials from instantiation of Stimulation, instead add to the relevant fiber (`fiber.potentials=potentials`)
-3. Remove fiber as an argument to instantiation of Stimulation, instead pass the fiber when calling:
-  - run_sim() (`stimulation.run_sim(stimamp,fiber)`)
-  - find_threshold(`stimulation.find_threshold(fiber)`).
-4. Replace imports of FiberBuilder and calls of FiberBuilder.generate() with the "build_fiber" function.
-  - `from wmglab_neuron import build_fiber`
-  - `fiber = build_fiber(args)`
 ## Usage
 See the Documentation for detailed information on usage:
 - [Tutorials](https://wmglab.pages.oit.duke.edu/wmglab-neuron/tutorials/index.html) on various operations.
