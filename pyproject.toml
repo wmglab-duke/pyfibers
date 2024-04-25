@@ -11,10 +11,11 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Operating System :: OS Independent"
 ]
+#TODO figure out how to check NEURON v8.2.4+ as a dependency on win 
 dependencies = [
   "matplotlib",
   "multiprocess",
-  "neuron",
+  # "neuron",
   "numpy",
   "pandas",
   "scipy",

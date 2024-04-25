@@ -106,6 +106,7 @@ tox_py312:
 # Define the build_docs script as an anchor
 .build_docs: &build_docs
   - apt-get update && apt-get -y install libgl1
+  - pip install neuron
   - pip install .
   - wmglab_neuron_install
   - pip install -U sphinx mock sphinx-rtd-theme
