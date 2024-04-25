@@ -10,8 +10,8 @@ from neuron import h
 from numpy import bool_
 from scipy.signal import argrelextrema
 
-from wmglab_neuron import FiberModel, _Fiber
-from wmglab_neuron.enums import BisectionMean, BoundsSearchMode, TerminationMode, ThresholdCondition
+from pyfibers import FiberModel, _Fiber
+from pyfibers.enums import BisectionMean, BoundsSearchMode, TerminationMode, ThresholdCondition
 
 h.load_file('stdrun.hoc')
 

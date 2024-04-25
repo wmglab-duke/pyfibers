@@ -8,8 +8,8 @@ from typing import Callable, TypedDict
 import numpy as np
 from neuron import h
 
-from wmglab_neuron import FiberModel
-from wmglab_neuron.fiber import _Fiber
+from pyfibers import FiberModel
+from pyfibers.fiber import _Fiber
 
 h.load_file('stdrun.hoc')
 

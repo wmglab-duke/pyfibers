@@ -11,7 +11,7 @@ import numpy as np
 from neuron import h
 from numpy import ndarray
 
-from wmglab_neuron import FiberModel
+from pyfibers import FiberModel
 
 h.load_file('stdrun.hoc')
 
@@ -36,23 +36,23 @@ def build_fiber(
     # https://codereview.stackexchange.com/questions/269572/factory-pattern-using-enum
     fiberclass: MRGFiber | RattayFiber | TigerholmFiber | SundtFiber | SchildFiber
     if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
-        from wmglab_neuron.models.mrg import MRGFiber
+        from pyfibers.models.mrg import MRGFiber
 
         fiberclass = MRGFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.RATTAY:
-        from wmglab_neuron.models.rattay import RattayFiber
+        from pyfibers.models.rattay import RattayFiber
 
         fiberclass = RattayFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.TIGERHOLM:
-        from wmglab_neuron.models.tigerholm import TigerholmFiber
+        from pyfibers.models.tigerholm import TigerholmFiber
 
         fiberclass = TigerholmFiber(fiber_model, diameter, **kwargs)
     elif fiber_model == FiberModel.SUNDT:
-        from wmglab_neuron.models.sundt import SundtFiber
+        from pyfibers.models.sundt import SundtFiber
 
         fiberclass = SundtFiber(fiber_model, diameter, **kwargs)
     elif fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:
-        from wmglab_neuron.models.schild import SchildFiber
+        from pyfibers.models.schild import SchildFiber
 
         fiberclass = SchildFiber(fiber_model, diameter, **kwargs)
     else:

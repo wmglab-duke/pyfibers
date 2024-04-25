@@ -1,4 +1,4 @@
-"""Enums for wmglab_neuron."""
+"""Enums for pyfibers."""
 
 from __future__ import annotations
 

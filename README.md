@@ -1,6 +1,6 @@
 Note add badges
 
-# wmglab-neuron
+# PyFibers
 This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols.
 
 We have implemented the following models:
@@ -22,23 +22,22 @@ We have implemented the following models:
    - If you plan to develop the package also:
      - Install the dev dependencies with `pip install .[dev]`
      - Install pre-commit hooks with `pre-commit install`
-5. To compile the mod files, in Anaconda prompt, run the command `wmglab_neuron_install`
+5. To compile the mod files, in Anaconda prompt, run the command `pyfibers_install`
    - Careful! Make sure that there is not another NEURON installation in your path (this could happen, for example, if you were adding one to your path in your `.bash_profile`). To check, you can run `which nrnivmodl`, and the path that it prints should be to your python installation of NEURON.
    - Note: You cannot run compilation on DCC Desktop nodes, as there are libraries needed which are not available there. Make sure you are on a login node when running this command.
-   - Note: if you receive a message that the wmglab_neuron_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
-   - After a few seconds, your terminal window should say "Successfully installed wmglab-neuron-\<Major>.\<Minor>.\<Patch>".
+   - Note: if you receive a message that the pyfibers_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
 
 ## Usage
 See the Documentation for detailed information on usage:
-- [Tutorials](https://wmglab.pages.oit.duke.edu/wmglab-neuron/tutorials/index.html) on various operations.
-- [API Documentation](https://wmglab.pages.oit.duke.edu/wmglab-neuron/autodoc/index.html) on function/class arguments and outputs.
+- [Tutorials](https://wmglab.pages.oit.duke.edu/pyfibers/tutorials/index.html) on various operations.
+- [API Documentation](https://wmglab.pages.oit.duke.edu/pyfibers/autodoc/index.html) on function/class arguments and outputs.
 
 ### Creating a fiber model
 Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup.
 
 ```python
 # create fiber
-from wmglab_neuron import build_fiber
+from pyfibers import build_fiber
 
 fiber = build_fiber(
     fiber_model=FiberModel.MRG_DISCRETE,

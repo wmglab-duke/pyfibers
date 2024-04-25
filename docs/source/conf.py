@@ -18,12 +18,12 @@ import sys
 from unittest import mock
 
 sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../../src/wmglab_neuron'))
+sys.path.insert(0, os.path.abspath('../../src/pyfibers'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'wmglab-neuron'
+project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags

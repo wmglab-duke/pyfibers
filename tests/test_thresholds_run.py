@@ -1,4 +1,4 @@
-"""Tests for wmglab-neuron.
+"""Tests for pyfibers.
 
 The copyrights of this software are owned by Duke University. Please
 refer to the LICENSE and README.md files for licensing instructions. The
@@ -11,9 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest  # noqa: I900
 import scipy.signal as sg
-from scipy.stats import norm
-
-from wmglab_neuron import (
+from pyfibers import (
     BisectionMean,
     BoundsSearchMode,
     FiberModel,
@@ -22,6 +20,7 @@ from wmglab_neuron import (
     ThresholdCondition,
     build_fiber,
 )
+from scipy.stats import norm
 
 # TODO Change all c fiber model to 1 um
 
