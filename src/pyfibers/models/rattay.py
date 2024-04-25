@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from neuron import h
 
-from wmglab_neuron import FiberModel
-from wmglab_neuron.fiber import _Fiber, _HomogeneousFiber
+from pyfibers import FiberModel
+from pyfibers.fiber import _Fiber, _HomogeneousFiber
 
 h.load_file('stdrun.hoc')
 

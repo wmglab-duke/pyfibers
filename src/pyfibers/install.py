@@ -1,4 +1,4 @@
-"""Install script for wmglab_neuron."""
+"""Install script for pyfibers."""
 
 from __future__ import annotations
 

@@ -5,6 +5,7 @@ requires = ["hatchling"]
 [project]
 authors = [{name = "Daniel Marshall"}, {name = "Elie Farah"}, {name = "Eric Musselman"}]
 classifiers = [
+  "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -21,8 +22,9 @@ dependencies = [
   "seaborn"
 ]
 description = "Modeling stimulation of peripheral nerve fibers"
+keywords = ["stimulation", "modeling", "computational", "fibers", "peripheral nerve"]
 license = {file = "LICENSE"}
-name = "wmglab-neuron"
+name = "pyfibers"
 readme = "README.md"
 requires-python = ">=3.9"
 version = "0.0.dev4"  # This is the only place version should be hard coded
@@ -43,12 +45,14 @@ dev = [
 ]
 
 [project.scripts]
-wmglab_neuron_install = "wmglab_neuron.install:main"
+pyfibers_install = "pyfibers.install:main"
 
 [project.urls]
-changelog = ""
-documentation = ""
-homepage = ""
+Changelog = ""
+Documentation = ""
+Homepage = ""
+Issues = ""
+Repository = ""
 
 [tool.black]
 line-length = 120
@@ -76,7 +80,7 @@ ignore_errors = true
 [tool.coverage.run]
 branch = true
 parallel = true
-source = ["wmglab_neuron"]
+source = ["pyfibers"]
 
 [tool.docformatter]
 in-place = true

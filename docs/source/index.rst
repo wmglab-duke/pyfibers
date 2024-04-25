@@ -1,4 +1,4 @@
-Welcome to wmglab-neuron's documentation!
+Welcome to PyFibers's documentation!
 =========================================
 
 .. include:: ../../README.md

@@ -107,7 +107,7 @@ tox_py312:
 .build_docs: &build_docs
   - apt-get update && apt-get -y install libgl1
   - pip install .
-  - wmglab_neuron_install
+  - pyfibers_install
   - pip install -U sphinx mock sphinx-rtd-theme
   - pip install -Ur docs/rtd_requirements.txt
   - apt-get install -y pandoc

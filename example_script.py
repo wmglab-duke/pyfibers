@@ -1,4 +1,4 @@
-"""Example use case of wmglab_neuron.
+"""Example use case of pyfibers.
 
 NOTE this is for development only
 """
@@ -12,7 +12,7 @@ import numpy as np
 
 sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
 
-from wmglab_neuron import FiberModel, ScaledStim, build_fiber  # noqa: E402
+from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
 nodecount = 133
 
