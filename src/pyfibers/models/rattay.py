@@ -21,6 +21,11 @@ class RattayFiber(_HomogeneousFiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        self.gating_variables = {
+            "h": "h_RattayAberham",
+            "m": "m_RattayAberham",
+            "n": "n_RattayAberham",
+        }
         self.myelinated = False
         self.delta_z = 8.333  # microns
         self.v_rest = -70  # millivolts
