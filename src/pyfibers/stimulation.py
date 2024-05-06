@@ -198,6 +198,7 @@ class ScaledStim:
         max_iterations: int = 100,
         exit_t_shift: float = 5,
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
+        fail_on_end_excitation: bool = True,
         **kwargs,
     ) -> tuple[float, float]:
         """Binary search to find threshold amplitudes.
@@ -217,6 +218,7 @@ class ScaledStim:
         :param max_iterations: the maximum number of iterations for finding search bounds
         :param exit_t_shift: shift (in ms) for detected action potential time to exit subthreshold stimulation
         :param bisection_mean: the type of mean to use for bisection search (arithmetic or geometric)
+        :param fail_on_end_excitation: if True, raise error if end excitation is detected
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
         :raises ValueError: If stimamp bottom and stimamp top have different signs
@@ -323,7 +325,7 @@ class ScaledStim:
                 assert self.threshold_checker(
                     fiber, **kwargs
                 ), 'Threshold stimulation did not generate an action potential'
-                self.end_excitation_checker(fiber)
+                self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
