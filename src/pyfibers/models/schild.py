@@ -24,9 +24,33 @@ class SchildFiber(_HomogeneousFiber):
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.myelinated = False
         self.delta_z = 8.333  # microns
-
+        self.gating_variables = {
+            "d_cat": "d_cat",
+            "f_cat": "f_cat",
+            "d_can": "d_can",
+            "fn1_can": "f1_can",
+            "fn2_can": "f2_can",
+            "m_naf": "m_naf",
+            "h_naf": "h_naf",
+            "j_naf": "l_naf",
+            "m_nas": "m_nas",
+            "h_nas": "h_nas",
+            "n": "n_kd",
+            "p": "p_ka",
+            "q": "q_ka",
+            "x": "x_kds",
+            "y": "y1_kds",
+            "c": "c_kca",
+        }
         self.v_rest = -48
         self.model97 = fiber_model == FiberModel.SCHILD97
+        # update gating variables for Schild 1997 model
+        if self.model97:
+            self.gating_variables["m_naf"] = "m_naf97mean"
+            self.gating_variables["m_nas"] = "m_nas97mean"
+            self.gating_variables["h_naf"] = "h_naf97mean"
+            self.gating_variables["h_nas"] = "h_nas97mean"
+            self.gating_variables.pop("j_naf")
 
     def generate(self, n_sections: int, length: float) -> _Fiber:  # noqa D102
         return self.generate_homogeneous(

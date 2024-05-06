@@ -23,8 +23,28 @@ class TigerholmFiber(_HomogeneousFiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        self.gating_variables = {
+            "m1.7": "m_nattxs",  # TODO check
+            "h1.7": "h_nattxs",  # TODO check
+            "s1.7": "s_nattxs",  # TODO check
+            "m1.8": "m_nav1p8",
+            "h1.8": "h_nav1p8",
+            "s1.8": "s_nav1p8",
+            "u1.8": "u_nav1p8",
+            "m1.9": "m_nav1p9",
+            "h1.9": "h_nav1p9",
+            "s1.9": "s_nav1p9",
+            "n_kdr": "n_kdrTiger",
+            "ns_km": "ns_ks",  # TODO check
+            "nf_km": "nf_ks",  # TODO check
+            "n_ka": "m_kf",  # TODO check
+            "h_ka": "h_kf",  # TODO check
+            "ns_h": "ns_h",
+            "nf_h": "nf_h",
+            "w_kna": "w_kna",
+        }
         self.myelinated = False
-        self.delta_z = 8.333  # micronss
+        self.delta_z = 8.333  # microns
         self.v_rest = -55  # millivolts
 
         if self.passive_end_nodes:
