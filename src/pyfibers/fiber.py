@@ -5,15 +5,27 @@ from __future__ import annotations
 import math
 import typing
 import warnings
+from enum import Enum, unique
 from typing import Callable
 
 import numpy as np
 from neuron import h
 from numpy import ndarray
 
-from pyfibers import FiberModel
-
 h.load_file('stdrun.hoc')
+
+
+@unique
+class FiberModel(Enum):
+    """Fiber models."""
+
+    MRG_INTERPOLATION = 0
+    MRG_DISCRETE = 1
+    SUNDT = 2
+    TIGERHOLM = 3
+    RATTAY = 4
+    SCHILD97 = 5
+    SCHILD94 = 6
 
 
 def build_fiber(
