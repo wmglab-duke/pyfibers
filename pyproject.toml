@@ -46,7 +46,7 @@ dev = [
 ]
 
 [project.scripts]
-pyfibers_install = "pyfibers.install:main"
+pyfibers_compile = "pyfibers.compile:main"
 
 [project.urls]
 Changelog = ""
