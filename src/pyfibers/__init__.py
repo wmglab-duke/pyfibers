@@ -20,8 +20,7 @@ with suppress(RuntimeError):
     print('Loaded neuron mechanism files')
 
 # load all python files
-from .enums import FiberModel, BoundsSearchMode, TerminationMode, ThresholdCondition, BisectionMean  # noqa: E402
-from .fiber import build_fiber, _Fiber  # noqa: E402
-from .stimulation import ScaledStim  # noqa: E402
+from .fiber import build_fiber, _Fiber, FiberModel  # noqa: E402
+from .stimulation import ScaledStim, BoundsSearchMode, TerminationMode, ThresholdCondition, BisectionMean  # noqa: E402
 
 __all__ = ['build_fiber', '_Fiber', 'ScaledStim', 'FiberModel']

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from enum import Enum, unique
 from typing import Callable
 
 import numpy as np
@@ -11,9 +12,40 @@ from numpy import bool_
 from scipy.signal import argrelextrema
 
 from pyfibers import FiberModel, _Fiber
-from pyfibers.enums import BisectionMean, BoundsSearchMode, TerminationMode, ThresholdCondition
 
 h.load_file('stdrun.hoc')
+
+
+@unique
+class ThresholdCondition(Enum):
+    """ThresholdCondition."""
+
+    ACTIVATION = 0
+    BLOCK = 1
+
+
+@unique
+class BoundsSearchMode(Enum):
+    """Bounds search modes."""
+
+    PERCENT_INCREMENT = 0
+    ABSOLUTE_INCREMENT = 1
+
+
+@unique
+class TerminationMode(Enum):
+    """Termination modes."""
+
+    PERCENT_DIFFERENCE = 0
+    ABSOLUTE_DIFFERENCE = 1
+
+
+@unique
+class BisectionMean(Enum):
+    """Termination modes."""
+
+    GEOMETRIC = 0
+    ARITHMETIC = 1
 
 
 class ScaledStim:
