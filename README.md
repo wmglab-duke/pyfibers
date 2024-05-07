@@ -22,10 +22,10 @@ We have implemented the following models:
    - If you plan to develop the package also:
      - Install the dev dependencies with `pip install .[dev]`
      - Install pre-commit hooks with `pre-commit install`
-5. To compile the mod files, in Anaconda prompt, run the command `pyfibers_install`
+5. To compile the mod files, in Anaconda prompt, run the command `pyfibers_compile`
    - Careful! Make sure that there is not another NEURON installation in your path (this could happen, for example, if you were adding one to your path in your `.bash_profile`). To check, you can run `which nrnivmodl`, and the path that it prints should be to your python installation of NEURON.
    - Note: You cannot run compilation on DCC Desktop nodes, as there are libraries needed which are not available there. Make sure you are on a login node when running this command.
-   - Note: if you receive a message that the pyfibers_install command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
+   - Note: if you receive a message that the pyfibers_compile command is not found, find the executable for this command in the `bin` path of your python directory and run it there (i.e., double-click on it)
 
 ## Usage
 See the Documentation for detailed information on usage:
