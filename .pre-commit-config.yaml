@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       # checking for syntax
       - id: check-yaml
@@ -32,19 +32,19 @@ repos:
           flynt
           # strip output from notebooks
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.6.1
+    rev: 0.7.1
     hooks:
       - id:
           nbstripout
           # format python code
   # pyupgrade (migrate code to newer syntax)
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
+    rev: v3.15.2
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.4.2
     hooks:
       - id: black
         additional_dependencies:
@@ -99,7 +99,7 @@ repos:
           - flake8-return
   # lint notebooks
   - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.1
+    rev: 1.8.5
     hooks:
       - id: nbqa-flake8
         args: ["--ignore=E402,D100"]
@@ -121,14 +121,14 @@ repos:
           - flake8-return
   # format and lint markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
+    rev: v0.40.0
     hooks:
       - id: markdownlint-fix
         args:
           [--disable, "md013,md034,md033,md036"]
           # check config files
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.27.3
+    rev: 0.28.3
     hooks:
       - id: check-gitlab-ci
         args: [--disable-formats, "regex"]
@@ -136,12 +136,12 @@ repos:
           check-readthedocs
           #format toml and yaml
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.12.0
+    rev: v2.13.0
     hooks:
       - id: pretty-format-toml
         args: [--autofix]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.10.0
     hooks:
       - id: mypy
         #exclude docs and tests directories

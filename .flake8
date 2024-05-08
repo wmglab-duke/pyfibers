@@ -5,7 +5,7 @@ ignore =
     #suppress annotation for *args and **kwargs, eventually consider removing
     ANN002, ANN003
     #temporary suppression of dependency check since NEURON Windows 8.2.4+ is invisible to pip
-    I900 
+    I900
 docstring-style: SPHINX
 max-line-length = 120
 max-complexity = 18

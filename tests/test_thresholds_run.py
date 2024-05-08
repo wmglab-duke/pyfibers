@@ -11,6 +11,8 @@ from __future__ import annotations
 import numpy as np
 import pytest  # noqa: I900
 import scipy.signal as sg
+from scipy.stats import norm
+
 from pyfibers import (
     BisectionMean,
     BoundsSearchMode,
@@ -20,7 +22,6 @@ from pyfibers import (
     ThresholdCondition,
     build_fiber,
 )
-from scipy.stats import norm
 
 # TODO Change all c fiber model to 1 um
 
