@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest  # noqa: I900
+
 from pyfibers import FiberModel, ScaledStim, build_fiber
 
 # TODO Change all c fiber model to 1 um
