@@ -85,7 +85,7 @@ class _Fiber:
         fiber_model: FiberModel,
         diameter: float,
         temperature: float = 37,
-        passive_end_nodes: bool = True,
+        passive_end_nodes: int | bool = True,
     ) -> None:
         """Initialize Fiber class.
 
@@ -94,14 +94,16 @@ class _Fiber:
         :param temperature: temperature of model [degrees celsius]
         :param passive_end_nodes: if True, set passive properties at the end nodes
         """
-        self.gating: dict[str, h.Vector] = {}
+        self.gating: dict[str, h.Vector] = None
         self.gating_variables: dict[str, str] = {}
-        self.vm: list = []
-        self.apc: list = []
+        self.vm: list = None
+        self.apc: list = None
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
-        self.passive_end_nodes = passive_end_nodes
+        self.passive_end_nodes = (
+            passive_end_nodes  # TODO error if longer than half the fiber length, warning if more than a quarter
+        )
         self.nodecount: int = None
         self.delta_z: float = None
         self.sections: list = []
@@ -203,7 +205,14 @@ class _Fiber:
     def set_save_vm(self: _Fiber) -> None:
         """Record membrane voltage (mV) along the axon."""
         if self.passive_end_nodes:
-            self.vm = [None] + [h.Vector().record(node(0.5)._ref_v) for node in self.nodes[1:-1]] + [None]
+            self.vm = (
+                [None] * self.passive_end_nodes
+                + [
+                    h.Vector().record(node(0.5)._ref_v)
+                    for node in self.nodes[self.passive_end_nodes : -self.passive_end_nodes]
+                ]
+                + [None] * self.passive_end_nodes
+            )
         else:
             self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
 
@@ -211,10 +220,9 @@ class _Fiber:
         """Record gating parameters for axon nodes."""
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
-        if self.passive_end_nodes:
-            nodelist = self.nodes[1:-1]
-        else:
-            nodelist = self.nodes
+        nodelist = (
+            self.nodes if not self.passive_end_nodes else self.nodes[self.passive_end_nodes : -self.passive_end_nodes]
+        )
 
         self.gating = {}
         for name, var in self.gating_variables.items():
@@ -222,7 +230,9 @@ class _Fiber:
             for node in nodelist:
                 self.gating[name].append(h.Vector().record(getattr(node(0.5), f"_ref_{var}")))
             if self.passive_end_nodes:
-                self.gating[name] = [None] + self.gating[name] + [None]
+                self.gating[name] = (
+                    [None] * self.passive_end_nodes + self.gating[name] + [None] * self.passive_end_nodes
+                )
 
     def point_source_potentials(
         self: _Fiber,
@@ -360,10 +370,11 @@ class _HomogeneousFiber(_Fiber):
         """
         self.sections = []
         for i in range(self.nodecount):
-            name = f"node {i}"
-            if self.passive_end_nodes and (i == 0 or i == self.nodecount - 1):
+            if self.passive_end_nodes and (i < self.passive_end_nodes or i >= self.nodecount - self.passive_end_nodes):
+                name = f"passive node {i}"
                 self.nodebuilder(self.passive_node)(self.v_rest, name=name)
             else:
+                name = f"active node {i}"
                 self.nodebuilder(modelnodefunc)(*args, name=name, **kwargs)
         for i in range(self.nodecount - 1):
             self.sections[i + 1].connect(self.sections[i])

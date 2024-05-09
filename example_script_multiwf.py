@@ -19,17 +19,22 @@ nodecount = 133
 model = FiberModel.MRG_INTERPOLATION  # type of fiber model
 
 # create fiber
-fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount, passive_end_nodes=2)
-
+fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount)
+pots = []
 # create curve of potentials
-fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 1)
-plt.plot(fiber.potentials)
+for spot in [100, -100]:
+    pots.append(fiber.point_source_potentials(0, 250, spot + fiber.length / 2, 1, 1))
+
+fiber.potentials = np.vstack(pots)
+
+plt.plot(fiber.potentials[0, :])
+plt.plot(fiber.potentials[1, :])
 
 # create biphasic square wave to use as a stimulation waveform
-waveform = np.concatenate((np.ones(10), -np.ones(10), np.zeros(1000000)))
+waveform = np.vstack([np.concatenate((np.ones(50), np.zeros(49750))), np.concatenate((np.ones(200), np.zeros(49600)))])
 
 # parameters
-time_step = 0.005  # timestep|
+time_step = 0.001  # timestep|
 time_stop = 15  # duration of simulation
 
 # Create instance of ScaledStim class
@@ -47,13 +52,3 @@ print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
 # run a finite amp (i.e., one amplitude, not in a bisection search as was done above)
 ap, time = stimulation.run_sim(-1, fiber)
-
-plt.figure()
-for key, value in fiber.gating.items():
-    plt.plot(stimulation.time, value[fiber.loc_index(0.5)], label=key)
-plt.legend()
-ax2 = plt.gca().twinx()
-plt.sca(ax2)
-plt.plot(stimulation.time, fiber.vm[fiber.loc_index(0.5)], label='vm', color='k')
-plt.ylabel('Vm')
-plt.xlim(0, 4)

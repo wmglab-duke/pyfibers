@@ -1,5 +1,5 @@
 default:
-  image: python:3.10
+  image: python:3.11
 
 workflow:
   rules:
@@ -70,12 +70,12 @@ mypy:
     - pip install mypy
     - mypy src
 
-tox_py310_w_cov:
+tox_py311_w_cov:
   stage: test
   script:
     - pip install "tox<=4.8.0"
     - tox -l
-    - tox -e py310-neuron{8},coverage
+    - tox -e py311-neuron{8},coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
@@ -91,11 +91,11 @@ tox_py39:
     - tox -e py39-neuron{8}
   image: python:3.9
 
-tox_py311:
+tox_py310:
   script:
     - pip install "tox<=4.8.0"
-    - tox -e py311-neuron{8}
-  image: python:3.11
+    - tox -e py310-neuron{8}
+  image: python:3.10
 
 tox_py312:
   script:

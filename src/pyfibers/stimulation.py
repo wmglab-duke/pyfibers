@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum, unique
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 from neuron import h
@@ -83,6 +83,7 @@ class ScaledStim:
         self.exit_t: float = None
         self.pad = pad_waveform
         self.truncate = truncate_waveform
+        self.n_timesteps: int = None
         try:
             self.time = h.Vector().record(h._ref_t)
         except RuntimeError:
@@ -91,31 +92,7 @@ class ScaledStim:
             )
         self._prep_waveform()
 
-    def _prep_waveform(self: ScaledStim) -> None:
-        """Prepare waveform for simulation.
-
-        :raises AssertionError: if waveform length is not equal to number of time steps
-        """
-        n_timestep = int(self.tstop / self.dt)
-        if self.pad and (n_timestep > len(self.waveform)):
-            # extend waveform until it is of length tstop/dt
-            print(f"Padding waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms (with 0's)")
-            if self.waveform[-1] != 0:
-                warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
-            self.waveform = np.hstack([self.waveform, [0] * (n_timestep - len(self.waveform))])
-
-        if self.truncate and (n_timestep < len(self.waveform)):
-            # truncate waveform until it is of length tstop/dt
-            print(f"Truncating waveform {len(self.waveform) * self.dt} ms to {self.tstop} ms")
-            if any(self.waveform[n_timestep:]):
-                warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
-            self.waveform = self.waveform[: n_timestep - len(self.waveform)]
-
-        # check that waveform length is equal to number of time steps
-        assert (
-            len(self.waveform) == n_timestep
-        ), f'Waveform length does not match number of time steps {self.tstop / self.dt}'
-
+    # MAGIC METHODS
     def __str__(self: ScaledStim) -> str:
         """Return string representation of ScaledStim class."""  # noqa: DAR201
         return (
@@ -129,6 +106,7 @@ class ScaledStim:
         # TODO: make this more informative for developers
         return self.__str__()
 
+    # PRIVATE METHODS
     def _add_istim(
         self: ScaledStim,
         fiber: _Fiber,
@@ -167,6 +145,37 @@ class ScaledStim:
         self.istim_record = h.Vector().record(self.istim._ref_i)
         return self
 
+    def _steady_state(self: ScaledStim) -> None:
+        """Allow system to reach steady-state by using a large dt before simulation."""
+        h.t = self.t_init_ss  # Start before t=0
+        h.dt = self.dt_init_ss  # Large dt
+        while h.t <= -self.dt_init_ss:
+            h.fadvance()
+        h.dt = self.dt  # Set simulation time bounds_search_step to user-specified time bounds_search_step
+        h.t = 0  # Probably redundant, reset simulation time to zero
+        h.fcurrent()
+        h.frecord_init()
+
+    @staticmethod
+    def _initialize_extracellular(fiber: _Fiber) -> None:
+        """Set extracellular stimulation values to zero along entire fiber.
+
+        :param fiber: instance of _Fiber class to initialize extracellular stimulation for
+        """
+        for section in fiber.sections:
+            section(0.5).e_extracellular = 0
+
+    @staticmethod
+    def _update_extracellular(fiber: _Fiber, e_stims: list[float]) -> None:
+        """Update the applied extracellular stimulation all along the fiber length.
+
+        :param fiber: instance of _Fiber class to apply extracellular stimulation to
+        :param e_stims: list of extracellular stimulations to apply along fiber length
+        """
+        for x, section in enumerate(fiber.sections):
+            section(0.5).e_extracellular = e_stims[x]
+
+    # PUBLIC METHODS
     def set_intracellular_stim(
         self: ScaledStim,
         delay: float,
@@ -198,24 +207,209 @@ class ScaledStim:
             'loc': loc,
         }
 
-    @staticmethod
-    def initialize_extracellular(fiber: _Fiber) -> None:
-        """Set extracellular stimulation values to zero along entire fiber.
+    def _prep_potentials(self: ScaledStim, fiber: _Fiber) -> None:
+        """Prepare the fiber object's potentials for further processing.
 
-        :param fiber: instance of _Fiber class to initialize extracellular stimulation for
+        Converts potentials into a 2D numpy array if they are not already in that format.
+        This function assumes that the input is either a single 1D numpy array or a list of 1D arrays.
+        :param fiber: instance of _Fiber class to prepare potentials for
         """
-        for section in fiber.sections:
-            section(0.5).e_extracellular = 0
+        assert fiber.potentials is not None, 'No fiber potentials found'
+
+        # Check if potentials is a single 1D numpy array and wrap it in a list
+        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
+            fiber.potentials = [fiber.potentials]
+
+        # Convert each potential in the list to a numpy array if not already
+        processed_potentials = [np.array(potential) for potential in fiber.potentials]
+
+        # asssert all potentials equal length of fiber coordinates
+        assert all(
+            len(potential) == len(fiber.coordinates) for potential in processed_potentials
+        ), 'Length of fiber potentials does not match length of fiber coordinates'
+
+        # Combine all processed potentials into a single 2D array
+        fiber.potentials = np.vstack(processed_potentials)
+
+        if np.all(fiber.potentials == 0):
+            warnings.warn('All fiber potentials are zero.', RuntimeWarning, stacklevel=2)
+
+    # BELONGS IN SCALEDSTIM SUBCLASS
+    def _prep_waveform(self: ScaledStim) -> None:
+        """Prepare waveform for simulation.
+
+        Accepts waveform as either a list of 1D numpy arrays or a single 1D numpy array,
+        processes each waveform independently, and returns a 2D numpy array.
+
+        :raises AssertionError: if any processed waveform row length is not equal to the number of time steps
+        """
+        self.n_timesteps = int(self.tstop / self.dt)
+
+        # Initialize list to store processed waveforms
+        processed_waveforms = []
+
+        # Check if waveform is a single 1D numpy array and wrap it in a list
+        if isinstance(self.waveform, np.ndarray) and self.waveform.ndim == 1:
+            self.waveform = [self.waveform]
+
+        # Process each waveform
+        for row in self.waveform:
+            row = np.array(row)  # Ensure row is a numpy array
+            if self.pad and (self.n_timesteps > len(row)):
+                # Extend waveform row until it is of length tstop/dt
+                print(f"Padding waveform {len(row) * self.dt} ms to {self.tstop} ms (with 0's)")
+                if row[-1] != 0:
+                    warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
+                row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
+
+            if self.truncate and (self.n_timesteps < len(row)):
+                # Truncate waveform row until it is of length tstop/dt
+                print(f"Truncating waveform {len(row) * self.dt} ms to {self.tstop} ms")
+                if any(row[self.n_timesteps :]):
+                    warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
+                row = row[: self.n_timesteps]
+
+            # Check that waveform row length is equal to number of time steps
+            assert (
+                len(row) == self.n_timesteps
+            ), f'Waveform row length does not match number of time steps {self.tstop / self.dt}'
+
+            processed_waveforms.append(row)  # Append processed row to the list
+
+        # Convert list of processed rows into a 2D numpy array
+        self.waveform = np.vstack(processed_waveforms)
+
+    def potentials_at_time(self: ScaledStim, i: int, fiber: _Fiber) -> np.typing.NDArray[np.float64]:
+        """Get potentials at a given time.
+
+        :param i: index of time step
+        :param fiber: fiber to get potentials for
+        :return: list of potentials at time i
+        """
+        # go through each waveform and multiply value for this time point by the corresponding potential set
+        potentials = np.zeros(fiber.potentials.shape[1])
+        for potential_set, waveform in zip(fiber.potentials, self.waveform):
+            potentials += waveform[i] * potential_set
+        return potentials  # TODO test this
+
+    def run_sim(
+        self: ScaledStim,
+        stimamp: float,
+        fiber: _Fiber,
+        ap_detect_location: float = 0.9,
+        exit_func: Callable = lambda x: False,
+        exit_func_interval: int = 100,
+        use_exit_t: bool = False,
+    ) -> tuple[float, float]:
+        """Run a simulation for a single stimulation amplitude.
+
+        :param stimamp: amplitude to be applied to extracellular stimulation
+        :param fiber: fiber to be stimulated
+        :param ap_detect_location: location to detect action potentials (percent along fiber)
+        :param exit_func: function to call to check if simulation should be exited
+        :param exit_func_interval: interval to call exit_func
+        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
+        :return: number of detected aps and time of last detected ap
+        """
+        print('Running:', round(stimamp, 3))
+
+        self.validate_scaling_inputs(fiber)
+
+        self.pre_run_setup(fiber)
+
+        # Run simulation
+        for i in range(self.n_timesteps):
+            timestep_potentials = stimamp * self.potentials_at_time(i, fiber)
+            self._update_extracellular(fiber, timestep_potentials)
+
+            h.fadvance()
+
+            if i % exit_func_interval == 0 and exit_func(fiber):
+                break
+            if use_exit_t and self.exit_t and h.t >= self.exit_t:
+                break
+
+        # get precision from the number of decimal places in self.dt
+        precision = len(str(self.dt).split('.')[1])
+
+        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
+
+    def validate_scaling_inputs(self: ScaledStim, fiber: _Fiber) -> None:
+        """Validate scaling inputs before running simulation.
+
+        :param fiber: instance of _Fiber class to validate scaling inputs for
+        """
+        self._prep_waveform()
+        self._prep_potentials(fiber)
+        assert len(fiber.potentials) == len(
+            self.waveform
+        ), 'Number of fiber potentials sets does not match number of waveforms'
+
+    def pre_run_setup(self: ScaledStim, fiber: _Fiber) -> None:
+        """Set up simulation before running.
+
+        :param fiber: instance of _Fiber class to set up simulation for
+        """
+        h.celsius = fiber.temperature  # Set simulation temperature
+        h.finitialize(fiber.v_rest)  # Initialize the simulation
+        fiber.apcounts()  # record action potentials
+        if fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
+            fiber.balance()
+        self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
+        self._steady_state()  # Allow system to reach steady-state before simulation
+        if self.istim_params:  # add istim train if specified
+            self._add_istim(fiber, **self.istim_params)  # type: ignore
+
+    # MAYBE DOESNT BELONG IN CLASS AT ALL (THRESHOLD RELATED)
 
     @staticmethod
-    def update_extracellular(fiber: _Fiber, e_stims: list[float]) -> None:
-        """Update the applied extracellular stimulation all along the fiber length.
+    def ap_checker(
+        fiber: _Fiber,
+        ap_detect_location: float = 0.9,
+        precision: int = 3,
+    ) -> tuple[int, float]:
+        """Check to see if an action potential occurred at the end of a run.
 
-        :param fiber: instance of _Fiber class to apply extracellular stimulation to
-        :param e_stims: list of extracellular stimulations to apply along fiber length
+        # remove this function and check in the respective functions
+
+        :param fiber: instance of fiber class
+        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :param precision: number of decimal places to round to
+        :return: number of action potentials that occurred
         """
-        for x, section in enumerate(fiber.sections):
-            section(0.5).e_extracellular = e_stims[x]
+        # Determine user-specified location along axon to check for action potential
+        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
+        detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
+        if detect_time:
+            assert detect_time > 0, 'Action potentials at t<=0 should be impossible'
+        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
+            warnings.warn(
+                "APs detected at locations other than the set detection location. "
+                "This could mean your stimamp is high enough for virtual anode block.",
+                stacklevel=2,
+            )
+        return detect_apc.n, detect_time
+
+    @staticmethod
+    def threshold_checker(
+        fiber: _Fiber,
+        block: bool = False,
+        ap_detect_location: float = 0.9,
+        istim_delay: float = 0,
+    ) -> bool:
+        """Check if stimulation was above or below threshold.
+
+        :param fiber: instance of fiber class
+        :param block: true if BLOCK_THRESHOLD protocol, false otherwise
+        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
+        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
+        :return: True if stim was supra-threshold, False if sub-threshold
+        """
+        # Determine user-specified location along axon to check for action potential
+        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
+        if block:
+            return detect_apc.time <= istim_delay  # check for block
+        return bool(detect_apc.n)  # otherwise check for activation
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
         self: ScaledStim,
@@ -232,7 +426,7 @@ class ScaledStim:
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
         fail_on_end_excitation: bool = True,
         **kwargs,
-    ) -> tuple[float, float]:
+    ) -> tuple[float | Any, tuple[float, float]]:
         """Binary search to find threshold amplitudes.
 
         :param fiber: instance of _Fiber class to apply stimulation to
@@ -275,17 +469,12 @@ class ScaledStim:
             )
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         self.exit_t = float('Inf')
-        # Determine searching parameters for binary search bounds
-        rel_increment = round(bounds_search_step / 100, 4)
-        abs_increment = round(bounds_search_step, 4)
 
-        # Determine searching parameters for termination of binary search
-        abs_thresh_resoln = round(termination_tolerance, 4)
-        rel_thresh_resoln = round(termination_tolerance / 100, 4)
         # first check stimamps
         supra_top, t = self.threshsim(stimamp_top, fiber, check_threshold=condition, **kwargs)
         supra_bot, _ = self.threshsim(stimamp_bottom, fiber, check_threshold=condition, **kwargs)
-        # Determine upper- and lower-bounds for simulation
+
+        # Determine upper- and lower-bounds for simulation (prior to bisection search)
         iterations = 0
         while iterations < max_iterations:
             print(f'Search bounds: top={round(stimamp_top,3)}, bottom={round(stimamp_bottom,3)}')
@@ -307,20 +496,21 @@ class ScaledStim:
                 # search upward with stimamp top
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
-                    stimamp_top = stimamp_top + abs_increment
+                    stimamp_top = stimamp_top + bounds_search_step
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
-                    stimamp_top = stimamp_top * (1 + rel_increment)
+                    stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
                 supra_top, t = self.threshsim(stimamp_top, fiber, check_threshold=condition, **kwargs)
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
-                    stimamp_bottom = stimamp_bottom - abs_increment
+                    stimamp_bottom = stimamp_bottom - bounds_search_step
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
-                    stimamp_bottom = stimamp_bottom * (1 - rel_increment)
+                    stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
                 supra_bot, _ = self.threshsim(stimamp_bottom, fiber, check_threshold=condition, **kwargs)
         else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
+
         # Now that bounds are set, enter bisection search
         print('Beginning bisection search')
         while True:
@@ -332,16 +522,14 @@ class ScaledStim:
                 stimamp = (stimamp_bottom + stimamp_top) / 2
             elif bisection_mean == BisectionMean.GEOMETRIC:
                 stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** (1 / 2)
-            else:
-                raise ValueError(f'bisection_mean must be arithmetic or geometric, not {bisection_mean}')
 
             suprathreshold, _ = self.threshsim(stimamp, fiber, check_threshold=condition, **kwargs)
 
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
-                thresh_resoln = abs(rel_thresh_resoln)
+                thresh_resoln = abs(termination_tolerance / 100)
                 tolerance = abs((stimamp_bottom - stimamp_top) / stimamp_top)
             elif termination_mode == TerminationMode.ABSOLUTE_DIFFERENCE:
-                thresh_resoln = abs(abs_thresh_resoln)
+                thresh_resoln = abs(termination_tolerance)
                 tolerance = abs(stimamp_bottom - stimamp_top)
 
             # Check to see if stimamp is at threshold
@@ -364,7 +552,7 @@ class ScaledStim:
             elif not suprathreshold:
                 stimamp_bottom = stimamp
 
-        return stimamp, n_aps
+        return stimamp, (n_aps, aptime)
 
     def supra_exit(self: ScaledStim, fiber: _Fiber) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
@@ -440,121 +628,3 @@ class ScaledStim:
             )
         else:
             raise NotImplementedError(f'{check_threshold} is not implemented')
-
-    def run_sim(
-        self: ScaledStim,
-        stimamp: float,
-        fiber: _Fiber,
-        ap_detect_location: float = 0.9,
-        exit_func: Callable = lambda x: False,
-        exit_func_interval: int = 100,
-        use_exit_t: bool = False,
-    ) -> tuple[float, float]:
-        """Run a simulation for a single stimulation amplitude.
-
-        :param stimamp: amplitude to be applied to extracellular stimulation
-        :param fiber: fiber to be stimulated
-        :param ap_detect_location: location to detect action potentials (percent along fiber)
-        :param exit_func: function to call to check if simulation should be exited
-        :param exit_func_interval: interval to call exit_func
-        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
-        :return: number of detected aps and time of last detected ap
-        """
-        self._prep_waveform()
-        print('Running:', round(stimamp, 3))
-
-        assert fiber.potentials is not None, 'No fiber potentials found'
-        if np.all(fiber.potentials == 0):
-            warnings.warn('All fiber potentials are zero.', RuntimeWarning, stacklevel=2)
-        assert len(fiber.potentials) == len(
-            fiber.coordinates
-        ), 'Number of fiber coordinates does not match number of potentials'
-
-        def steady_state() -> None:
-            """Allow system to reach steady-state by using a large dt before simulation."""
-            h.t = self.t_init_ss  # Start before t=0
-            h.dt = self.dt_init_ss  # Large dt
-            while h.t <= -self.dt_init_ss:
-                h.fadvance()
-            h.dt = self.dt  # Set simulation time bounds_search_step to user-specified time bounds_search_step
-            h.t = 0  # Probably redundant, reset simulation time to zero
-            h.fcurrent()
-            h.frecord_init()
-
-        h.celsius = fiber.temperature  # Set simulation temperature
-        h.finitialize(fiber.v_rest)  # Initialize the simulation
-        fiber.apcounts()  # record action potentials
-
-        if fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
-            fiber.balance()
-
-        self.initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
-        steady_state()  # Allow system to reach steady-state before simulation
-        if self.istim_params:  # add istim train if specified
-            self._add_istim(fiber, **self.istim_params)  # type: ignore
-
-        # Begin simulation
-        for i, amp in enumerate(self.waveform):
-            scaled_stim = [stimamp * amp * x for x in fiber.potentials]
-            self.update_extracellular(fiber, scaled_stim)
-
-            h.fadvance()
-
-            if i % exit_func_interval == 0 and exit_func(fiber):
-                break
-            if use_exit_t and self.exit_t and h.t >= self.exit_t:
-                break
-
-        # get precision from the number of decimal places in self.dt
-        precision = len(str(self.dt).split('.')[1])
-
-        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
-
-    @staticmethod
-    def ap_checker(
-        fiber: _Fiber,
-        ap_detect_location: float = 0.9,
-        precision: int = 3,
-    ) -> tuple[int, float]:
-        """Check to see if an action potential occurred at the end of a run.
-
-        # remove this function and check in the respective functions
-
-        :param fiber: instance of fiber class
-        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
-        :param precision: number of decimal places to round to
-        :return: number of action potentials that occurred
-        """
-        # Determine user-specified location along axon to check for action potential
-        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
-        detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
-        if detect_time:
-            assert detect_time > 0, 'Action potentials at t<=0 should be impossible'
-        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
-            warnings.warn(
-                "APs detected at locations other than the set detection location. "
-                "This could mean your stimamp is high enough for virtual anode block.",
-                stacklevel=2,
-            )
-        return detect_apc.n, detect_time
-
-    @staticmethod
-    def threshold_checker(
-        fiber: _Fiber,
-        block: bool = False,
-        ap_detect_location: float = 0.9,
-        istim_delay: float = 0,
-    ) -> bool:
-        """Check if stimulation was above or below threshold.
-
-        :param fiber: instance of fiber class
-        :param block: true if BLOCK_THRESHOLD protocol, false otherwise
-        :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
-        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
-        :return: True if stim was supra-threshold, False if sub-threshold
-        """
-        # Determine user-specified location along axon to check for action potential
-        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
-        if block:
-            return detect_apc.time <= istim_delay  # check for block
-        return bool(detect_apc.n)  # otherwise check for activation
