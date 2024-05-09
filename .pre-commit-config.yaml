@@ -119,6 +119,7 @@ repos:
           - flake8-warnings
           - flake8-pie
           - flake8-return
+      - id: nbqa-pyupgrade
   # format and lint markdown
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.40.0
