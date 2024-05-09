@@ -364,17 +364,24 @@ class MRGFiber(_Fiber):
         :param nl: number of myelin lemella
         :return: nrn.h.Section
         """
+        # check if this is a passive node
+        self.passive = self.passive_end_nodes and (
+            (index - 1) / 11 < self.passive_end_nodes
+            or (self.nodecount - 1) - (index - 1) / 11 < self.passive_end_nodes
+        )
+
         space_p1 = 0.002  # Thickness of periaxonal space in MYSA sections [um]
         # periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
         rpn0 = (rhoa * 0.01) / (math.pi * ((((node_diam / 2) + space_p1) ** 2) - ((node_diam / 2) ** 2)))
 
-        node = h.Section(name='node ' + str(index))
+        name = f'active node {index}' if not self.passive else f'passive node {index}'
+        node = h.Section(name=name)
         node.nseg = 1
         node.diam = node_diam
         node.L = nodelength
         node.Ra = rhoa / 10000
 
-        if self.passive_end_nodes and (index == 1 or index == (self.nodecount - 1) * 11 + 1):
+        if self.passive:
             node.cm = 2
             node.insert('pas')
             node.g_pas = 0.0001
