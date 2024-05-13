@@ -6,7 +6,7 @@ import numpy as np
 from neuron import h
 
 from pyfibers import FiberModel
-from pyfibers.fiber import _Fiber, _HomogeneousFiber
+from pyfibers.fiber import Fiber, _HomogeneousFiber
 
 h.load_file('stdrun.hoc')
 
@@ -52,7 +52,7 @@ class SchildFiber(_HomogeneousFiber):
             self.gating_variables["h_nas"] = "h_nas97mean"
             self.gating_variables.pop("j_naf")
 
-    def generate(self, n_sections: int, length: float) -> _Fiber:  # noqa D102
+    def generate(self, n_sections: int, length: float) -> Fiber:  # noqa D102
         return self.generate_homogeneous(
             n_sections,
             length,

@@ -11,7 +11,7 @@ from neuron import h
 from numpy import bool_
 from scipy.signal import argrelextrema
 
-from pyfibers import FiberModel, _Fiber
+from pyfibers import Fiber, FiberModel
 
 h.load_file('stdrun.hoc')
 
@@ -109,7 +109,7 @@ class ScaledStim:
     # PRIVATE METHODS
     def _add_istim(
         self: ScaledStim,
-        fiber: _Fiber,
+        fiber: Fiber,
         delay: float = 0,
         pw: float = 0,
         dur: float = 0,
@@ -120,7 +120,7 @@ class ScaledStim:
     ) -> ScaledStim:
         """Create instance of trainIClamp for intracellular stimulation.
 
-        :param fiber: instance of _Fiber class to add intracellular stimulation to
+        :param fiber: instance of Fiber class to add intracellular stimulation to
         :param delay: the delay from the start of the simulation to the onset of the intracellular stimulation [ms]
         :param pw: the pulse duration of the intracellular stimulation [ms]
         :param dur: the duration from the start of the simulation to the end of the intracellular stimulation [ms]
@@ -157,19 +157,19 @@ class ScaledStim:
         h.frecord_init()
 
     @staticmethod
-    def _initialize_extracellular(fiber: _Fiber) -> None:
+    def _initialize_extracellular(fiber: Fiber) -> None:
         """Set extracellular stimulation values to zero along entire fiber.
 
-        :param fiber: instance of _Fiber class to initialize extracellular stimulation for
+        :param fiber: instance of Fiber class to initialize extracellular stimulation for
         """
         for section in fiber.sections:
             section(0.5).e_extracellular = 0
 
     @staticmethod
-    def _update_extracellular(fiber: _Fiber, e_stims: list[float]) -> None:
+    def _update_extracellular(fiber: Fiber, e_stims: list[float]) -> None:
         """Update the applied extracellular stimulation all along the fiber length.
 
-        :param fiber: instance of _Fiber class to apply extracellular stimulation to
+        :param fiber: instance of Fiber class to apply extracellular stimulation to
         :param e_stims: list of extracellular stimulations to apply along fiber length
         """
         for x, section in enumerate(fiber.sections):
@@ -207,12 +207,12 @@ class ScaledStim:
             'loc': loc,
         }
 
-    def _prep_potentials(self: ScaledStim, fiber: _Fiber) -> None:
+    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
         """Prepare the fiber object's potentials for further processing.
 
         Converts potentials into a 2D numpy array if they are not already in that format.
         This function assumes that the input is either a single 1D numpy array or a list of 1D arrays.
-        :param fiber: instance of _Fiber class to prepare potentials for
+        :param fiber: instance of Fiber class to prepare potentials for
         """
         assert fiber.potentials is not None, 'No fiber potentials found'
 
@@ -279,7 +279,7 @@ class ScaledStim:
         # Convert list of processed rows into a 2D numpy array
         self.waveform = np.vstack(processed_waveforms)
 
-    def potentials_at_time(self: ScaledStim, i: int, fiber: _Fiber) -> np.typing.NDArray[np.float64]:
+    def potentials_at_time(self: ScaledStim, i: int, fiber: Fiber) -> np.typing.NDArray[np.float64]:
         """Get potentials at a given time.
 
         :param i: index of time step
@@ -295,7 +295,7 @@ class ScaledStim:
     def run_sim(
         self: ScaledStim,
         stimamp: float,
-        fiber: _Fiber,
+        fiber: Fiber,
         ap_detect_location: float = 0.9,
         exit_func: Callable = lambda x: False,
         exit_func_interval: int = 100,
@@ -334,10 +334,10 @@ class ScaledStim:
 
         return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
 
-    def validate_scaling_inputs(self: ScaledStim, fiber: _Fiber) -> None:
+    def validate_scaling_inputs(self: ScaledStim, fiber: Fiber) -> None:
         """Validate scaling inputs before running simulation.
 
-        :param fiber: instance of _Fiber class to validate scaling inputs for
+        :param fiber: instance of Fiber class to validate scaling inputs for
         """
         self._prep_waveform()
         self._prep_potentials(fiber)
@@ -345,10 +345,10 @@ class ScaledStim:
             self.waveform
         ), 'Number of fiber potentials sets does not match number of waveforms'
 
-    def pre_run_setup(self: ScaledStim, fiber: _Fiber) -> None:
+    def pre_run_setup(self: ScaledStim, fiber: Fiber) -> None:
         """Set up simulation before running.
 
-        :param fiber: instance of _Fiber class to set up simulation for
+        :param fiber: instance of Fiber class to set up simulation for
         """
         h.celsius = fiber.temperature  # Set simulation temperature
         h.finitialize(fiber.v_rest)  # Initialize the simulation
@@ -364,7 +364,7 @@ class ScaledStim:
 
     @staticmethod
     def ap_checker(
-        fiber: _Fiber,
+        fiber: Fiber,
         ap_detect_location: float = 0.9,
         precision: int = 3,
     ) -> tuple[int, float]:
@@ -392,7 +392,7 @@ class ScaledStim:
 
     @staticmethod
     def threshold_checker(
-        fiber: _Fiber,
+        fiber: Fiber,
         block: bool = False,
         ap_detect_location: float = 0.9,
         istim_delay: float = 0,
@@ -413,7 +413,7 @@ class ScaledStim:
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
         self: ScaledStim,
-        fiber: _Fiber,
+        fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
         bounds_search_mode: BoundsSearchMode = BoundsSearchMode.PERCENT_INCREMENT,
         bounds_search_step: float = 10,
@@ -429,7 +429,7 @@ class ScaledStim:
     ) -> tuple[float | Any, tuple[float, float]]:
         """Binary search to find threshold amplitudes.
 
-        :param fiber: instance of _Fiber class to apply stimulation to
+        :param fiber: instance of Fiber class to apply stimulation to
         :param condition: condition to search for threshold (activation or block)
         :param bounds_search_mode: indicates how to change upper and lower bounds for the binary search
         :param bounds_search_step: the incremental increase/decrease of the upper/lower bound in the binary search
@@ -554,7 +554,7 @@ class ScaledStim:
 
         return stimamp, (n_aps, aptime)
 
-    def supra_exit(self: ScaledStim, fiber: _Fiber) -> bool:
+    def supra_exit(self: ScaledStim, fiber: Fiber) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
 
         :param fiber: Fiber object to check for threshold
@@ -564,7 +564,7 @@ class ScaledStim:
 
     @staticmethod
     def end_excitation_checker(
-        fiber: _Fiber, multi_site_check: bool = True, fail_on_end_excitation: bool = True
+        fiber: Fiber, multi_site_check: bool = True, fail_on_end_excitation: bool = True
     ) -> bool_:
         """Check for end excitation.
 
@@ -594,7 +594,7 @@ class ScaledStim:
     def threshsim(
         self: ScaledStim,
         stimamp: float,
-        fiber: _Fiber,
+        fiber: Fiber,
         check_threshold: ThresholdCondition = ThresholdCondition.ACTIVATION,
         ap_detect_location: float = 0.9,
         istim_delay: int = 0,
