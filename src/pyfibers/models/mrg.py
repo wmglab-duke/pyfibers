@@ -9,12 +9,12 @@ import numpy as np
 from neuron import h
 
 from pyfibers import FiberModel
-from pyfibers.fiber import _Fiber
+from pyfibers.fiber import Fiber
 
 h.load_file('stdrun.hoc')
 
 
-class MRGFiber(_Fiber):
+class MRGFiber(Fiber):
     """Implementation of the MRG fiber model."""
 
     def __init__(self: MRGFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
@@ -34,7 +34,7 @@ class MRGFiber(_Fiber):
         self.myelinated = True
         self.v_rest = -80  # millivolts
 
-    def generate(self: MRGFiber, n_sections: int, length: float) -> _Fiber:
+    def generate(self: MRGFiber, n_sections: int, length: float) -> Fiber:
         """Build fiber model sections with NEURON.
 
         :param n_sections: number of fiber coordinates

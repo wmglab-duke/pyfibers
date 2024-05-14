@@ -30,7 +30,7 @@ class FiberModel(Enum):
 
 def build_fiber(
     fiber_model: FiberModel, diameter: float, n_sections: int = None, length: float = None, **kwargs
-) -> _Fiber:
+) -> Fiber:
     """Generate a fiber model in NEURON.
 
     :param fiber_model: fiber model to use
@@ -79,9 +79,11 @@ def build_fiber(
     return fiberclass
 
 
-class _Fiber:
+class Fiber:
+    """Base class for fibers."""
+
     def __init__(  # TODO update tests
-        self: _Fiber,
+        self: Fiber,
         fiber_model: FiberModel,
         diameter: float,
         temperature: float = 37,
@@ -112,36 +114,36 @@ class _Fiber:
         self.length: float = None
         self.potentials: ndarray = np.array([])
 
-    def __str__(self: _Fiber) -> str:
+    def __str__(self: Fiber) -> str:
         """Return a string representation of the fiber."""  # noqa: DAR201
         return (
             f"{self.fiber_model.name} fiber of diameter {self.diameter} μm and length {self.length:.2f} μm "
             f"\n\tnode count: {len(self)}, section count: {len(self.sections)}"
         )
 
-    def __repr__(self: _Fiber) -> str:
+    def __repr__(self: Fiber) -> str:
         """Return a string representation of the fiber."""  # noqa: DAR201
         # TODO: make this more informative for developers
         return self.__str__()
 
-    def __len__(self: _Fiber) -> int:
+    def __len__(self: Fiber) -> int:
         """Return the number of nodes in the fiber."""  # noqa: DAR201
         assert self.nodecount == len(self.nodes), "Node count does not match number of nodes"
         return len(self.nodes)
 
-    def __getitem__(self: _Fiber, item: int) -> h.Section:
+    def __getitem__(self: Fiber, item: int) -> h.Section:
         """Return the node at the given index."""  # noqa: DAR201, DAR101
         return self.nodes[item]
 
-    def __iter__(self: _Fiber) -> typing.Iterator[h.Section]:
+    def __iter__(self: Fiber) -> typing.Iterator[h.Section]:
         """Return an iterator over the nodes in the fiber."""  # noqa: DAR201
         return iter(self.nodes)
 
-    def __contains__(self: _Fiber, item: h.Section) -> bool:
+    def __contains__(self: Fiber, item: h.Section) -> bool:
         """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
         return item in self.sections
 
-    def loc(self: _Fiber, loc: float) -> h.Section:
+    def loc(self: Fiber, loc: float) -> h.Section:
         """Return the node at the given location (Using the same convention as NEURON).
 
         :param loc: location in the fiber (from 0 to 1)
@@ -149,7 +151,7 @@ class _Fiber:
         """
         return self.nodes[self.loc_index(loc)]
 
-    def loc_index(self: _Fiber, loc: float) -> int:
+    def loc_index(self: Fiber, loc: float) -> int:
         """Return the index of the node at the given location (Using the same convention as NEURON).
 
         :param loc: location in the fiber (from 0 to 1)
@@ -158,7 +160,7 @@ class _Fiber:
         return int(loc * (len(self) - 1))
 
     def resample_potentials(
-        self: _Fiber,
+        self: Fiber,
         potentials: np.ndarray,
         potential_coords: np.ndarray,
         center: bool = False,
@@ -193,7 +195,7 @@ class _Fiber:
 
         return newpotentials
 
-    def apcounts(self: _Fiber, thresh: float = -30) -> None:
+    def apcounts(self: Fiber, thresh: float = -30) -> None:
         """Create a list of NEURON APCount objects at all nodes along the axon.
 
         :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
@@ -202,7 +204,7 @@ class _Fiber:
         for apc in self.apc:
             apc.thresh = thresh
 
-    def set_save_vm(self: _Fiber) -> None:
+    def set_save_vm(self: Fiber) -> None:
         """Record membrane voltage (mV) along the axon."""
         if self.passive_end_nodes:
             self.vm = (
@@ -216,7 +218,7 @@ class _Fiber:
         else:
             self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
 
-    def set_save_gating(self: _Fiber) -> None:
+    def set_save_gating(self: Fiber) -> None:
         """Record gating parameters for axon nodes."""
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
@@ -235,7 +237,7 @@ class _Fiber:
                 )
 
     def point_source_potentials(
-        self: _Fiber,
+        self: Fiber,
         x: float,
         y: float,
         z: float,
@@ -280,7 +282,7 @@ class _Fiber:
         return potentials
 
 
-class _HomogeneousFiber(_Fiber):
+class _HomogeneousFiber(Fiber):
     """Initialize Homogeneous (all sections are identical) class."""
 
     def __init__(self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
@@ -295,7 +297,7 @@ class _HomogeneousFiber(_Fiber):
 
     def generate_homogeneous(
         self: _HomogeneousFiber, n_sections: int, length: float, modelfunc: Callable, *args, **kwargs
-    ) -> _Fiber:
+    ) -> Fiber:
         """Build fiber model sections with NEURON.
 
         :param n_sections: number of fiber coordinates from COMSOL
