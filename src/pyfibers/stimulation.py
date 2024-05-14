@@ -427,20 +427,20 @@ class ScaledStim:
         fail_on_end_excitation: bool = True,
         **kwargs,
     ) -> tuple[float | Any, tuple[float, float]]:
-        """Binary search to find threshold amplitudes.
+        """Bisection search to find threshold amplitudes. #TODO clean up this docstring.
 
         :param fiber: instance of Fiber class to apply stimulation to
         :param condition: condition to search for threshold (activation or block)
-        :param bounds_search_mode: indicates how to change upper and lower bounds for the binary search
-        :param bounds_search_step: the incremental increase/decrease of the upper/lower bound in the binary search
+        :param bounds_search_mode: indicates how to change upper and lower bounds during initial search
+        :param bounds_search_step: the incremental increase/decrease of the upper/lower bound in the initial search
             if bounds_search_mode is 'PERCENT_INCREMENT' this is the percentage increase/decrease,
             if bounds_search_mode is 'ABSOLUTE_INCREMENT' this is the absolute increase/decrease
         :param termination_mode: indicates when upper and lower bounds converge on a solution of appropriate precision
         :param termination_tolerance: difference between upper and lower bounds that indicates convergence
             if absolute difference if termination_mode is 'ABSOLUTE_DIFFERENCE',
             or percentage difference if termination_mode is 'PERCENT_DIFFERENCE'
-        :param stimamp_top: the upper-bound stimulation amplitude first tested in a binary search for thresholds
-        :param stimamp_bottom: the lower-bound stimulation amplitude first tested in a binary search for thresholds
+        :param stimamp_top: the upper-bound stimulation amplitude first tested to establish search bounds
+        :param stimamp_bottom: the lower-bound stimulation amplitude first tested to establish search bounds
         :param max_iterations: the maximum number of iterations for finding search bounds
         :param exit_t_shift: shift (in ms) for detected action potential time to exit subthreshold stimulation
         :param bisection_mean: the type of mean to use for bisection search (arithmetic or geometric)
