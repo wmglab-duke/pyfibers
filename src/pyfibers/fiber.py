@@ -114,6 +114,15 @@ class Fiber:
         self.length: float = None
         self.potentials: ndarray = np.array([])
 
+    def __call__(self: Fiber, loc: float) -> h.Section:
+        """Call the fiber nodes with NEURON style indexing.
+
+        :param loc: location in the fiber (from 0 to 1)
+        :return: node at the given location
+        """  # noqa: DAR201
+        assert 0 <= loc <= 1, "Location must be between 0 and 1"
+        return self.nodes[self.loc_index(loc)]
+
     def __str__(self: Fiber) -> str:
         """Return a string representation of the fiber."""  # noqa: DAR201
         return (
@@ -149,7 +158,7 @@ class Fiber:
         :param loc: location in the fiber (from 0 to 1)
         :return: node at the given location
         """
-        return self.nodes[self.loc_index(loc)]
+        return self(loc)
 
     def loc_index(self: Fiber, loc: float) -> int:
         """Return the index of the node at the given location (Using the same convention as NEURON).
