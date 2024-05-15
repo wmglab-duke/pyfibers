@@ -221,7 +221,7 @@ def test_block_threshold():
 
     stimulation.set_intracellular_stim(delay=10, pw=0.5, dur=40, freq=100, amp=1, ind=2)
 
-    amp, _ = stimulation.find_threshold(fiber, stimamp_top=-3, istim_delay=10, condition=ThresholdCondition.BLOCK)
+    amp, _ = stimulation.find_threshold(fiber, stimamp_top=-3, block_delay=10, condition=ThresholdCondition.BLOCK)
 
     assert np.isclose(amp, -2.7897656250000002)
 

@@ -300,7 +300,7 @@ class ScaledStim:
         exit_func: Callable = lambda x: False,
         exit_func_interval: int = 100,
         use_exit_t: bool = False,
-    ) -> tuple[float, float]:
+    ) -> tuple[int, float]:
         """Run a simulation for a single stimulation amplitude.
 
         :param stimamp: amplitude to be applied to extracellular stimulation
@@ -395,21 +395,21 @@ class ScaledStim:
         fiber: Fiber,
         block: bool = False,
         ap_detect_location: float = 0.9,
-        istim_delay: float = 0,
+        block_delay: float = 0,
     ) -> bool:
         """Check if stimulation was above or below threshold.
 
         :param fiber: instance of fiber class
         :param block: true if BLOCK_THRESHOLD protocol, false otherwise
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
-        :param istim_delay: the delay from the simulation start to the onset of the intracellular stimulation [ms]
+        :param block_delay: time after start of simulation to check for block [ms]
         :return: True if stim was supra-threshold, False if sub-threshold
         """
         # Determine user-specified location along axon to check for action potential
-        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
+        detect_n, detect_time = ScaledStim.ap_checker(fiber, ap_detect_location=ap_detect_location)
         if block:
-            return detect_apc.time <= istim_delay  # check for block
-        return bool(detect_apc.n)  # otherwise check for activation
+            return detect_time <= block_delay  # check for block
+        return bool(detect_n)  # otherwise check for activation
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
         self: ScaledStim,
@@ -424,7 +424,7 @@ class ScaledStim:
         max_iterations: int = 100,
         exit_t_shift: float = 5,
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
-        fail_on_end_excitation: bool = True,
+        block_delay: int = 0,
         **kwargs,
     ) -> tuple[float | Any, tuple[float, float]]:
         """Bisection search to find threshold amplitudes. #TODO clean up this docstring.
@@ -444,35 +444,20 @@ class ScaledStim:
         :param max_iterations: the maximum number of iterations for finding search bounds
         :param exit_t_shift: shift (in ms) for detected action potential time to exit subthreshold stimulation
         :param bisection_mean: the type of mean to use for bisection search (arithmetic or geometric)
-        :param fail_on_end_excitation: if True, raise error if end excitation is detected
+        :param block_delay: delay from start of stimulation to start checking for block
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
-        :raises ValueError: If stimamp bottom and stimamp top have different signs
-        :raises ValueError: If stimamp top does not exceed stimamp bottom
         :return: the threshold amplitude for the given condition, and the number of detected aps
         """
-        if abs(stimamp_top) < abs(stimamp_bottom):
-            raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
-        if stimamp_top * stimamp_bottom < 0:
-            raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
-        if self.istim is not None and condition == ThresholdCondition.ACTIVATION:
-            warnings.warn(
-                "Intracellular stimulation is enabled for this ScaledStim instance, are you sure you want "
-                "to search for activation threshold?",
-                stacklevel=2,
-            )
-        if self.istim is None and condition == ThresholdCondition.BLOCK:
-            warnings.warn(
-                "Intracellular stimulation is not enabled for this ScaledStim instance, are you sure you want "
-                "to search for block threshold?",
-                stacklevel=2,
-            )
-        assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
-        self.exit_t = float('Inf')
+        self.validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift)
 
         # first check stimamps
-        supra_top, t = self.threshsim(stimamp_top, fiber, check_threshold=condition, **kwargs)
-        supra_bot, _ = self.threshsim(stimamp_bottom, fiber, check_threshold=condition, **kwargs)
+        supra_top, (_, t) = self.threshsim(
+            stimamp_top, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+        )
+        supra_bot, _ = self.threshsim(
+            stimamp_bottom, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+        )
 
         # Determine upper- and lower-bounds for simulation (prior to bisection search)
         iterations = 0
@@ -499,7 +484,9 @@ class ScaledStim:
                     stimamp_top = stimamp_top + bounds_search_step
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
-                supra_top, t = self.threshsim(stimamp_top, fiber, check_threshold=condition, **kwargs)
+                supra_top, (_, t) = self.threshsim(
+                    stimamp_top, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+                )
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
                 stimamp_top = stimamp_bottom
@@ -507,7 +494,9 @@ class ScaledStim:
                     stimamp_bottom = stimamp_bottom - bounds_search_step
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
-                supra_bot, _ = self.threshsim(stimamp_bottom, fiber, check_threshold=condition, **kwargs)
+                supra_bot, _ = self.threshsim(
+                    stimamp_bottom, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+                )
         else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
 
@@ -523,7 +512,9 @@ class ScaledStim:
             elif bisection_mean == BisectionMean.GEOMETRIC:
                 stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** (1 / 2)
 
-            suprathreshold, _ = self.threshsim(stimamp, fiber, check_threshold=condition, **kwargs)
+            suprathreshold, _ = self.threshsim(
+                stimamp, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+            )
 
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(termination_tolerance / 100)
@@ -539,13 +530,16 @@ class ScaledStim:
                 print('Threshold found at stimamp =', round(stimamp, 3))
                 print('Validating threshold...')
                 # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
-                if 'istim_delay' in kwargs:
-                    kwargs.pop('istim_delay')  # remove istim_delay if present
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
                 assert self.threshold_checker(
-                    fiber, **kwargs
+                    fiber,
+                    condition == ThresholdCondition.BLOCK,
+                    kwargs.get('ap_detect_location', 0.9),
+                    block_delay=block_delay,
                 ), 'Threshold stimulation did not generate an action potential'
-                self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
+                self.end_excitation_checker(
+                    fiber, fail_on_end_excitation=kwargs.get('fail_on_end_excitation', True)
+                )  # TODO move to run_sim
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -553,6 +547,33 @@ class ScaledStim:
                 stimamp_bottom = stimamp
 
         return stimamp, (n_aps, aptime)
+
+    def validate_threshold_args(
+        self: ScaledStim, condition: ThresholdCondition, stimamp_top: float, stimamp_bottom: float, exit_t_shift: float
+    ) -> None:  # noqa DAR101
+        """Validate threshold search arguments.
+
+        :raises ValueError: If stimamp bottom and stimamp top have different signs
+        :raises ValueError: If stimamp top does not exceed stimamp bottom
+        """
+        if abs(stimamp_top) < abs(stimamp_bottom):
+            raise ValueError("stimamp_top must be greater than stimamp_bottom in magnitude.")
+        if stimamp_top * stimamp_bottom < 0:
+            raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
+        if self.istim is not None and condition == ThresholdCondition.ACTIVATION:
+            warnings.warn(
+                "Intracellular stimulation is enabled for this ScaledStim instance, are you sure you want "
+                "to search for activation threshold?",
+                stacklevel=2,
+            )
+        if self.istim is None and condition == ThresholdCondition.BLOCK:
+            warnings.warn(
+                "Intracellular stimulation is not enabled for this ScaledStim instance, are you sure you want "
+                "to search for block threshold?",
+                stacklevel=2,
+            )
+        assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
+        self.exit_t = float('Inf')
 
     def supra_exit(self: ScaledStim, fiber: Fiber) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
@@ -596,35 +617,31 @@ class ScaledStim:
         stimamp: float,
         fiber: Fiber,
         check_threshold: ThresholdCondition = ThresholdCondition.ACTIVATION,
-        ap_detect_location: float = 0.9,
-        istim_delay: int = 0,
-        *args,
+        block_delay: int = 0,
         **kwargs,
-    ) -> tuple[int, float]:
+    ) -> tuple[bool, tuple[int, float]]:
         """Run a simulation with a given stimulus amplitude and check for threshold.
 
         :param stimamp: the stimulus amplitude
         :param fiber: the fiber to stimulate
         :param check_threshold: the condition to check for threshold
-        :param ap_detect_location: the location to detect action potentials
-        :param istim_delay: the delay of the stimulus
-        :param args: additional arguments to pass to the run_sim method
+        :param block_delay: the delay of the stimulus
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :return: Number of detected aps and time of last detected ap
-        :raises NotImplementedError: if threshold condition is not implemented
         """
         if check_threshold == ThresholdCondition.ACTIVATION:  # noqa: R505
             n_aps, aptime = self.run_sim(
-                stimamp, fiber, *args, exit_func=self.supra_exit, use_exit_t=True, **kwargs
+                stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, **kwargs
             )  # type: ignore
-            return self.threshold_checker(fiber, ap_detect_location=ap_detect_location), aptime
-        elif check_threshold == ThresholdCondition.BLOCK:
-            n_aps, aptime = self.run_sim(stimamp, fiber, *args, **kwargs)
-            return (
-                self.threshold_checker(
-                    fiber, ap_detect_location=ap_detect_location, block=True, istim_delay=istim_delay
-                ),
+            return self.threshold_checker(fiber, ap_detect_location=kwargs.get('ap_detect_location', 0.9)), (
+                n_aps,
                 aptime,
             )
-        else:
-            raise NotImplementedError(f'{check_threshold} is not implemented')
+        elif check_threshold == ThresholdCondition.BLOCK:
+            n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
+            return (
+                self.threshold_checker(
+                    fiber, ap_detect_location=kwargs.get('ap_detect_location', 0.9), block=True, block_delay=block_delay
+                ),
+                (n_aps, aptime),
+            )
