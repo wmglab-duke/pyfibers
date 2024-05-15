@@ -24,6 +24,7 @@ class MRGFiber(Fiber):
         :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
+        assert 'delta_z' not in kwargs, 'Cannot specify delta_z for MRG Fiber'
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_axnode_myel",

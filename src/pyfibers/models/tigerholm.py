@@ -78,14 +78,6 @@ class TigerholmFiber(_HomogeneousFiber):
         node.gbar_kna = 0.00042
         node.Ra = 35.4
         node.cm = 1
-        node.celsiusT_ks = celsius
-        node.celsiusT_kf = celsius
-        node.celsiusT_h = celsius
-        node.celsiusT_nattxs = celsius
-        node.celsiusT_nav1p8 = celsius
-        node.celsiusT_nav1p9 = celsius
-        node.celsiusT_nakpump = celsius
-        node.celsiusT_kdrTiger = celsius
         node.gbar_ks = 0.0069733
         node.gbar_kf = 0.012756
         node.gbar_h = 0.0025377
@@ -94,6 +86,15 @@ class TigerholmFiber(_HomogeneousFiber):
         node.gbar_nav1p9 = 9.4779e-05
         node.smalla_nakpump = -0.0047891
         node.gbar_kdrTiger = 0.018002
+
+        node.celsiusT_ks = celsius
+        node.celsiusT_kf = celsius
+        node.celsiusT_h = celsius
+        node.celsiusT_nattxs = celsius
+        node.celsiusT_nav1p8 = celsius
+        node.celsiusT_nav1p9 = celsius
+        node.celsiusT_nakpump = celsius
+        node.celsiusT_kdrTiger = celsius
 
     def balance(self: TigerholmFiber) -> None:
         """Balance membrane currents for Tigerholm model."""

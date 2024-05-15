@@ -80,7 +80,7 @@ def build_fiber(
 
 
 class Fiber:
-    """Base class for fibers."""
+    """Base class for model fibers."""
 
     def __init__(  # TODO update tests
         self: Fiber,
@@ -290,18 +290,50 @@ class Fiber:
 
         return potentials
 
+    def measure_cv_raw(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
+        """Estimate fiber conduction velocity using ap times at specific points.
+
+        :param start: Starting position for conduction velocity measurement [0, 1]
+        :param end: Ending position for conduction velocity measurement [0, 1]
+        :param tolerance: Default tolerance for determining linearity (ms)
+        :raises ValueError: if conduction is not (roughly) linear between start and end
+        :return: Conduction velocity [m/s]
+        """
+        # Check that both nodes (start and end) have detected APs
+        start_ind, end_ind = self.loc_index(start), self.loc_index(end)
+        for ind in [start_ind, end_ind]:
+            assert self.apc[ind].n > 0, f"No detected APs at node {ind}."
+
+        # Check that conduction is linear between start and end nodelist
+        aptimes = [self.apc[ind].time for ind in range(start_ind, end_ind + 1)]
+        if not np.allclose(np.diff(aptimes), np.diff(aptimes)[0], atol=tolerance):
+            raise ValueError("Conduction is not linear between the specified nodes.")
+
+        # Calculate conduction velocity from AP times
+        coords = [self.coordinates[i] for i, section in enumerate(self.sections) if section in self.nodes]
+        distance = np.abs(coords[start_ind] - coords[end_ind])
+        time = np.abs(aptimes[-1] - aptimes[0])
+        distance *= 1e-6  # convert to meters
+        time *= 1e-3  # convert to seconds
+
+        return distance / time
+
 
 class _HomogeneousFiber(Fiber):
     """Initialize Homogeneous (all sections are identical) class."""
 
-    def __init__(self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
+    def __init__(
+        self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, delta_z: float = 8.333, **kwargs
+    ) -> None:
         """Initialize UnmyelinatedFiber class.
 
         :param fiber_model: name of fiber model type
         :param diameter: fiber diameter [microns]
+        :param delta_z: length of each node/section
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        self.delta_z = delta_z
         self.v_rest: int = None
 
     def generate_homogeneous(
