@@ -65,7 +65,7 @@ def get_activation_threshold_ps(model, nodecount=133, diameter=5.7, **kwargs):  
 
     # parameters
     time_step = 0.001
-    time_stop = 50
+    time_stop = 20
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
     stimulation.run_sim(0, fiber)  # TODO why do I need to run this first for correct result
