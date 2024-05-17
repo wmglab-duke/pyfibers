@@ -297,7 +297,7 @@ class ScaledStim:
         stimamp: float,
         fiber: Fiber,
         ap_detect_location: float = 0.9,
-        exit_func: Callable = lambda x: False,
+        exit_func: Callable = lambda *x: False,
         exit_func_interval: int = 100,
         use_exit_t: bool = False,
     ) -> tuple[int, float]:
@@ -324,7 +324,7 @@ class ScaledStim:
 
             h.fadvance()
 
-            if i % exit_func_interval == 0 and exit_func(fiber):
+            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location):
                 break
             if use_exit_t and self.exit_t and h.t >= self.exit_t:
                 break
@@ -575,13 +575,14 @@ class ScaledStim:
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         self.exit_t = float('Inf')
 
-    def supra_exit(self: ScaledStim, fiber: Fiber) -> bool:
+    def supra_exit(self: ScaledStim, fiber: Fiber, ap_detect_location: float) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
 
         :param fiber: Fiber object to check for threshold
+        :param ap_detect_location: location to detect action potentials (percent along fiber)
         :return: True if threshold is reached, False otherwise
         """
-        return self.threshold_checker(fiber)
+        return self.threshold_checker(fiber, ap_detect_location=ap_detect_location)
 
     @staticmethod
     def end_excitation_checker(
