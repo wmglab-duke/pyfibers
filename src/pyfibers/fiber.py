@@ -17,7 +17,7 @@ h.load_file('stdrun.hoc')
 
 @unique
 class FiberModel(Enum):
-    """Fiber models."""
+    """Enumeration for available fiber models."""
 
     MRG_INTERPOLATION = 0
     MRG_DISCRETE = 1

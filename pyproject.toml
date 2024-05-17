@@ -42,7 +42,8 @@ dev = [
   "myst-parser",
   "nbsphinx",
   "sphinx-copybutton",
-  "sphinx-rtd-dark-mode"
+  "sphinx-rtd-dark-mode",
+  "enum-tools[sphinx]"
 ]
 
 [project.scripts]

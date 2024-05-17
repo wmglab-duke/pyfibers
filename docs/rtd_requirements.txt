@@ -1,3 +1,4 @@
+enum-tools[sphinx]
 myst-parser
 nbsphinx
 sphinx-copybutton
