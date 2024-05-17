@@ -17,6 +17,8 @@ import os
 import sys
 from unittest import mock
 
+os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../src/pyfibers'))
 
@@ -35,7 +37,15 @@ release = 'alpha'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['myst_parser', 'sphinx.ext.autodoc', 'nbsphinx', 'sphinx_copybutton', 'sphinx_rtd_dark_mode']
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'nbsphinx',
+    'sphinx_copybutton',
+    'sphinx_rtd_dark_mode',
+    'sphinx.ext.autosummary',
+    'enum_tools.autoenum',
+]
 
 MOCK_MODULES = ['numpy', 'pandas']
 
@@ -51,6 +61,8 @@ autodoc_mock_imports = ['neuron', 'scipy']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
+# uncomment the line below to exclude all tutorials from the documentation build
+# exclude_patterns = ['tutorials/**.ipynb']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -75,3 +87,6 @@ html_show_sphinx = False
 myst_heading_anchors = 4
 
 default_dark_mode = False
+
+# Comment out line below to not generate autosummary files
+autosummary_generate = True
