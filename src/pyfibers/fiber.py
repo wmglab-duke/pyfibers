@@ -213,37 +213,38 @@ class Fiber:
         for apc in self.apc:
             apc.thresh = thresh
 
-    def set_save_vm(self: Fiber) -> None:
-        """Record membrane voltage (mV) along the axon."""
+    def record_values(self: Fiber, ref_attr: str) -> list[h.Vector]:
+        """Record values from all nodes along the axon.
+
+        :param ref_attr: attribute to record from each node
+        :return: list of NEURON vectors for recording values during simulation
+        """
         if self.passive_end_nodes:
-            self.vm = (
+            return (
                 [None] * self.passive_end_nodes
                 + [
-                    h.Vector().record(node(0.5)._ref_v)
+                    h.Vector().record(getattr(node(0.5), ref_attr))
                     for node in self.nodes[self.passive_end_nodes : -self.passive_end_nodes]
                 ]
                 + [None] * self.passive_end_nodes
             )
-        else:
-            self.vm = [h.Vector().record(node(0.5)._ref_v) for node in self]
+        return [h.Vector().record(getattr(node(0.5), ref_attr)) for node in self.nodes]
+
+    def set_save_vm(self: Fiber) -> None:
+        """Record membrane voltage (mV) along the axon."""
+        self.vm = self.record_values('_ref_v')
+
+    def set_save_im(self: Fiber) -> None:
+        """Record membrane current (nA) along the axon."""
+        self.im = self.record_values('_ref_i_membrane')
 
     def set_save_gating(self: Fiber) -> None:
         """Record gating parameters for axon nodes."""
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
-        nodelist = (
-            self.nodes if not self.passive_end_nodes else self.nodes[self.passive_end_nodes : -self.passive_end_nodes]
-        )
-
         self.gating = {}
         for name, var in self.gating_variables.items():
-            self.gating[name] = []
-            for node in nodelist:
-                self.gating[name].append(h.Vector().record(getattr(node(0.5), f"_ref_{var}")))
-            if self.passive_end_nodes:
-                self.gating[name] = (
-                    [None] * self.passive_end_nodes + self.gating[name] + [None] * self.passive_end_nodes
-                )
+            self.gating[name] = self.record_values(f"_ref_{var}")
 
     def point_source_potentials(
         self: Fiber,
