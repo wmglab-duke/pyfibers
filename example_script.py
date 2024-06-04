@@ -50,10 +50,10 @@ ap, time = stimulation.run_sim(-1, fiber)
 
 plt.figure()
 for key, value in fiber.gating.items():
-    plt.plot(stimulation.time, value[fiber.loc_index(0.5)], label=key)
+    plt.plot(stimulation.time, value[fiber.loc_index(0.6)], label=key)
 plt.legend()
 ax2 = plt.gca().twinx()
 plt.sca(ax2)
-plt.plot(stimulation.time, fiber.vm[fiber.loc_index(0.5)], label='vm', color='k')
+plt.plot(stimulation.time, fiber.vm[fiber.loc_index(0.6)], label='vm', color='k')
 plt.ylabel('Vm')
 plt.xlim(0, 4)
