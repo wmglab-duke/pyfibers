@@ -7,6 +7,7 @@ Welcome to PyFibers's documentation!
 .. toctree::
    :maxdepth: 2
 
-   autodoc/index
-   tutorials/index
+   extracellular_potentials
    custom
+   tutorials/index
+   autodoc/index
