@@ -37,8 +37,8 @@ potentials = np.array([0, 1, 2, 3, 2, 1, 0])
 fiber.resample_potentials(arc_lengths, potentials, inplace=True)
 ```
 
-# Electrical potentials from multiple sources
-## Superposition
+## Electrical potentials from multiple sources
+### Superposition
 In the case where each source delivers a weighted version of the same stimulus, the potentials can be weighted and summed under the principle of superposition. For example, the potentials due to two point sources of opposite polarity can be calculated as:
 ```python
 pt_x1 = 0  # μm
@@ -63,7 +63,7 @@ potentials_array_2 = np.array([0, 0, 1, 2, 3, 2, 1])
 fiber.potentials = 1 * potentials_array_1 + -1 * potentials_array_2
 ```
 
-## Different waveforms for each source
+### Different waveforms for each source
 In the case where each source delivers a different stimulus (for example, one stimulus is a square wave and the other is a sinusoidal wave), the potentials must be weighted during each time step of the simulation. Thus, the potentials must be provided as a 2D array, where each row corresponds to the potentials from a different source.
 ```python
 potentials_array_1 = np.array([1, 2, 3, 2, 1, 0, 0])
