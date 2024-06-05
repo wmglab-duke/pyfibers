@@ -100,6 +100,7 @@ class Fiber:
         self.gating_variables: dict[str, str] = {}
         self.vm: list = None
         self.apc: list = None
+        self.im: list = None
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
