@@ -48,67 +48,57 @@ class BisectionMean(Enum):
     ARITHMETIC = 1
 
 
-class ScaledStim:
+class Stimulation:
     """Manage stimulation of NEURON simulations."""
 
     def __init__(
-        self: ScaledStim,
-        waveform: list[int],
+        self: Stimulation,
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
         dt_init_ss: float = 10,
-        pad_waveform: bool = True,
-        truncate_waveform: bool = True,
+        custom_run_sim: Callable = None,
     ) -> None:
-        """Initialize ScaledStim class.
+        """Initialize Stimulation class.
 
-        :param waveform: list of amplitudes at each time bounds_search_step of the simulation
-        :param dt: time bounds_search_step for simulation [seconds]
-        :param tstop: time bounds_search_step for simulation [seconds]
+        :param dt: time step for simulation [seconds]
+        :param tstop: time step for simulation [seconds]
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
-        :param dt_init_ss: the time bounds_search_step used to reach steady state [ms]
-        :param pad_waveform: if true, extend waveform until it is of length tstop/dt
-        :param truncate_waveform: if true, truncate waveform until it is of length tstop/dt
+        :param dt_init_ss: the time step used to reach steady state [ms]
+        :param custom_run_sim: custom run_sim function provided by the user
         :raises RuntimeError: if called before any sections/fibers are created
         """
-        self.istim_params: dict[str, float] = {}
-        self.waveform: np.typing.NDArray[np.float64] = np.array(waveform)
         self.dt = dt
         self.tstop = tstop
-        self.istim: h.trainIClamp = None
-        self.istim_record = None
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
+        self.istim: h.trainIClamp = None
+        self.istim_record = None
+        self.istim_params: dict[str, float] = {}
         self.exit_t: float = None
-        self.pad = pad_waveform
-        self.truncate = truncate_waveform
-        self.n_timesteps: int = None
+        self.custom_run_sim = custom_run_sim  # Store the custom run_sim function
         try:
             self.time = h.Vector().record(h._ref_t)
         except RuntimeError:
             raise RuntimeError(
-                'Could not set up time recording vector. Maybe you haven\'t created any ' 'sections/fibers yet?'
+                'Could not set up time recording vector. Maybe you haven\'t created any sections/fibers yet?'
             )
-        self._prep_waveform()
 
-    # MAGIC METHODS
-    def __str__(self: ScaledStim) -> str:
+    def __str__(self: Stimulation) -> str:
         """Return string representation of ScaledStim class."""  # noqa: DAR201
         return (
-            f'ScaledStim: {self.dt * self.tstop} ms (dt={self.dt} ms)'
+            f'{type(self).__name__}: {self.dt * self.tstop} ms (dt={self.dt} ms)'
             f' (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)'
             f' istim_params={self.istim_params}'
         )
 
-    def __repr__(self: ScaledStim) -> str:
+    def __repr__(self: Stimulation) -> str:
         """Return a string representation of the ScaledStim."""  # noqa: DAR201
         # TODO: make this more informative for developers
         return self.__str__()
 
-    # PRIVATE METHODS
     def _add_istim(
-        self: ScaledStim,
+        self: Stimulation,
         fiber: Fiber,
         delay: float = 0,
         pw: float = 0,
@@ -117,7 +107,7 @@ class ScaledStim:
         amp: float = 0,
         ind: int = None,
         loc: float = None,
-    ) -> ScaledStim:
+    ) -> Stimulation:
         """Create instance of trainIClamp for intracellular stimulation.
 
         :param fiber: instance of Fiber class to add intracellular stimulation to
@@ -128,7 +118,7 @@ class ScaledStim:
         :param amp: the intracellular stimulation amplitude [nA]
         :param ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
         :param loc: node location along the fiber (using NEURON style indexing)
-        :return: instance of ScaledStim class
+        :return: instance of Stimulation class
         """
         assert (ind is None) != (loc is None), 'Must specify either ind or loc, but not both'
         ind = ind or fiber.loc_index(loc)
@@ -145,13 +135,13 @@ class ScaledStim:
         self.istim_record = h.Vector().record(self.istim._ref_i)
         return self
 
-    def _steady_state(self: ScaledStim) -> None:
+    def _steady_state(self: Stimulation) -> None:
         """Allow system to reach steady-state by using a large dt before simulation."""
         h.t = self.t_init_ss  # Start before t=0
         h.dt = self.dt_init_ss  # Large dt
         while h.t <= -self.dt_init_ss:
             h.fadvance()
-        h.dt = self.dt  # Set simulation time bounds_search_step to user-specified time bounds_search_step
+        h.dt = self.dt  # Set simulation time step to user-specified time step
         h.t = 0  # Probably redundant, reset simulation time to zero
         h.fcurrent()
         h.frecord_init()
@@ -175,9 +165,17 @@ class ScaledStim:
         for x, section in enumerate(fiber.sections):
             section(0.5).e_extracellular = e_stims[x]
 
-    # PUBLIC METHODS
+    def run_sim(self: Stimulation, *args, **kwargs) -> tuple[int, float]:
+        """Run a simulation with the given parameters."""  # noqa DAR201, DAR401
+        if self.custom_run_sim:
+            return self.custom_run_sim(self, *args, **kwargs)
+
+        raise NotImplementedError(
+            "The run_sim method must be overridden by the subclass or provided as a custom function."
+        )
+
     def set_intracellular_stim(
-        self: ScaledStim,
+        self: Stimulation,
         delay: float,
         pw: float,
         dur: float,
@@ -207,145 +205,7 @@ class ScaledStim:
             'loc': loc,
         }
 
-    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
-        """Prepare the fiber object's potentials for further processing.
-
-        Converts potentials into a 2D numpy array if they are not already in that format.
-        This function assumes that the input is either a single 1D numpy array or a list of 1D arrays.
-        :param fiber: instance of Fiber class to prepare potentials for
-        """
-        assert fiber.potentials is not None, 'No fiber potentials found'
-
-        # Check if potentials is a single 1D numpy array and wrap it in a list
-        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
-            fiber.potentials = [fiber.potentials]
-
-        # Convert each potential in the list to a numpy array if not already
-        processed_potentials = [np.array(potential) for potential in fiber.potentials]
-
-        # asssert all potentials equal length of fiber coordinates
-        assert all(
-            len(potential) == len(fiber.coordinates) for potential in processed_potentials
-        ), 'Length of fiber potentials does not match length of fiber coordinates'
-
-        # Combine all processed potentials into a single 2D array
-        fiber.potentials = np.vstack(processed_potentials)
-
-        if np.all(fiber.potentials == 0):
-            warnings.warn('All fiber potentials are zero.', RuntimeWarning, stacklevel=2)
-
-    # BELONGS IN SCALEDSTIM SUBCLASS
-    def _prep_waveform(self: ScaledStim) -> None:
-        """Prepare waveform for simulation.
-
-        Accepts waveform as either a list of 1D numpy arrays or a single 1D numpy array,
-        processes each waveform independently, and returns a 2D numpy array.
-
-        :raises AssertionError: if any processed waveform row length is not equal to the number of time steps
-        """
-        self.n_timesteps = int(self.tstop / self.dt)
-
-        # Initialize list to store processed waveforms
-        processed_waveforms = []
-
-        # Check if waveform is a single 1D numpy array and wrap it in a list
-        if isinstance(self.waveform, np.ndarray) and self.waveform.ndim == 1:
-            self.waveform = [self.waveform]
-
-        # Process each waveform
-        for row in self.waveform:
-            row = np.array(row)  # Ensure row is a numpy array
-            if self.pad and (self.n_timesteps > len(row)):
-                # Extend waveform row until it is of length tstop/dt
-                print(f"Padding waveform {len(row) * self.dt} ms to {self.tstop} ms (with 0's)")
-                if row[-1] != 0:
-                    warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
-                row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
-
-            if self.truncate and (self.n_timesteps < len(row)):
-                # Truncate waveform row until it is of length tstop/dt
-                print(f"Truncating waveform {len(row) * self.dt} ms to {self.tstop} ms")
-                if any(row[self.n_timesteps :]):
-                    warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
-                row = row[: self.n_timesteps]
-
-            # Check that waveform row length is equal to number of time steps
-            assert (
-                len(row) == self.n_timesteps
-            ), f'Waveform row length does not match number of time steps {self.tstop / self.dt}'
-
-            processed_waveforms.append(row)  # Append processed row to the list
-
-        # Convert list of processed rows into a 2D numpy array
-        self.waveform = np.vstack(processed_waveforms)
-
-    def potentials_at_time(self: ScaledStim, i: int, fiber: Fiber) -> np.typing.NDArray[np.float64]:
-        """Get potentials at a given time.
-
-        :param i: index of time step
-        :param fiber: fiber to get potentials for
-        :return: list of potentials at time i
-        """
-        # go through each waveform and multiply value for this time point by the corresponding potential set
-        potentials = np.zeros(fiber.potentials.shape[1])
-        for potential_set, waveform in zip(fiber.potentials, self.waveform):
-            potentials += waveform[i] * potential_set
-        return potentials  # TODO test this
-
-    def run_sim(
-        self: ScaledStim,
-        stimamp: float,
-        fiber: Fiber,
-        ap_detect_location: float = 0.9,
-        exit_func: Callable = lambda *x: False,
-        exit_func_interval: int = 100,
-        use_exit_t: bool = False,
-    ) -> tuple[int, float]:
-        """Run a simulation for a single stimulation amplitude.
-
-        :param stimamp: amplitude to be applied to extracellular stimulation
-        :param fiber: fiber to be stimulated
-        :param ap_detect_location: location to detect action potentials (percent along fiber)
-        :param exit_func: function to call to check if simulation should be exited
-        :param exit_func_interval: interval to call exit_func
-        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
-        :return: number of detected aps and time of last detected ap
-        """
-        print('Running:', round(stimamp, 3))
-
-        self.validate_scaling_inputs(fiber)
-
-        self.pre_run_setup(fiber)
-
-        # Run simulation
-        for i in range(self.n_timesteps):
-            timestep_potentials = stimamp * self.potentials_at_time(i, fiber)
-            self._update_extracellular(fiber, timestep_potentials)
-
-            h.fadvance()
-
-            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location):
-                break
-            if use_exit_t and self.exit_t and h.t >= self.exit_t:
-                break
-
-        # get precision from the number of decimal places in self.dt
-        precision = len(str(self.dt).split('.')[1])
-
-        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
-
-    def validate_scaling_inputs(self: ScaledStim, fiber: Fiber) -> None:
-        """Validate scaling inputs before running simulation.
-
-        :param fiber: instance of Fiber class to validate scaling inputs for
-        """
-        self._prep_waveform()
-        self._prep_potentials(fiber)
-        assert len(fiber.potentials) == len(
-            self.waveform
-        ), 'Number of fiber potentials sets does not match number of waveforms'
-
-    def pre_run_setup(self: ScaledStim, fiber: Fiber) -> None:
+    def pre_run_setup(self: Stimulation, fiber: Fiber) -> None:
         """Set up simulation before running.
 
         :param fiber: instance of Fiber class to set up simulation for
@@ -357,10 +217,8 @@ class ScaledStim:
             fiber.balance()
         self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
         self._steady_state()  # Allow system to reach steady-state before simulation
-        if self.istim_params:  # add istim train if specified
+        if hasattr(self, 'istim_params') and self.istim_params:  # add istim train if specified
             self._add_istim(fiber, **self.istim_params)  # type: ignore
-
-    # MAYBE DOESNT BELONG IN CLASS AT ALL (THRESHOLD RELATED)
 
     @staticmethod
     def ap_checker(
@@ -412,7 +270,7 @@ class ScaledStim:
         return bool(detect_n)  # otherwise check for activation
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
-        self: ScaledStim,
+        self: Stimulation,
         fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
         bounds_search_mode: BoundsSearchMode = BoundsSearchMode.PERCENT_INCREMENT,
@@ -549,7 +407,7 @@ class ScaledStim:
         return stimamp, (n_aps, aptime)
 
     def validate_threshold_args(
-        self: ScaledStim, condition: ThresholdCondition, stimamp_top: float, stimamp_bottom: float, exit_t_shift: float
+        self: Stimulation, condition: ThresholdCondition, stimamp_top: float, stimamp_bottom: float, exit_t_shift: float
     ) -> None:  # noqa DAR101
         """Validate threshold search arguments.
 
@@ -575,7 +433,7 @@ class ScaledStim:
         assert exit_t_shift is None or exit_t_shift > 0, 'exit_t_shift must be nonzero and positive'
         self.exit_t = float('Inf')
 
-    def supra_exit(self: ScaledStim, fiber: Fiber, ap_detect_location: float) -> bool:
+    def supra_exit(self: Stimulation, fiber: Fiber, ap_detect_location: float) -> bool:
         """Exit simulation if threshold is reached, activation searches only.
 
         :param fiber: Fiber object to check for threshold
@@ -614,7 +472,7 @@ class ScaledStim:
         return end_excitation
 
     def threshsim(
-        self: ScaledStim,
+        self: Stimulation,
         stimamp: float,
         fiber: Fiber,
         check_threshold: ThresholdCondition = ThresholdCondition.ACTIVATION,
@@ -646,3 +504,169 @@ class ScaledStim:
                 ),
                 (n_aps, aptime),
             )
+
+
+class ScaledStim(Stimulation):
+    """Manage scaled stimulation of NEURON simulations."""
+
+    def __init__(
+        self: ScaledStim,
+        waveform: list[float],
+        dt: float = 0.001,
+        tstop: float = 50,
+        t_init_ss: float = -200,
+        dt_init_ss: float = 10,
+        pad_waveform: bool = True,
+        truncate_waveform: bool = True,
+    ) -> None:
+        """Initialize ScaledStim class.
+
+        :param waveform: list of amplitudes at each time step of the simulation
+        :param dt: time step for simulation [seconds]
+        :param tstop: time step for simulation [seconds]
+        :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
+        :param dt_init_ss: the time step used to reach steady state [ms]
+        :param pad_waveform: if true, extend waveform until it is of length tstop/dt
+        :param truncate_waveform: if true, truncate waveform until it is of length tstop/dt
+        """
+        super().__init__(dt, tstop, t_init_ss, dt_init_ss)
+        self.waveform: np.typing.NDArray[np.float64] = np.array(waveform)
+        self.pad = pad_waveform
+        self.truncate = truncate_waveform
+        self.n_timesteps: int = None
+        self._prep_waveform()
+
+    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
+        """Prepare the fiber object's potentials for further processing.
+
+        Converts potentials into a 2D numpy array if they are not already in that format.
+        This function assumes that the input is either a single 1D numpy array or a list of 1D arrays.
+        :param fiber: instance of Fiber class to prepare potentials for
+        """
+        assert fiber.potentials is not None, 'No fiber potentials found'
+
+        # Check if potentials is a single 1D numpy array and wrap it in a list
+        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
+            fiber.potentials = [fiber.potentials]
+
+        # Convert each potential in the list to a numpy array if not already
+        processed_potentials = [np.array(potential) for potential in fiber.potentials]
+
+        # assert all potentials equal length of fiber coordinates
+        assert all(
+            len(potential) == len(fiber.coordinates) for potential in processed_potentials
+        ), 'Length of fiber potentials does not match length of fiber coordinates'
+
+        # Combine all processed potentials into a single 2D array
+        fiber.potentials = np.vstack(processed_potentials)
+
+        if np.all(fiber.potentials == 0):
+            warnings.warn('All fiber potentials are zero.', RuntimeWarning, stacklevel=2)
+
+    def _prep_waveform(self: ScaledStim) -> None:
+        """Prepare waveform for simulation.
+
+        Accepts waveform as either a list of 1D numpy arrays or a single 1D numpy array,
+        processes each waveform independently, and returns a 2D numpy array.
+
+        :raises AssertionError: if any processed waveform row length is not equal to the number of time steps
+        """
+        self.n_timesteps = int(self.tstop / self.dt)
+
+        # Initialize list to store processed waveforms
+        processed_waveforms = []
+
+        # Check if waveform is a single 1D numpy array and wrap it in a list
+        if isinstance(self.waveform, np.ndarray) and self.waveform.ndim == 1:
+            self.waveform = [self.waveform]
+
+        # Process each waveform
+        for row in self.waveform:
+            row = np.array(row)  # Ensure row is a numpy array
+            if self.pad and (self.n_timesteps > len(row)):
+                # Extend waveform row until it is of length tstop/dt
+                if row[-1] != 0:
+                    warnings.warn('Padding a waveform that does not end with 0.', stacklevel=2)
+                row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
+
+            if self.truncate and (self.n_timesteps < len(row)):
+                # Truncate waveform row until it is of length tstop/dt
+                if any(row[self.n_timesteps :]):
+                    warnings.warn('Truncating waveform removed non-zero values.', stacklevel=2)
+                row = row[: self.n_timesteps]
+
+            # Check that waveform row length is equal to number of time steps
+            assert (
+                len(row) == self.n_timesteps
+            ), f'Waveform row length does not match number of time steps {self.tstop / self.dt}'
+
+            processed_waveforms.append(row)  # Append processed row to the list
+
+        # Convert list of processed rows into a 2D numpy array
+        self.waveform = np.vstack(processed_waveforms)
+
+    def potentials_at_time(self: ScaledStim, i: int, fiber: Fiber) -> np.typing.NDArray[np.float64]:
+        """Get potentials at a given time.
+
+        :param i: index of time step
+        :param fiber: fiber to get potentials for
+        :return: list of potentials at time i
+        """
+        # go through each waveform and multiply value for this time point by the corresponding potential set
+        potentials = np.zeros(fiber.potentials.shape[1])
+        for potential_set, waveform in zip(fiber.potentials, self.waveform):
+            potentials += waveform[i] * potential_set
+        return potentials
+
+    def validate_scaling_inputs(self: ScaledStim, fiber: Fiber) -> None:
+        """Validate scaling inputs before running simulation.
+
+        :param fiber: instance of Fiber class to validate scaling inputs for
+        """
+        self._prep_waveform()
+        self._prep_potentials(fiber)
+        assert len(fiber.potentials) == len(
+            self.waveform
+        ), 'Number of fiber potentials sets does not match number of waveforms'
+
+    def run_sim(
+        self: ScaledStim,
+        stimamp: float,
+        fiber: Fiber,
+        ap_detect_location: float = 0.9,
+        exit_func: Callable = lambda *x: False,
+        exit_func_interval: int = 100,
+        use_exit_t: bool = False,
+    ) -> tuple[int, float]:
+        """Run a simulation for a single stimulation amplitude.
+
+        :param stimamp: amplitude to be applied to extracellular stimulation
+        :param fiber: fiber to be stimulated
+        :param ap_detect_location: location to detect action potentials (percent along fiber)
+        :param exit_func: function to call to check if simulation should be exited
+        :param exit_func_interval: interval to call exit_func
+        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
+        :return: number of detected aps and time of last detected ap
+        """
+        print('Running:', round(stimamp, 3))
+
+        self.validate_scaling_inputs(fiber)
+
+        self.pre_run_setup(fiber)
+
+        # Run simulation
+        for i in range(self.n_timesteps):
+            timestep_potentials = stimamp * self.potentials_at_time(i, fiber)
+            self._update_extracellular(fiber, timestep_potentials)
+
+            h.fadvance()
+
+            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location):
+                break
+            if use_exit_t and self.exit_t and h.t >= self.exit_t:
+                break
+
+        # get precision from the number of decimal places in self.dt
+        precision = len(str(self.dt).split('.')[1])
+
+        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)

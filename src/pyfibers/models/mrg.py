@@ -8,11 +8,10 @@ from __future__ import annotations
 import math
 from typing import Callable, TypedDict
 
-import numpy as np
 from neuron import h
 
 from pyfibers import FiberModel
-from pyfibers.fiber import Fiber
+from pyfibers.fiber import Fiber, HeterogeneousFiber
 
 h.load_file("stdrun.hoc")
 
@@ -79,7 +78,7 @@ fiber_parameters_all: FiberParameters = {  # TODO needs comments
 }
 
 
-class MRGFiber(Fiber):
+class MRGFiber(HeterogeneousFiber):
     """Implementation of the MRG fiber model."""
 
     def __init__(self: MRGFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
@@ -91,6 +90,7 @@ class MRGFiber(Fiber):
         :type diameter: float
         :param kwargs: Keyword arguments to pass to the base class.
         """
+        self.mrg_params: dict = None
         assert "delta_z" not in kwargs, "Cannot specify delta_z for MRG Fiber"
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
@@ -101,6 +101,7 @@ class MRGFiber(Fiber):
         }
         self.myelinated = True
         self.v_rest = -80  # millivolts
+        self.get_mrg_params()
 
     def generate(self: MRGFiber, n_sections: int, length: float) -> Fiber:
         """Build fiber model sections with NEURON.
@@ -111,33 +112,22 @@ class MRGFiber(Fiber):
         """
         # Determine geometrical parameters for fiber based on fiber model
         self.get_mrg_params()
+        # Function list for section order
+        function_list = [
+            lambda ind: self.create_node(ind),
+            lambda ind: self.create_mysa(ind),
+            lambda ind: self.create_flut(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_stin(ind),
+            lambda ind: self.create_flut(ind),
+            lambda ind: self.create_mysa(ind),
+        ]
 
-        if length is not None:
-            n_sections = math.floor(length / self.delta_z) * 11 + 1
-        else:
-            assert (n_sections - 1) % 11 == 0, (
-                "n_sections must be 1 + 11n where n is an integer one less than the " "number of nodes of Ranvier."
-            )
-
-        # Determine number of nodecount
-        self.nodecount = int(1 + (n_sections - 1) / 11)
-
-        # Create fiber sections
-        self.create_sections()
-        # use section attribute L to generate coordinates
-        # get the coordinates at the center of each section, each section is a different length
-        start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
-        end_coords = np.array([section.L for section in self.sections])  # end of each section
-        self.coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # center of each section
-
-        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
-
-        assert np.isclose(
-            self.coordinates[-1] - self.coordinates[0],  # center to center length
-            self.delta_z * (self.nodecount - 1),  # expected length of fiber
-        ), "Fiber length is not correct."
-
-        return self
+        return super().generate(n_sections, length, function_list)
 
     def get_mrg_params(self: MRGFiber) -> None:
         """Get geometrical parameters for MRG fiber model and save to self.
@@ -166,31 +156,6 @@ class MRGFiber(Fiber):
                 raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
 
         self.delta_z = self.mrg_params["delta_z"]
-
-    def create_sections(self: MRGFiber) -> MRGFiber:
-        """Create and connect NEURON sections for a myelinated fiber type.
-
-        :return: Fiber object
-        """
-        # Create the axon sections
-        nsegments = self.nodecount + 2 * (self.nodecount - 1) + 2 * (self.nodecount - 1) + 6 * (self.nodecount - 1)
-        for ind in range(1, nsegments + 1):
-            if ind % 11 == 1:
-                section = self.create_node(ind)
-                self.nodes.append(section)
-            elif ind % 11 == 2 or ind % 11 == 0:
-                section = self.create_mysa(ind)
-            elif ind % 11 == 3 or ind % 11 == 10:
-                section = self.create_flut(ind)
-            else:
-                section = self.create_stin(ind)
-            self.sections.append(section)
-
-        # Connect the axon sections
-        for i in range(nsegments - 1):
-            self.sections[i + 1].connect(self.sections[i])
-
-        return self
 
     def create_mysa(self: MRGFiber, i: int) -> h.Section:
         """Create a single MYSA segment for MRG fiber type.
@@ -317,7 +282,7 @@ class MRGFiber(Fiber):
         nodelength = self.mrg_params["node_length"]  # Length of nodes of Ranvier [um]
 
         # check if this is a passive node
-        self.passive = self.passive_end_nodes and (
+        passive = self.passive_end_nodes and (
             (index - 1) / 11 < self.passive_end_nodes
             or (self.nodecount - 1) - (index - 1) / 11 < self.passive_end_nodes
         )
@@ -326,14 +291,14 @@ class MRGFiber(Fiber):
         # periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
         rpn0 = (rhoa * 0.01) / (math.pi * ((((node_diam / 2) + space_p1) ** 2) - ((node_diam / 2) ** 2)))
 
-        name = f"active node {index}" if not self.passive else f"passive node {index}"
+        name = f"active node {index}" if not passive else f"passive node {index}"
         node = h.Section(name=name)
         node.nseg = 1
         node.diam = node_diam
         node.L = nodelength
         node.Ra = rhoa / 10000
 
-        if self.passive:
+        if passive:
             node.cm = 2
             node.insert("pas")
             node.g_pas = 0.0001

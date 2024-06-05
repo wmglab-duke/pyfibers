@@ -96,17 +96,27 @@ class Fiber:
         :param temperature: temperature of model [degrees celsius]
         :param passive_end_nodes: if True, set passive properties at the end nodes
         """
-        self.gating: dict[str, h.Vector] = None
-        self.gating_variables: dict[str, str] = {}
-        self.vm: list = None
-        self.apc: list = None
-        self.im: list = None
+        # fiber arguments
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
         self.passive_end_nodes = (
             passive_end_nodes  # TODO error if longer than half the fiber length, warning if more than a quarter
         )
+
+        # recording
+        self.gating: dict[str, h.Vector] = None
+        self.gating_variables: dict[str, str] = {}
+        self.vm: list = None
+        self.apc: list = None
+        self.im: list = None
+
+        # intrinsic activity
+        self.nc: h.NetCon = None
+        self.syn: h.ExpSyn = None
+        self.stim: h.NetStim = None
+
+        # fiber attributes
         self.nodecount: int = None
         self.delta_z: float = None
         self.sections: list = []
@@ -152,6 +162,24 @@ class Fiber:
     def __contains__(self: Fiber, item: h.Section) -> bool:
         """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
         return item in self.sections
+
+    def _connect_sections(self: Fiber) -> None:
+        """Connect the fiber sections."""
+        for i in range(len(self.sections) - 1):
+            self.sections[i + 1].connect(self.sections[i])
+
+    def _calculate_coordinates(self: Fiber) -> None:
+        """Generate and validate fiber coordinates."""
+        start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
+        end_coords = np.array([section.L for section in self.sections])  # end of each section
+        self.coordinates: np.ndarray = np.cumsum(  # type: ignore
+            (start_coords + end_coords) / 2
+        )  # center of each section
+        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
+        assert np.isclose(
+            self.coordinates[-1] - self.coordinates[0],  # center to center length
+            self.delta_z * (self.nodecount - 1),  # expected length of fiber
+        ), "Fiber length is not correct."
 
     def loc(self: Fiber, loc: float) -> h.Section:
         """Return the node at the given location (Using the same convention as NEURON).
@@ -387,7 +415,7 @@ class _HomogeneousFiber(Fiber):
     def __init__(
         self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, delta_z: float = 8.333, **kwargs
     ) -> None:
-        """Initialize UnmyelinatedFiber class.
+        """Initialize _HomogeneousFiber class.
 
         :param fiber_model: name of fiber model type
         :param diameter: fiber diameter [microns]
@@ -395,7 +423,7 @@ class _HomogeneousFiber(Fiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
-        self.delta_z = delta_z
+        self.delta_z: float = delta_z
         self.v_rest: int = None
 
     def generate_homogeneous(
@@ -416,23 +444,14 @@ class _HomogeneousFiber(Fiber):
                 stacklevel=2,
             )
 
-            # Determine number of nodecount
+        # Determine number of nodecount
         self.nodecount = int(n_sections) if length is None else math.floor(length / self.delta_z)
 
         # Create fiber sections
         self.sectionbuilder(modelfunc, *args, **kwargs)
 
         # use section attribute L to generate coordinates, every section is the same length
-        self.coordinates = (
-            np.cumsum([section.L for section in self.sections]) - self.sections[0].L / 2
-        )  # end of each section
-
-        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
-
-        assert np.isclose(
-            self.coordinates[-1] - self.coordinates[0],  # center to center length
-            self.delta_z * (self.nodecount - 1),  # expected length of fiber
-        ), "Fiber length is not correct."
+        self._calculate_coordinates()
 
         return self
 
@@ -461,6 +480,11 @@ class _HomogeneousFiber(Fiber):
 
     @staticmethod
     def passive_node(node: h.Section, v_rest: int) -> None:
+        """Set passive properties for a node.
+
+        :param node: section object to set passive properties for
+        :param v_rest: resting membrane potential [mV]
+        """
         node.insert('pas')
         node.g_pas = 0.0001
         node.e_pas = v_rest
@@ -481,7 +505,70 @@ class _HomogeneousFiber(Fiber):
             else:
                 name = f"active node {i}"
                 self.nodebuilder(modelnodefunc)(*args, name=name, **kwargs)
-        for i in range(self.nodecount - 1):
-            self.sections[i + 1].connect(self.sections[i])
-
+        self._connect_sections()
         self.nodes = self.sections
+
+
+class HeterogeneousFiber(Fiber):
+    """Superclass for different types of fiber models."""
+
+    def __init__(self: HeterogeneousFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
+        """Initialize HeterogeneousFiber class.
+
+        :param fiber_model: fiber model to use
+        :param diameter: fiber diameter [um]
+        :param kwargs: keyword arguments to pass to the fiber model class
+        """
+        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        self.delta_z = None
+        self.v_rest = None
+
+    def generate(
+        self: HeterogeneousFiber, n_sections: int, length: float, function_list: list[Callable]
+    ) -> HeterogeneousFiber:
+        """Build fiber model sections with NEURON.
+
+        :param n_sections: number of sections to comprise fiber
+        :param length: length of the fiber
+        :param function_list: list of functions to generate fiber sections. Each function should generate a section.
+            the function list should start with the node of Ranvier and end with the section before the next node
+        :return: generated instance of fiber model class
+        """
+        # Determine geometrical parameters for fiber based on fiber model
+        if length is not None:
+            n_sections = math.floor(length / self.delta_z) * len(function_list) + 1
+        else:
+            assert (n_sections - 1) % len(function_list) == 0, (
+                f"n_sections must be 1 + {len(function_list)}n where n is an integer one less than the "
+                "number of nodes of Ranvier."
+            )
+
+        # Determine number of nodecount
+        self.nodecount = int(1 + (n_sections - 1) / len(function_list))
+
+        # Create fiber sections
+        self.create_sections(function_list)
+
+        # Generate fiber coordinates and validate them
+        self._calculate_coordinates()
+
+        return self
+
+    def create_sections(self: HeterogeneousFiber, function_list: list[Callable]) -> HeterogeneousFiber:
+        """Create and connect NEURON sections for a myelinated fiber type using specified functions.
+
+        :param function_list: list of functions to generate fiber sections. Each function should generate a section.
+            the function list should start with the node of Ranvier and end with the section before the next node
+        :return: generated instance of fiber model class
+        """
+        nsegments = (self.nodecount - 1) * len(function_list) + 1
+        for ind in range(1, nsegments + 1):
+            function = function_list[(ind - 1) % len(function_list)]
+            section = function(ind)
+            if (ind - 1) % len(function_list) == 0:
+                self.nodes.append(section)
+            self.sections.append(section)
+
+        self._connect_sections()
+
+        return self
