@@ -38,6 +38,10 @@ fiber.resample_potentials(arc_lengths, potentials, inplace=True)
 ```
 
 ## Electrical potentials from multiple sources
+```{note}
+PyFibers supports one stimulation amplitude for scaling input potentials (as an argument to {py:meth}`.ScaledStim.run_sim`). Threshold searches using {py:meth}`.Stimulation.find_threshold`, similarly provide a single "stimamp" input to {py:meth}`.ScaledStim.run_sim`. To scale potentials from multiple sources independently, you must either scale the potentials as you provide them to the fiber object, or use your own custom `run_sim()` method (See [Custom Simulations](custom.md#custom-simulations)).
+```
+
 ### Superposition
 In the case where each source delivers a weighted version of the same stimulus, the potentials can be weighted and summed under the principle of superposition. For example, the potentials due to two point sources of opposite polarity can be calculated as:
 ```python
