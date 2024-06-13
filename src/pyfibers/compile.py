@@ -17,12 +17,9 @@ def main() -> None:
     # Copy all txt files and rename to .mod
     # remove all .mod and .c files
     for file in os.listdir():
-        if file.endswith(".mod") or file.endswith(".c"):
+        if not file.endswith(".mod"):
             os.remove(file)
 
-    for file in os.listdir():
-        if file.endswith(".txt"):
-            os.rename(file, file[:-4] + ".mod")
     # Check for nrnivmodl
     if not shutil.which("nrnivmodl"):
         raise RuntimeError(
