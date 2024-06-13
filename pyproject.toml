@@ -43,6 +43,8 @@ dev = [
   "nbsphinx",
   "sphinx-copybutton",
   "sphinx-rtd-dark-mode",
+  "moviepy",
+  "IPython",
   "enum-tools[sphinx]"
 ]
 

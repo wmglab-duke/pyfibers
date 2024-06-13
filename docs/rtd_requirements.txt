@@ -1,4 +1,6 @@
 enum-tools[sphinx]
+IPython
+moviepy
 myst-parser
 nbsphinx
 sphinx-copybutton
