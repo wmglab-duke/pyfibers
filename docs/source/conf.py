@@ -62,7 +62,7 @@ autodoc_mock_imports = ['neuron', 'scipy']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 # uncomment the line below to exclude all tutorials from the documentation build
-# exclude_patterns = ['tutorials/**.ipynb']
+# exclude_patterns = ['tutorials/**.ipynb'] #noqa: E800
 
 
 # -- Options for HTML output -------------------------------------------------

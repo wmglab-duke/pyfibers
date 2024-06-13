@@ -3,11 +3,11 @@ default:
 
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - if: $CI_COMMIT_REF_PROTECTED
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+    when: never
+  - if: $CI_COMMIT_REF_PROTECTED
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -21,61 +21,61 @@ variables:
 # them in a virtualenv and cache it as well.
 
 stages:
-  - lint
-  - test
-  - deploy
+- lint
+- test
+- deploy
 
 cache:
   paths:
-    - .cache/pip
-    - venv/
+  - .cache/pip
+  - venv/
 
 before_script:
-  - python --version
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
+- python --version
+- pip install virtualenv
+- virtualenv venv
+- source venv/bin/activate
 
 isort:
   stage: lint
   script:
-    - pip install isort
-    - isort --check-only src
+  - pip install isort
+  - isort --check-only src
 
 black:
   stage: lint
   script:
-    - pip install black black[jupyter]
-    - black --check src
+  - pip install black black[jupyter]
+  - black --check src
 
 flake8:
   stage: lint
   script:
-    - pip install flake8==5.* flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring flake8-blind_except flake8-requirements flake8-deprecated flake8-requirements pep8-naming
-    - flake8 --extend-ignore=T100,T101,T102 src
+  - pip install flake8==5.* flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring flake8-blind_except flake8-requirements flake8-deprecated flake8-requirements pep8-naming
+  - flake8 --extend-ignore=T100,T101,T102 src
 
 docstring_check:
   stage: lint
   script:
-    - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
-    - flake8 --select=D,DAR,RST src
+  - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
+  - flake8 --select=D,DAR,RST src
   rules:
     #only check docstrings if main or merging with main
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 mypy:
   stage: lint
   script:
-    - pip install mypy
-    - mypy src
+  - pip install mypy
+  - mypy src
 
 tox_py311_w_cov:
   stage: test
   script:
-    - pip install "tox<=4.8.0"
-    - tox -l
-    - tox -e py311-neuron{8},coverage
+  - pip install "tox<=4.8.0"
+  - tox -l
+  - tox -e py311-neuron{8},coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
@@ -83,52 +83,52 @@ tox_py311_w_cov:
         coverage_format: cobertura
         path: coverage.xml
     paths:
-      - coverage_html_report/
+    - coverage_html_report/
 
 tox_py39:
   script:
-    - pip install "tox<=4.8.0"
-    - tox -e py39-neuron{8}
+  - pip install "tox<=4.8.0"
+  - tox -e py39-neuron{8}
   image: python:3.9
 
 tox_py310:
   script:
-    - pip install "tox<=4.8.0"
-    - tox -e py310-neuron{8}
+  - pip install "tox<=4.8.0"
+  - tox -e py310-neuron{8}
   image: python:3.10
 
 tox_py312:
   script:
-    - pip install "tox<=4.8.0"
-    - tox -e py312-neuron{8}
+  - pip install "tox<=4.8.0"
+  - tox -e py312-neuron{8}
   image: python:3.12
 
 # Define the build_docs script as an anchor
 .build_docs: &build_docs
-  - apt-get update && apt-get -y install libgl1
-  - pip install neuron
-  - pip install .
-  - pyfibers_compile
-  - pip install -U sphinx mock sphinx-rtd-theme
-  - pip install -Ur docs/rtd_requirements.txt
-  - apt-get install -y pandoc
-  - pip install --upgrade pip ipython ipykernel
-  - ipython kernel install --name "python3" --user
-  - cd docs/source; sphinx-build -W -b html . ../../public
+- apt-get update && apt-get -y install libgl1
+- pip install neuron
+- pip install .
+- pyfibers_compile
+- pip install -U sphinx mock sphinx-rtd-theme
+- pip install -Ur docs/rtd_requirements.txt
+- apt-get install -y pandoc
+- pip install --upgrade pip ipython ipykernel
+- ipython kernel install --name "python3" --user
+- cd docs/source; sphinx-build -W -b html . ../../public
 
 test_docs:
   stage: test
   script:
-    - *build_docs
+  - *build_docs
   rules:
-    - if: '$CI_COMMIT_BRANCH != "$CI_DEFAULT_BRANCH"'
+  - if: $CI_COMMIT_BRANCH != "$CI_DEFAULT_BRANCH"
 
 pages:
   stage: deploy
   script:
-    - *build_docs
+  - *build_docs
   artifacts:
     paths:
-      - public
+    - public
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

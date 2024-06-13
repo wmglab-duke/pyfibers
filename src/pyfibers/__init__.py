@@ -11,16 +11,22 @@ import importlib.metadata
 # assign version number from pyproject.toml
 __version__ = importlib.metadata.version(__package__ or __name__)
 
-# load all NEURON files #TODO suppress already loaded warnings
+# load all NEURON files
 MOD_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'MOD')
 with suppress(RuntimeError):
-    h.nrn_load_dll(os.path.join(MOD_dir, 'nrnmech.dll'))
-    print('Loaded neuron dll')
     neuron.load_mechanisms(MOD_dir)
-    print('Loaded neuron mechanism files')
 
 # load all python files
 from .fiber import build_fiber, Fiber, FiberModel  # noqa: E402
 from .stimulation import ScaledStim, BoundsSearchMode, TerminationMode, ThresholdCondition, BisectionMean  # noqa: E402
 
-__all__ = ['build_fiber', 'Fiber', 'ScaledStim', 'FiberModel']
+__all__ = [
+    'build_fiber',
+    'Fiber',
+    'ScaledStim',
+    'FiberModel',
+    'BoundsSearchMode',
+    'TerminationMode',
+    'ThresholdCondition',
+    'BisectionMean',
+]

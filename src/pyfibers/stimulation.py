@@ -241,7 +241,7 @@ class Stimulation:
         if detect_time:
             assert detect_time > 0, 'Action potentials at t<=0 should be impossible'
         if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
-            warnings.warn(
+            warnings.warn(  # TODO only warn on last run of threshold search
                 "APs detected at locations other than the set detection location. "
                 "This could mean your stimamp is high enough for virtual anode block.",
                 stacklevel=2,
