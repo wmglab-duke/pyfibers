@@ -52,11 +52,6 @@ dev = [
 pyfibers_compile = "pyfibers.compile:main"
 
 [project.urls]
-Changelog = ""
-Documentation = ""
-Homepage = ""
-Issues = ""
-Repository = ""
 
 [tool.black]
 line-length = 120

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import warnings
 from enum import Enum, unique
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 from neuron import h
 from numpy import bool_
 from scipy.signal import argrelextrema
 
-from pyfibers import Fiber, FiberModel
+if TYPE_CHECKING:
+    from pyfibers import Fiber
+
+from pyfibers import FiberModel
 
 h.load_file('stdrun.hoc')
 
@@ -46,6 +49,14 @@ class BisectionMean(Enum):
 
     GEOMETRIC = 0
     ARITHMETIC = 1
+
+
+@unique
+class StimAmpTarget(Enum):
+    """Stimulation target."""
+
+    INTRACELLULAR = 0
+    EXTRACELLULAR = 1
 
 
 class Stimulation:
@@ -254,6 +265,7 @@ class Stimulation:
         block: bool = False,
         ap_detect_location: float = 0.9,
         block_delay: float = 0,
+        thresh_num_aps: int = 1,
     ) -> bool:
         """Check if stimulation was above or below threshold.
 
@@ -261,13 +273,22 @@ class Stimulation:
         :param block: true if BLOCK_THRESHOLD protocol, false otherwise
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
         :param block_delay: time after start of simulation to check for block [ms]
+        :param thresh_num_aps: number of action potentials for threshold search
+        :raises NotImplementedError: if block and thresh_num_aps != 1
         :return: True if stim was supra-threshold, False if sub-threshold
         """
+        assert thresh_num_aps > 0, 'thresh_num_aps must be greater than 0'
         # Determine user-specified location along axon to check for action potential
         detect_n, detect_time = ScaledStim.ap_checker(fiber, ap_detect_location=ap_detect_location)
         if block:
-            return detect_time <= block_delay  # check for block
-        return bool(detect_n)  # otherwise check for activation
+            if thresh_num_aps != 1:
+                raise NotImplementedError(
+                    'Block threshold only supports thresh_num_aps=1, since NEURON APCount only records time of last AP.'
+                )
+            # if no action potentials detected after block delay, stimulation is supra-threshold
+            return detect_time <= block_delay  # True if no aps detected after block delay, False otherwise
+        # otherwise check for activation
+        return detect_n >= thresh_num_aps  # True if detected aps >= thresh_num_aps, False otherwise
 
     def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
         self: Stimulation,
@@ -283,6 +304,7 @@ class Stimulation:
         exit_t_shift: float = 5,
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
         block_delay: int = 0,
+        thresh_num_aps: int = 1,
         **kwargs,
     ) -> tuple[float | Any, tuple[float, float]]:
         """Bisection search to find threshold amplitudes. #TODO clean up this docstring.
@@ -303,6 +325,10 @@ class Stimulation:
         :param exit_t_shift: shift (in ms) for detected action potential time to exit subthreshold stimulation
         :param bisection_mean: the type of mean to use for bisection search (arithmetic or geometric)
         :param block_delay: delay from start of stimulation to start checking for block
+        :param thresh_num_aps: number of action potentials for threshold search
+            - if activation, suprathreshold requires detected aps >= thresh_num_aps
+            - if block, suprathreshold requires detected aps < thresh_num_aps
+            (NOT implemented, block currently requires thresh_num_aps=1)
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :raises RuntimeError: If stimamp bottom is supra-threshold and stimamp top is sub-threshold
         :return: the threshold amplitude for the given condition, and the number of detected aps
@@ -311,10 +337,10 @@ class Stimulation:
 
         # first check stimamps
         supra_top, (_, t) = self.threshsim(
-            stimamp_top, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+            stimamp_top, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
         )
         supra_bot, _ = self.threshsim(
-            stimamp_bottom, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+            stimamp_bottom, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
         )
 
         # Determine upper- and lower-bounds for simulation (prior to bisection search)
@@ -343,7 +369,12 @@ class Stimulation:
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
                 supra_top, (_, t) = self.threshsim(
-                    stimamp_top, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+                    stimamp_top,
+                    fiber,
+                    condition=condition,
+                    block_delay=block_delay,
+                    thresh_num_aps=thresh_num_aps,
+                    **kwargs,
                 )
             elif supra_bot and supra_top:
                 # search downward with stimamp bottom
@@ -353,7 +384,12 @@ class Stimulation:
                 elif bounds_search_mode == BoundsSearchMode.PERCENT_INCREMENT:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
                 supra_bot, _ = self.threshsim(
-                    stimamp_bottom, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+                    stimamp_bottom,
+                    fiber,
+                    condition=condition,
+                    block_delay=block_delay,
+                    thresh_num_aps=thresh_num_aps,
+                    **kwargs,
                 )
         else:
             raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
@@ -371,7 +407,7 @@ class Stimulation:
                 stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** (1 / 2)
 
             suprathreshold, _ = self.threshsim(
-                stimamp, fiber, check_threshold=condition, block_delay=block_delay, **kwargs
+                stimamp, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
             )
 
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
@@ -389,11 +425,12 @@ class Stimulation:
                 print('Validating threshold...')
                 # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
-                assert self.threshold_checker(
+                assert self.threshold_checker(  # assert that stim is above threshold
                     fiber,
                     condition == ThresholdCondition.BLOCK,
                     kwargs.get('ap_detect_location', 0.9),
                     block_delay=block_delay,
+                    thresh_num_aps=thresh_num_aps,
                 ), 'Threshold stimulation did not generate an action potential'
                 self.end_excitation_checker(
                     fiber, fail_on_end_excitation=kwargs.get('fail_on_end_excitation', True)
@@ -475,32 +512,40 @@ class Stimulation:
         self: Stimulation,
         stimamp: float,
         fiber: Fiber,
-        check_threshold: ThresholdCondition = ThresholdCondition.ACTIVATION,
+        condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
         block_delay: int = 0,
+        thresh_num_aps: int = 1,
         **kwargs,
     ) -> tuple[bool, tuple[int, float]]:
         """Run a simulation with a given stimulus amplitude and check for threshold.
 
         :param stimamp: the stimulus amplitude
         :param fiber: the fiber to stimulate
-        :param check_threshold: the condition to check for threshold
+        :param condition: the condition to check for threshold
         :param block_delay: the delay of the stimulus
+        :param thresh_num_aps: number of action potentials for threshold search
         :param kwargs: additional keyword arguments to pass to the run_sim method
         :return: Number of detected aps and time of last detected ap
         """
-        if check_threshold == ThresholdCondition.ACTIVATION:  # noqa: R505
+        if condition == ThresholdCondition.ACTIVATION:  # noqa: R505
             n_aps, aptime = self.run_sim(
                 stimamp, fiber, exit_func=self.supra_exit, use_exit_t=True, **kwargs
             )  # type: ignore
-            return self.threshold_checker(fiber, ap_detect_location=kwargs.get('ap_detect_location', 0.9)), (
+            return self.threshold_checker(
+                fiber, ap_detect_location=kwargs.get('ap_detect_location', 0.9), thresh_num_aps=thresh_num_aps
+            ), (
                 n_aps,
                 aptime,
             )
-        elif check_threshold == ThresholdCondition.BLOCK:
+        elif condition == ThresholdCondition.BLOCK:
             n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
             return (
                 self.threshold_checker(
-                    fiber, ap_detect_location=kwargs.get('ap_detect_location', 0.9), block=True, block_delay=block_delay
+                    fiber,
+                    ap_detect_location=kwargs.get('ap_detect_location', 0.9),
+                    block=True,
+                    block_delay=block_delay,
+                    thresh_num_aps=thresh_num_aps,
                 ),
                 (n_aps, aptime),
             )
@@ -637,6 +682,7 @@ class ScaledStim(Stimulation):
         exit_func: Callable = lambda *x: False,
         exit_func_interval: int = 100,
         use_exit_t: bool = False,
+        stimamp_target: StimAmpTarget = StimAmpTarget.EXTRACELLULAR,
     ) -> tuple[int, float]:
         """Run a simulation for a single stimulation amplitude.
 
@@ -646,6 +692,9 @@ class ScaledStim(Stimulation):
         :param exit_func: function to call to check if simulation should be exited
         :param exit_func_interval: interval to call exit_func
         :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
+        :param stimamp_target: whether to use "stimamp" to scale extracellular or intracellular stimulation
+            - if EXTRACELLULAR, stimamp is applied to extracellular potentials (fiber.potentials * stimamp)
+            - if INTRACELLULAR, stimamp is applied to the intracellular stimulus (self.istim.amp * stimamp)
         :return: number of detected aps and time of last detected ap
         """
         print('Running:', round(stimamp, 3))
@@ -654,9 +703,19 @@ class ScaledStim(Stimulation):
 
         self.pre_run_setup(fiber)
 
+        # set stimamps  # TODO move to fxn above
+        extracellular_stimamp = stimamp if stimamp_target == StimAmpTarget.EXTRACELLULAR else 0
+
+        # if stimamp_is_intra, scale istim current
+        if stimamp_target == StimAmpTarget.INTRACELLULAR:  # TODO move to fxn above
+            assert self.istim is not None, 'Intracellular stimulation is not enabled for this ScaledStim instance.'
+            if stimamp < 0:
+                warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
+            self.istim.amp *= stimamp
+
         # Run simulation
         for i in range(self.n_timesteps):
-            timestep_potentials = stimamp * self.potentials_at_time(i, fiber)
+            timestep_potentials = extracellular_stimamp * self.potentials_at_time(i, fiber)
             self._update_extracellular(fiber, timestep_potentials)
 
             h.fadvance()
