@@ -692,6 +692,7 @@ class ScaledStim(Stimulation):
         :param exit_func: function to call to check if simulation should be exited
         :param exit_func_interval: interval to call exit_func
         :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
+        :raises RuntimeError: if NaNs are detected in fiber potentials
         :param stimamp_target: whether to use "stimamp" to scale extracellular or intracellular stimulation
             - if EXTRACELLULAR, stimamp is applied to extracellular potentials (fiber.potentials * stimamp)
             - if INTRACELLULAR, stimamp is applied to the intracellular stimulus (self.istim.amp * stimamp)
@@ -719,6 +720,10 @@ class ScaledStim(Stimulation):
             self._update_extracellular(fiber, timestep_potentials)
 
             h.fadvance()
+
+            # check for NaNs in fiber potentials
+            if np.any(np.isnan([s.v for s in fiber.sections])):
+                raise RuntimeError('NaN detected in fiber potentials')
 
             if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location):
                 break
