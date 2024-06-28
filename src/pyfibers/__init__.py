@@ -17,9 +17,11 @@ with suppress(RuntimeError):
     neuron.load_mechanisms(MOD_dir)
 
 # load all python files
-from .fiber import build_fiber, FiberModel  # noqa: E402
+from .fiber import build_fiber, Fiber  # noqa: E402
+from .model_enum import FiberModel  # noqa: E402
 from .stimulation import (  # noqa: E402
     ScaledStim,
+    Stimulation,
     BoundsSearchMode,
     TerminationMode,
     ThresholdCondition,
@@ -29,7 +31,9 @@ from .stimulation import (  # noqa: E402
 
 __all__ = [
     'build_fiber',
+    'Fiber',
     'ScaledStim',
+    'Stimulation',
     'FiberModel',
     'BoundsSearchMode',
     'TerminationMode',

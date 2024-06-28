@@ -20,7 +20,9 @@ dependencies = [
   "numpy",
   "pandas",
   "scipy",
-  "seaborn"
+  "seaborn",
+  "aenum",
+  "importlib_metadata"
 ]
 description = "Modeling stimulation of peripheral nerve fibers"
 keywords = ["stimulation", "modeling", "computational", "fibers", "peripheral nerve"]
@@ -102,6 +104,7 @@ use_parentheses = true
 [tool.mypy]
 # exclude docs directory
 exclude = ["docs", "tests"]
+explicit_package_bases = true
 ignore_missing_imports = true
 implicit_optional = true
 no_strict_optional = true

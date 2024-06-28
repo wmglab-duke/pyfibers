@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from neuron import h
 
-from pyfibers import FiberModel
 from pyfibers.fiber import Fiber, _HomogeneousFiber
 
 h.load_file('stdrun.hoc')
@@ -13,14 +12,15 @@ h.load_file('stdrun.hoc')
 class SundtFiber(_HomogeneousFiber):
     """Sundt fiber model."""
 
-    def __init__(self: SundtFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
-        """Initialize UnmyelinatedFiber class.
+    submodels = ['SUNDT']
 
-        :param fiber_model: enum of fiber model type
+    def __init__(self: SundtFiber, diameter: float, **kwargs) -> None:
+        """Initialize SundtFiber class.
+
         :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_nahh",
             "m": "m_nahh",

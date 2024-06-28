@@ -86,6 +86,7 @@ class Stimulation:
         self.istim: h.trainIClamp = None
         self.istim_record = None
         self.istim_params: dict[str, float] = {}
+
         self.exit_t: float = None
         self.custom_run_sim = custom_run_sim  # Store the custom run_sim function
         try:

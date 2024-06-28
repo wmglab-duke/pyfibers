@@ -5,8 +5,7 @@ from __future__ import annotations
 import math
 import typing
 import warnings
-from enum import Enum, unique
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 from neuron import h
@@ -14,23 +13,13 @@ from numpy import ndarray
 
 h.load_file('stdrun.hoc')
 
-
-@unique
-class FiberModel(Enum):
-    """Enumeration for available fiber models."""
-
-    MRG_INTERPOLATION = 0
-    MRG_DISCRETE = 1
-    SUNDT = 2
-    TIGERHOLM = 3
-    RATTAY = 4
-    SCHILD97 = 5
-    SCHILD94 = 6
+if TYPE_CHECKING:
+    from .model_enum import FiberModel
 
 
 def build_fiber(
     fiber_model: FiberModel, diameter: float, n_sections: int = None, length: float = None, **kwargs
-) -> Fiber:
+) -> object:  # Replace with the correct type of your fiber models
     """Generate a fiber model in NEURON.
 
     :param fiber_model: fiber model to use
@@ -38,45 +27,18 @@ def build_fiber(
     :param n_sections: number of fiber coordinates to use
     :param length: length of the fiber
     :param kwargs: keyword arguments to pass to the fiber model class
-    :raises ValueError: if the fiber model is not supported
     :return: generated instance of fiber model class
     """
     assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
     assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
 
-    # todo: maybe stop passing model, find a cleaner way to implement this factory
-    # https://codereview.stackexchange.com/questions/269572/factory-pattern-using-enum
-    fiberclass: MRGFiber | RattayFiber | TigerholmFiber | SundtFiber | SchildFiber
-    if fiber_model in [FiberModel.MRG_DISCRETE, FiberModel.MRG_INTERPOLATION]:
-        from pyfibers.models.mrg import MRGFiber
+    fiber_class = fiber_model.value
 
-        fiberclass = MRGFiber(fiber_model, diameter, **kwargs)
-    elif fiber_model == FiberModel.RATTAY:
-        from pyfibers.models.rattay import RattayFiber
-
-        fiberclass = RattayFiber(fiber_model, diameter, **kwargs)
-    elif fiber_model == FiberModel.TIGERHOLM:
-        from pyfibers.models.tigerholm import TigerholmFiber
-
-        fiberclass = TigerholmFiber(fiber_model, diameter, **kwargs)
-    elif fiber_model == FiberModel.SUNDT:
-        from pyfibers.models.sundt import SundtFiber
-
-        fiberclass = SundtFiber(fiber_model, diameter, **kwargs)
-    elif fiber_model in [FiberModel.SCHILD94, FiberModel.SCHILD97]:
-        from pyfibers.models.schild import SchildFiber
-
-        fiberclass = SchildFiber(fiber_model, diameter, **kwargs)
-    else:
-        raise ValueError("Fiber Model not valid")
-
-    fiberclass.generate(n_sections, length)
-
-    fiberclass.potentials = np.zeros(len(fiberclass.coordinates))
-
-    assert len(fiberclass) == fiberclass.nodecount, "Node count does not match number of nodes"
-
-    return fiberclass
+    fiber_instance = fiber_class(diameter=diameter, fiber_model=fiber_model, **kwargs)
+    fiber_instance.generate(n_sections, length)
+    fiber_instance.potentials = np.zeros(len(fiber_instance.coordinates))
+    assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
+    return fiber_instance
 
 
 class Fiber:

@@ -22,7 +22,7 @@ def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperatur
 
 def test_bad_fiber_model():
     """Test that a bad fiber model raises an error."""
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         build_fiber(diameter=5.7, fiber_model='bad_model', temperature=37, n_sections=133)
 
 
