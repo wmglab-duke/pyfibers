@@ -6,7 +6,6 @@ import warnings
 
 from neuron import h
 
-from pyfibers import FiberModel
 from pyfibers.fiber import Fiber, _HomogeneousFiber
 
 h.load_file('stdrun.hoc')
@@ -15,14 +14,15 @@ h.load_file('stdrun.hoc')
 class TigerholmFiber(_HomogeneousFiber):
     """Tigerholm Fiber model."""
 
-    def __init__(self: TigerholmFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
-        """Initialize UnmyelinatedFiber class.
+    submodels = ['TIGERHOLM']
 
-        :param fiber_model: name of fiber model type
+    def __init__(self: TigerholmFiber, diameter: float, **kwargs) -> None:
+        """Initialize TigerholmFiber class.
+
         :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
             "m1.7": "m_nattxs",  # TODO check
             "h1.7": "h_nattxs",  # TODO check

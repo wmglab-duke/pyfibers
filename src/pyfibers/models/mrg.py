@@ -10,7 +10,6 @@ from typing import Callable, TypedDict
 
 from neuron import h
 
-from pyfibers import FiberModel
 from pyfibers.fiber import Fiber, HeterogeneousFiber
 
 h.load_file("stdrun.hoc")
@@ -81,18 +80,17 @@ fiber_parameters_all: FiberParameters = {  # TODO needs comments
 class MRGFiber(HeterogeneousFiber):
     """Implementation of the MRG fiber model."""
 
-    def __init__(self: MRGFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
+    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION']
+
+    def __init__(self: MRGFiber, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
 
-        :param fiber_model: Name of fiber model type.
-        :type fiber_model: FiberModel
         :param diameter: Fiber diameter [microns].
-        :type diameter: float
         :param kwargs: Keyword arguments to pass to the base class.
         """
         self.mrg_params: dict = None
         assert "delta_z" not in kwargs, "Cannot specify delta_z for MRG Fiber"
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_axnode_myel",
             "m": "m_axnode_myel",
@@ -134,26 +132,26 @@ class MRGFiber(HeterogeneousFiber):
 
         :raises ValueError: If an invalid fiber diameter is passed in.
         """
-        if self.fiber_model == FiberModel.MRG_DISCRETE:
+        if self.fiber_model.name == "MRG_DISCRETE":
             fiber_param_discrete = fiber_parameters_all["MRG_DISCRETE"]
             try:
                 diameter_index = fiber_param_discrete["diameters"].index(self.diameter)
             except ValueError:
                 raise ValueError(
-                    "Diameter chosen not valid for FiberModel.MRG_DISCRETE. "
+                    "Diameter chosen not valid for MRG_DISCRETE. "
                     "Choose from {fiber_parameters_all['MRG_DISCRETE']['diameters']}"
                 )
             self.mrg_params = {
                 param: fiber_param_discrete[param][diameter_index]  # type: ignore
                 for param in fiber_param_discrete.keys()
             }
-        elif self.fiber_model == FiberModel.MRG_INTERPOLATION:
+        elif self.fiber_model.name == "MRG_INTERPOLATION":
             fiber_param_interp = fiber_parameters_all["MRG_INTERPOLATION"]
             self.mrg_params = {
                 param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
             }
             if self.diameter < 2 or self.diameter > 16:
-                raise ValueError("Diameter for FiberModel.MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
+                raise ValueError("Diameter for MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
 
         self.delta_z = self.mrg_params["delta_z"]
 
@@ -298,7 +296,7 @@ class MRGFiber(HeterogeneousFiber):
         node.L = nodelength
         node.Ra = rhoa / 10000
 
-        if passive:
+        if passive:  # TODO, see if can change to generalized passive function
             node.cm = 2
             node.insert("pas")
             node.g_pas = 0.0001

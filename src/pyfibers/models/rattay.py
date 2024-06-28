@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from neuron import h
 
-from pyfibers import FiberModel
 from pyfibers.fiber import Fiber, _HomogeneousFiber
 
 h.load_file('stdrun.hoc')
@@ -13,14 +12,15 @@ h.load_file('stdrun.hoc')
 class RattayFiber(_HomogeneousFiber):
     """Rattay fiber model."""
 
-    def __init__(self: RattayFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
-        """Initialize UnmyelinatedFiber class.
+    submodels = ['RATTAY']
 
-        :param fiber_model: name of fiber model type
-        :param diameter: fiber diameter [microns]
-        :param kwargs: keyword arguments to pass to the base class
+    def __init__(self: RattayFiber, diameter: float, **kwargs) -> None:
+        """Initialize RattayFiber class.
+
+        :param diameter: Fiber diameter [microns].
+        :param kwargs: Keyword arguments to pass to the base class.
         """
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
+        super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_RattayAberham",
             "m": "m_RattayAberham",

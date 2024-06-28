@@ -110,6 +110,21 @@ class MyHeterogeneousFiber(HeterogeneousFiber):
 
 By following these simplified steps, you can create new fiber models based on the specific characteristics of your desired fiber. Define the necessary methods and parameters that match your fiber model requirements.
 
+### Making your fiber model discoverable as a plugin
+Other research groups may wish to create their own fiber models in the PyFibers environment, and publish them as a separate repository. Such fiber models can be made discoverable as plugins which will become automatically available in PyFibers after installation. To make your fiber model discoverable as a plugin, follow these steps:
+
+1. **Create a Python package for your fiber model**: Create a Python package for your fiber model and include the necessary files and classes. We recommend following Python's [packaging tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/).
+
+2. Specify the entry point for your fiber model. The entry point tells pyfibers that your fiber model should be imported, and where to find the class that defines it. Entry points can be specified in multiple ways, here we will provide an example using pyproject.toml:
+
+```toml
+[project.entry-points."pyfibers.plugins"]
+my_fiber_model = "my_fiber_model_package.my_fiber_model_module:MyFiberModelClass"
+```
+3. Make the NEURON mechanisms available to the Python interpreter. This requires (1) compiling the NEURON mechanisms (see PyFibers's compile script for an example of how to do this) and (2) making the compiled mechanisms available to the Python interpreter (by calling neuron.load_mechanisms() in your __init__.py file, see PyFibers's __init__.py for an example of how to do this).
+
+4. **Publish your fiber model package**: Publish your fiber model package to a repository such as PyPI. Once published, other users can install your fiber model package using pip. After installation, your fiber model will be automatically discovered and available for use in PyFibers. The name of the fiber model will be given by the "submodels" attribute of your class (see the instructions for creating fiber models above).
+
 ## Custom simulations
 This section provides examples of how to run custom simulations using fibers. These examples demonstrate different methods, including directly using NEURON's IClamp and h.run, leveraging the Stimulation class with a custom run_sim function, and using the Stimulation.pre_run_setup method with manual assignment of extracellular potentials.
 
