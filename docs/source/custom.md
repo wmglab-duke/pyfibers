@@ -179,7 +179,40 @@ In this example, we demonstrate how to set up a custom simulation using the NEUR
 
 ---
 
-### Example 2: Custom Simulation with a Custom `run_sim` Function
+### Example 2: Custom Simulation Using `Stimulation.pre_run_setup` and Manual Extracellular Potentials
+
+In this example, we demonstrate how to set up a custom simulation by using the `Stimulation.pre_run_setup` method and then manually assigning extracellular potentials in a loop.
+
+#### Steps:
+
+1. **Create and configure the fiber as above**:
+
+2. **Set up the `Stimulation` instance**:
+    ```python
+    from pyfibers import Stimulation
+
+    stimulation = Stimulation(dt=0.001, tstop=20)
+
+    # Pre-run setup
+    stimulation.pre_run_setup(fiber)
+    ```
+
+3. **Manually assign extracellular potentials in the simulation loop**:
+    ```python
+    stimamp = 0.1  # Example stimulation amplitude
+
+    for i in range(int(stimulation.tstop / stimulation.dt)):
+        # Manually assign extracellular potentials
+        e_stims = [stimamp * pot for pot in fiber.potentials]
+        stimulation._update_extracellular(fiber, e_stims)
+
+        # Advance the simulation
+        h.fadvance()
+    ```
+
+---
+
+### Example 3: Custom Simulation with a Custom `run_sim` Function
 
 In this example, we demonstrate how to set up a custom simulation by providing a custom `run_sim` function to the `Stimulation` class. You could also achieve this by creating a subclass and overriding the `run_sim` method.
 
@@ -216,37 +249,43 @@ In this example, we demonstrate how to set up a custom simulation by providing a
 
 ---
 
-### Example 3: Custom Simulation Using `Stimulation.pre_run_setup` and Manual Extracellular Potentials
+### Example 4: Custom `run_sim` in a subclass of `Stimulation`
 
-In this example, we demonstrate how to set up a custom simulation by using the `Stimulation.pre_run_setup` method and then manually assigning extracellular potentials in a loop.
+In this example, we demonstrate how to create a subclass of `Stimulation` and override the `run_sim` method to provide custom simulation logic.
 
 #### Steps:
 
-1. **Create and configure the fiber as above**:
-
-2. **Set up the `Stimulation` instance**:
+1. **Create a subclass of `Stimulation`**:
     ```python
     from pyfibers import Stimulation
 
-    stimulation = Stimulation(dt=0.001, tstop=20)
 
-    # Pre-run setup
-    stimulation.pre_run_setup(fiber)
+    class CustomStimulation(Stimulation):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
     ```
 
-3. **Manually assign extracellular potentials in the simulation loop**:
+2. **Override the `run_sim` method**:
     ```python
-    stimamp = 0.1  # Example stimulation amplitude
+    def run_sim(self, fiber):
+        print("Running custom simulation:")
 
-    for i in range(int(stimulation.tstop / stimulation.dt)):
-        # Manually assign extracellular potentials
-        e_stims = [stimamp * pot for pot in fiber.potentials]
-        stimulation._update_extracellular(fiber, e_stims)
+        self.pre_run_setup(fiber)
 
-        # Advance the simulation
-        h.fadvance()
+        # Example of a custom simulation loop
+        for i in range(int(self.tstop / self.dt)):
+            # Custom simulation logic here
+
+            # Advance to next time step
+            h.fadvance()
+
+        return 1  # return desired data here.
     ```
-
+3. **Set up the `CustomStimulation` instance and run the simulation**:
+    ```python
+    stimulation = CustomStimulation(dt=0.001, tstop=20)
+    stimulation.run_sim(fiber)
+    ```
 ---
 
 These examples demonstrate different ways to set up and run custom simulations using fibers with or without the `Stimulation` class. Each method allows for flexibility in how the simulations are defined and executed.

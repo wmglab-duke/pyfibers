@@ -219,12 +219,15 @@ def test_block_threshold():
     # Create new stimulation object
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
-    stimulation.set_intracellular_stim(delay=10, pw=0.5, dur=40, freq=100, amp=1, ind=2)
+    # Add intrinsic activity
+    fiber.add_intrinsic_activity(loc=0.1, avg_interval=5, num_stims=10000, start_time=10, noise=0)
 
+    # Find threshold
     amp, _ = stimulation.find_threshold(fiber, stimamp_top=-3, block_delay=10, condition=ThresholdCondition.BLOCK)
 
-    assert np.isclose(amp, -2.7897656250000002)
+    assert np.isclose(amp, -2.7080078125)
 
+    # Run simulation with no stimulation
     n, t = stimulation.run_sim(0, fiber)
 
-    assert n == 4.0 and np.isclose(t, 40.5215)
+    assert n == 8.0 and np.isclose(t, 45.476)

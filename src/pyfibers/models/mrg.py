@@ -184,8 +184,8 @@ class MRGFiber(HeterogeneousFiber):
 
         mysa.insert("extracellular")
         mysa.xraxial[0] = rpn1
-        mysa.xc[0] = mycm / (nl * 2)  # short circuit
-        mysa.xg[0] = mygm / (nl * 2)  # short circuit
+        mysa.xc[0] = mycm / (nl * 2)
+        mysa.xg[0] = mygm / (nl * 2)
 
         return mysa
 
@@ -220,8 +220,8 @@ class MRGFiber(HeterogeneousFiber):
 
         flut.insert("extracellular")
         flut.xraxial[0] = rpn2
-        flut.xc[0] = mycm / (nl * 2)  # short circuit
-        flut.xg[0] = mygm / (nl * 2)  # short circuit
+        flut.xc[0] = mycm / (nl * 2)
+        flut.xg[0] = mygm / (nl * 2)
 
         return flut
 
@@ -261,8 +261,8 @@ class MRGFiber(HeterogeneousFiber):
 
         stin.insert("extracellular")
         stin.xraxial[0] = rpx
-        stin.xc[0] = mycm / (nl * 2)  # short circuit
-        stin.xg[0] = mygm / (nl * 2)  # short circuit
+        stin.xc[0] = mycm / (nl * 2)
+        stin.xg[0] = mygm / (nl * 2)
 
         return stin
 
@@ -302,8 +302,8 @@ class MRGFiber(HeterogeneousFiber):
             node.g_pas = 0.0001
             node.e_pas = self.v_rest
             node.insert("extracellular")
-            node.xc[0] = mycm / (nl * 2)  # short circuit
-            node.xg[0] = mygm / (nl * 2)  # short circuit
+            node.xc[0] = mycm / (nl * 2)
+            node.xg[0] = mygm / (nl * 2)
 
         else:
             node.cm = 2
