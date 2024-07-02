@@ -18,7 +18,7 @@ We have implemented the following models:
 4. Install the package using pip
    - Open anaconda prompt
    - Navigate to the repo root directory
-   - `pip install .` or if you plan to do package development `pip install .[dev]`, which will also install development dependencies
+   - `pip install .` or if you plan to do package development `pip install .[dev]`, which will also install development dependencies. (If using a zsh shell, use the command `pip install .'[dev]'`)
    - If you plan to develop the package also:
      - Install the dev dependencies with `pip install .[dev]`
      - Install pre-commit hooks with `pre-commit install`
