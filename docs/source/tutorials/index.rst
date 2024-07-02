@@ -11,3 +11,4 @@ tutorials
    5_block_threshold
    6_parallelism
    7_recording
+   8_fiber_paths_3d

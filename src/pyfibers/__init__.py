@@ -17,7 +17,7 @@ with suppress(RuntimeError):
     neuron.load_mechanisms(MOD_dir)
 
 # load all python files
-from .fiber import build_fiber, Fiber  # noqa: E402
+from .fiber import Fiber, build_fiber, build_fiber_3d  # noqa: E402
 from .model_enum import FiberModel  # noqa: E402
 from .stimulation import (  # noqa: E402
     ScaledStim,
@@ -31,6 +31,7 @@ from .stimulation import (  # noqa: E402
 
 __all__ = [
     'build_fiber',
+    'build_fiber_3d',
     'Fiber',
     'ScaledStim',
     'Stimulation',

@@ -8,6 +8,7 @@ import warnings
 from typing import TYPE_CHECKING, Callable
 
 import numpy as np
+from nd_line.nd_line import nd_line
 from neuron import h
 from numpy import ndarray
 
@@ -18,29 +19,93 @@ if TYPE_CHECKING:
 
 
 def build_fiber(
-    fiber_model: FiberModel, diameter: float, n_sections: int = None, length: float = None, **kwargs
-) -> object:  # Replace with the correct type of your fiber models
+    fiber_model: FiberModel,
+    diameter: float,
+    length: float = None,
+    n_sections: int = None,
+    n_nodes: int = None,
+    **kwargs,
+) -> Fiber:
     """Generate a fiber model in NEURON.
 
     :param fiber_model: fiber model to use
     :param diameter: fiber diameter [um]
-    :param n_sections: number of fiber coordinates to use
+    :param n_sections: number of fiber longitudinal coordinates to use
     :param length: length of the fiber
+    :param n_nodes: number of nodes in the fiber
     :param kwargs: keyword arguments to pass to the fiber model class
+    :raises ValueError: if more than one of length, n_sections, or n_nodes is provided
+    :raises NotImplementedError: if n_nodes is provided, as it is not yet supported
     :return: generated instance of fiber model class
     """
-    assert (length is not None) or (n_sections is not None), "Must specify either length or n_sections"
-    assert (length is None) or (n_sections is None), "Can't specify both length and n_sections"
+    # must provide one of length, n_sections, or n_nodes, and only one
+    if sum(x is not None for x in [length, n_sections, n_nodes]) != 1:
+        raise ValueError("Must provide exactly one of length, n_sections, or n_nodes")
+    if n_nodes is not None:
+        raise NotImplementedError("n_nodes is not yet supported")
+    assert "is_3d" not in kwargs, "is_3d is set automatically, try using build_fiber_3d() instead"
+
+    # TODO finish supporting n_nodes as an arg
 
     fiber_class = fiber_model.value
 
     fiber_instance = fiber_class(diameter=diameter, fiber_model=fiber_model, **kwargs)
 
     fiber_instance.generate(n_sections, length)
-    fiber_instance.potentials = np.zeros(len(fiber_instance.coordinates))
+
+    fiber_instance.coordinates = np.concatenate(
+        (
+            np.zeros((len(fiber_instance.longitudinal_coordinates), 1)),
+            np.zeros((len(fiber_instance.longitudinal_coordinates), 1)),
+            fiber_instance.longitudinal_coordinates.reshape(-1, 1),
+        ),
+        axis=1,
+    )
+    fiber_instance.potentials = np.zeros(len(fiber_instance.longitudinal_coordinates))
     fiber_instance.time = h.Vector().record(h._ref_t)  # TODO move to generate
 
     assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
+
+    return fiber_instance
+
+
+def build_fiber_3d(
+    fiber_model: FiberModel,
+    diameter: float,
+    path_coordinates: ndarray,
+    **kwargs,
+) -> Fiber:
+    """Generate a 3D fiber model in NEURON.
+
+    :param fiber_model: fiber model to use
+    :param diameter: fiber diameter [um]
+    :param path_coordinates: x,y,z-coordinates of the fiber [um] (required)
+    :param kwargs: keyword arguments to pass to the fiber model class
+    :raises ValueError: if n_sections, n_nodes, or length is provided
+    :return: generated instance of fiber model class
+    """
+    # path_coordinates must be provided
+    if path_coordinates is None:
+        raise ValueError("path_coordinates must be provided for 3D fibers")
+
+    if 'n_sections' in kwargs or 'n_nodes' in kwargs or 'length' in kwargs:
+        raise ValueError("For 3D fibers, cannot specify n_sections, n_nodes, or length")
+
+    # Calculate the length from path_coordinates
+    nd = nd_line(path_coordinates)
+
+    # Create the fiber instance using the base class method
+    fiber_instance = build_fiber(
+        fiber_model=fiber_model,
+        diameter=diameter,
+        length=nd.length,
+        **kwargs,
+    )
+    fiber_instance._set_3d()
+
+    # Make the 3D fiber coordinates an intrinsic property of the Fiber object.
+    fiber_instance.coordinates = np.array([nd.interp(p) for p in fiber_instance.longitudinal_coordinates])
+    # TODO: support shifting fiber coordinates along fiber path
 
     return fiber_instance
 
@@ -54,6 +119,7 @@ class Fiber:
         diameter: float,
         temperature: float = 37,
         passive_end_nodes: int | bool = True,
+        is_3d: bool = False,
     ) -> None:
         """Initialize Fiber class.
 
@@ -61,6 +127,7 @@ class Fiber:
         :param fiber_model: name of fiber model type
         :param temperature: temperature of model [degrees celsius]
         :param passive_end_nodes: if True, set passive properties at the end nodes
+        :param is_3d: if True, fiber is 3D
         """
         # fiber arguments
         self.diameter = diameter
@@ -69,6 +136,7 @@ class Fiber:
         self.passive_end_nodes = (
             passive_end_nodes  # TODO error if longer than half the fiber length, warning if more than a quarter
         )
+        self.__is_3d = is_3d
 
         # recording
         self.gating: dict[str, h.Vector] = None
@@ -140,12 +208,12 @@ class Fiber:
         """Generate and validate fiber coordinates."""
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
-        self.coordinates: np.ndarray = np.cumsum(  # type: ignore
+        self.longitudinal_coordinates: np.ndarray = np.cumsum(  # type: ignore
             (start_coords + end_coords) / 2
         )  # center of each section
         self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
         assert np.isclose(
-            self.coordinates[-1] - self.coordinates[0],  # center to center length
+            self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0],  # center to center length
             self.delta_z * (self.nodecount - 1),  # expected length of fiber
         ), "Fiber length is not correct."
 
@@ -165,6 +233,12 @@ class Fiber:
         """
         return int(loc * (len(self) - 1))
 
+    def is_3d(self: Fiber) -> bool:  # noqa: D102
+        return self.__is_3d
+
+    def _set_3d(self: Fiber) -> None:  # noqa: D102
+        self.__is_3d = True
+
     def resample_potentials(
         self: Fiber,
         potentials: np.ndarray,
@@ -182,11 +256,19 @@ class Fiber:
         """
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
+        assert len(potential_coords.shape) == 1, "Potential coordinates must be a 1D array"
+        assert len(potentials.shape) == 1, "Potentials must be a 1D array"
+        assert len(potential_coords) == len(potentials), "Potentials and coordinates must be the same length"
+        assert len(potential_coords) >= 2, "Must provide at least two points for resampling"
+
         if not center:
             potential_coords = potential_coords - potential_coords[0]
-            target_coords = self.coordinates
+            target_coords = self.longitudinal_coordinates
         else:
-            target_coords = self.coordinates - (self.coordinates[0] + self.coordinates[-1]) / 2
+            target_coords = (
+                self.longitudinal_coordinates
+                - (self.longitudinal_coordinates[0] + self.longitudinal_coordinates[-1]) / 2
+            )
             potential_coords = potential_coords - (potential_coords[0] + potential_coords[-1]) / 2
 
         newpotentials = np.interp(target_coords, potential_coords, potentials)
@@ -197,7 +279,9 @@ class Fiber:
 
         if inplace:
             self.potentials = newpotentials
-            assert len(self.potentials) == len(self.coordinates), "Potentials and coordinates must be the same length"
+            assert len(self.potentials) == len(
+                self.longitudinal_coordinates
+            ), "Potentials and coordinates must be the same length"
 
         return newpotentials
 
@@ -267,10 +351,9 @@ class Fiber:
         :return: potentials at all fiber coordinates [mV]
         """
         # Calculate distance between source and sections
-        xs = ys = np.zeros(len(self.coordinates))
-        xs = x - xs
-        ys = y - ys
-        zs = z - self.coordinates
+        xs = x - self.coordinates[:, 0]
+        ys = y - self.coordinates[:, 1]
+        zs = z - self.coordinates[:, 2]
         # convert to meters
         xs *= 1e-6
         ys *= 1e-6
@@ -311,7 +394,7 @@ class Fiber:
             raise ValueError("Conduction is not linear between the specified nodes.")
 
         # Calculate conduction velocity from AP times
-        coords = [self.coordinates[i] for i, section in enumerate(self.sections) if section in self.nodes]
+        coords = [self.longitudinal_coordinates[i] for i, section in enumerate(self.sections) if section in self.nodes]
         distance = np.abs(coords[start_ind] - coords[end_ind])
         time = np.abs(aptimes[-1] - aptimes[0])
         distance *= 1e-6  # convert to meters
@@ -479,6 +562,62 @@ class Fiber:
         membrane_currents = self.membrane_currents(downsample)
         return self.sfap(membrane_currents, rec_potentials)
 
+    def set_xyz(self: Fiber, x: float = 0, y: float = 0, z: float = 0) -> None:
+        """Set the x and y coordinates of the fiber.
+
+        This assumes that the fiber is straight and centered at the xy origin.
+        Do not use with 3D fibers (provided path_coordinates at initialization)
+
+        :param x: x-coordinate of the fiber [um]
+        :param y: y-coordinate of the fiber [um]
+        :param z: amount to shift the z-coordinate of the fiber [um]
+        """
+        assert not self.__is_3d, "set_xyz() is not compatible with 3D fibers"
+        # warn if the x coordinates are not all the same or the y coordinates are not all the same
+        if not np.allclose(self.coordinates[:, 0], x) or not np.allclose(self.coordinates[:, 1], y):
+            warnings.warn("X or Y coordinates vary, you may be running this on a fiber with a 3D path", stacklevel=2)
+        self.coordinates[:, 0] = x
+        self.coordinates[:, 1] = y
+        self.coordinates[:, 2] += z
+
+    # 3D Fiber functionality #
+
+    def resample_potentials_3d(
+        self: Fiber,
+        potentials: np.ndarray,
+        potential_coords: np.ndarray,
+        center: bool = False,
+        inplace: bool = False,
+    ) -> np.ndarray:
+        """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
+
+        :param potentials: high-res potentials
+        :param potential_coords: x, y, z coordinates of high-res potentials. Must be along the fiber path
+        :param center: if True, center the potentials around the fiber midpoint
+        :param inplace: if True, replace the potentials in the fiber with the resampled potentials
+        :return: resampled potentials
+        """
+        assert self.__is_3d, "resample_potentials_3d() is only compatible with 3D fibers"
+
+        potential_coords, potentials = np.array(potential_coords), np.array(potentials)
+
+        # if shape of potential coords is 2D, calculate arc lengths and replace
+        assert len(potential_coords.shape) == 2, (
+            "Potential coordinates must be a 2D array. " "If using arc lengths, use resample_potentials() instead."
+        )
+        assert potential_coords.shape[1] == 3, "Must provide exactly 3 coordinates for x,y,z"
+
+        # TODO need some way to ensure that the potential_coords are along the fiber path
+
+        return self.resample_potentials(
+            potentials=potentials,
+            potential_coords=nd_line(potential_coords).cumul,
+            center=center,
+            inplace=inplace,
+        )
+
+    # Heterogeneous and Homogeneous Fiber Classes #
+
 
 class _HomogeneousFiber(Fiber):
     """Initialize Homogeneous (all sections are identical) class."""
@@ -521,7 +660,7 @@ class _HomogeneousFiber(Fiber):
         # Create fiber sections
         self.sectionbuilder(modelfunc, *args, **kwargs)
 
-        # use section attribute L to generate coordinates, every section is the same length
+        # use section attribute L to generate fiber coordinates for NEURON calculations
         self._calculate_coordinates()
 
         return self
