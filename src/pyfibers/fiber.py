@@ -35,9 +35,13 @@ def build_fiber(
     fiber_class = fiber_model.value
 
     fiber_instance = fiber_class(diameter=diameter, fiber_model=fiber_model, **kwargs)
+
     fiber_instance.generate(n_sections, length)
     fiber_instance.potentials = np.zeros(len(fiber_instance.coordinates))
+    fiber_instance.time = h.Vector().record(h._ref_t)  # TODO move to generate
+
     assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
+
     return fiber_instance
 
 
@@ -72,6 +76,7 @@ class Fiber:
         self.vm: list = None
         self.apc: list = None
         self.im: list = None
+        self.time: list = None
 
         # intrinsic activity
         self.nc: h.NetCon = None
@@ -79,6 +84,7 @@ class Fiber:
         self.stim: h.NetStim = None
 
         # fiber attributes
+        self.myelinated: bool = None
         self.nodecount: int = None
         self.delta_z: float = None
         self.sections: list = []
@@ -204,12 +210,15 @@ class Fiber:
         for apc in self.apc:
             apc.thresh = thresh
 
-    def record_values(self: Fiber, ref_attr: str) -> list[h.Vector]:
+    def record_values(self: Fiber, ref_attr: str, allsec: bool = False) -> list[h.Vector]:
         """Record values from all nodes along the axon.
 
         :param ref_attr: attribute to record from each node
+        :param allsec: if True, record from all sections, not just nodes
         :return: list of NEURON vectors for recording values during simulation
         """
+        if allsec:
+            return [h.Vector().record(getattr(sec(0.5), ref_attr)) for sec in self.sections]
         if self.passive_end_nodes:
             return (
                 [None] * self.passive_end_nodes
@@ -225,9 +234,9 @@ class Fiber:
         """Record membrane voltage (mV) along the axon."""
         self.vm = self.record_values('_ref_v')
 
-    def set_save_im(self: Fiber) -> None:
-        """Record membrane current (nA) along the axon."""
-        self.im = self.record_values('_ref_i_membrane')
+    def set_save_im(self: Fiber, allsec: bool = False) -> None:
+        """Record membrane current (nA) along the axon."""  # noqa: DAR101
+        self.im = self.record_values('_ref_i_membrane', allsec=allsec)
 
     def set_save_gating(self: Fiber) -> None:
         """Record gating parameters for axon nodes."""
@@ -282,7 +291,7 @@ class Fiber:
 
         return potentials
 
-    def measure_cv_raw(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
+    def measure_cv(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
         """Estimate fiber conduction velocity using ap times at specific points.
 
         :param start: Starting position for conduction velocity measurement [0, 1]
@@ -369,6 +378,105 @@ class Fiber:
         # Connect the spike generator to the synapse
         self.nc = h.NetCon(self.stim, self.syn)
         self.nc.weight[0] = netcon_weight
+
+    @staticmethod
+    def calculate_periaxonal_current(from_sec: h.Section, to_sec: h.Section) -> float:
+        """Calculate the periaxonal current between two compartments.
+
+        :param from_sec: the section from which the current is flowing
+        :param to_sec: the section to which the current is flowing
+        :return: the periaxonal current between the two compartments [mA]
+        """
+        vext_from = from_sec(0.5).vext[0]  # [mV]
+        vext_to = to_sec(0.5).vext[0]  # [mV]
+        compartment_length_from = 1e-4 * from_sec.L  # [cm]
+        compartment_xraxial_from = from_sec.xraxial[0]  # [megaOhm/cm]
+        node_length_to = 1e-4 * to_sec.L  # [cm]
+        node_xraxial_to = to_sec.xraxial[0]  # [megaOhm/cm]
+        r_periaxonal = 1e6 * (
+            node_xraxial_to * (node_length_to / 2) + compartment_xraxial_from * (compartment_length_from / 2)
+        )  # [Ohm]
+        return (vext_from - vext_to) / r_periaxonal  # I = V/R [mA]
+
+    def membrane_currents(self: Fiber, downsample: int = 1) -> np.ndarray:
+        """Calculate membrane currents, including periaxonal currents for myelinated fibers.
+
+        :param downsample: the downsample rate for the time vector
+        :return: membrane current matrix, consisting of membrane currents for all sections for every time point
+        """
+        assert self.im is not None, "Membrane currents not saved. Call set_save_im() before running the simulation."
+
+        time_vector = np.array(self.time)
+        downsampled_time = time_vector[::downsample]
+        downsample_idx = np.arange(0, len(time_vector), downsample)
+
+        # Precompute lengths and diameters for all sections
+        sections_length = np.array([1e-4 * sec.L for sec in self.sections])  # [cm]
+        sections_diameter = np.array([1e-4 * sec.diam for sec in self.sections])  # [cm]
+
+        i_membrane_matrix = np.zeros((len(downsampled_time), len(self.sections)))
+
+        for time_idx in downsample_idx:
+            downsampled_idx = time_idx // downsample
+            specific_i_membrane = np.array(
+                [self.im[sec_idx][time_idx] for sec_idx in range(len(self.sections))]
+            )  # [mA/cm^2]
+            i_membrane = np.pi * sections_length * sections_diameter * specific_i_membrane  # [mA]
+
+            if self.myelinated:
+                # Initialize periaxonal currents
+                peri_i_left = np.zeros(len(self.sections))
+                peri_i_right = np.zeros(len(self.sections))
+
+                # Calculate periaxonal current from left compartment
+                peri_i_left[1:] = np.array(
+                    [
+                        self.calculate_periaxonal_current(self.sections[sec_idx - 1], self.sections[sec_idx])
+                        for sec_idx in range(1, len(self.sections))
+                    ]
+                )
+                # Calculate periaxonal current from right compartment
+                peri_i_right[:-1] = np.array(
+                    [
+                        self.calculate_periaxonal_current(self.sections[sec_idx + 1], self.sections[sec_idx])
+                        for sec_idx in range(len(self.sections) - 1)
+                    ]
+                )
+
+                # Calculate net current
+                net_i_extra = i_membrane + peri_i_left + peri_i_right  # [mA]
+            else:
+                net_i_extra = i_membrane  # [mA]
+
+            # Add current to matrix
+            i_membrane_matrix[downsampled_idx] = net_i_extra
+
+        return i_membrane_matrix
+
+    @staticmethod
+    def sfap(current_matrix: np.ndarray, potentials: np.ndarray) -> np.ndarray:
+        """Calculate SFAP from a membrane current matrix and recording potentials.
+
+        :param current_matrix: rows are time points, columns are sections
+        :param potentials: the extracellular potentials at all fiber coordinates
+        :return: the single fiber action potential across all time points
+        """
+        assert (
+            len(potentials) == current_matrix.shape[1]
+        ), "Potentials and current matrix columns must have the same length"
+        return 1e3 * np.dot(current_matrix, potentials)  # [uV]
+
+    def record_sfap(self: Fiber, rec_potentials: list | ndarray, downsample: int = 1) -> np.ndarray:
+        """Potential over time from fiber at a recording electrode.
+
+        :param rec_potentials: the extracellular potentials from recording electrode
+        :param downsample: the downsample rate for the time vector
+        :return: the single fiber action potential across all time points
+        """
+        assert self.im is not None, "Membrane currents not saved. Call set_save_im() before running the simulation."
+
+        membrane_currents = self.membrane_currents(downsample)
+        return self.sfap(membrane_currents, rec_potentials)
 
 
 class _HomogeneousFiber(Fiber):

@@ -10,3 +10,4 @@ tutorials
    4_resampling_potentials
    5_block_threshold
    6_parallelism
+   7_recording

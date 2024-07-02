@@ -46,6 +46,7 @@ class MRGInterpolationParameters(TypedDict):  # noqa: D101
 class FiberParameters(TypedDict):  # noqa: D101
     MRG_DISCRETE: MRGDiscreteParameters
     MRG_INTERPOLATION: MRGInterpolationParameters
+    SMALL_MRG_INTERPOLATION: MRGInterpolationParameters
 
 
 fiber_parameters_all: FiberParameters = {  # TODO needs comments
@@ -74,13 +75,25 @@ fiber_parameters_all: FiberParameters = {  # TODO needs comments
         node_diam=lambda d: 0.01093 * d**2 + 0.1008 * d + 1.099,
         axon_diam=lambda d: 0.02361 * d**2 + 0.3673 * d + 0.7122,
     ),
+    "SMALL_MRG_INTERPOLATION": MRGInterpolationParameters(
+        node_length=lambda d: 1.0,
+        paranodal_length_1=lambda d: 3.0,
+        rhoa=lambda d: 0.7e6,
+        mycm=lambda d: 0.1,
+        mygm=lambda d: 0.001,
+        paranodal_length_2=lambda d: -0.171 * d**2 + 6.48 * d - 0.935,
+        delta_z=lambda d: -3.22 * d**2 + 148 * d - 128,
+        nl=lambda d: int(17.4 * d - 1.74),
+        node_diam=lambda d: 0.321 * d + 0.37,
+        axon_diam=lambda d: 0.553 * d - 0.024,
+    ),
 }
 
 
 class MRGFiber(HeterogeneousFiber):
     """Implementation of the MRG fiber model."""
 
-    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION']
+    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION']
 
     def __init__(self: MRGFiber, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
@@ -152,7 +165,15 @@ class MRGFiber(HeterogeneousFiber):
             }
             if self.diameter < 2 or self.diameter > 16:
                 raise ValueError("Diameter for MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
-
+        elif self.fiber_model == "SMALL_MRG_INTERPOLATION":
+            fiber_param_interp = fiber_parameters_all["SMALL_MRG_INTERPOLATION"]
+            self.mrg_params = {
+                param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
+            }
+            if self.diameter < 1.011 or self.diameter > 16:
+                raise ValueError("Diameter for SMALL_MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
+            if self.diameter > 5.7:
+                print(f"WARNING - {self.fiber_model} fiber model is not recommended for fiber diameters above 5.7 um")
         self.delta_z = self.mrg_params["delta_z"]
 
     def create_mysa(self: MRGFiber, i: int) -> h.Section:
@@ -312,5 +333,9 @@ class MRGFiber(HeterogeneousFiber):
             node.xraxial[0] = rpn0
             node.xc[0] = 0  # short circuit
             node.xg[0] = 1e10  # short circuit
+            # adjust conductances (SMALL_MRG_INTERPOLATION  only)
+            if self.fiber_model == "SMALL_MRG_INTERPOLATION":
+                node.gnabar_axnode_myel = 2.333333
+                node.gkbar_axnode_myel = 0.115556
 
         return node
