@@ -27,7 +27,6 @@ class RattayFiber(_HomogeneousFiber):
             "n": "n_RattayAberham",
         }
         self.myelinated = False
-        self.delta_z = 8.333  # microns
         self.v_rest = -70  # millivolts
 
     def generate(self: RattayFiber, n_sections: int, length: float) -> Fiber:  # noqa D102

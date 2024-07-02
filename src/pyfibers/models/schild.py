@@ -23,7 +23,6 @@ class SchildFiber(_HomogeneousFiber):
         """
         super().__init__(diameter=diameter, **kwargs)
         self.myelinated = False
-        self.delta_z = 8.333  # microns
         self.gating_variables = {
             "d_cat": "d_cat",
             "f_cat": "f_cat",

@@ -5,9 +5,15 @@ This package implements biophysical models of axons in the NEURON simulation env
 
 We have implemented the following models:
 - MRG
-- SUNDT
-- TIGERHOLM
-- RATTAY
+   - MRG-discrete
+   - MRG-interpolation
+   - Small MRG-interpolation
+- Sundt
+- Tigerholm
+- Rattay
+- Schild
+   - Schild 1994
+   - Schild 1997
 
 ## Installation
 *Note that these instructions are temporary for development*

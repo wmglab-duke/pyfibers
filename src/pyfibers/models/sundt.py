@@ -28,7 +28,6 @@ class SundtFiber(_HomogeneousFiber):
             "l": "l_borgkdr",
         }
         self.myelinated = False
-        self.delta_z = 8.333  # microns
         self.v_rest = -60  # millivolts
 
     def generate(self: SundtFiber, n_sections: int, length: float) -> Fiber:  # noqa D102

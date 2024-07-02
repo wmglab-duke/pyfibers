@@ -44,7 +44,6 @@ class TigerholmFiber(_HomogeneousFiber):
             "w_kna": "w_kna",
         }
         self.myelinated = False
-        self.delta_z = 8.333  # microns
         self.v_rest = -55  # millivolts
 
         if self.passive_end_nodes:

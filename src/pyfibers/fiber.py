@@ -282,7 +282,7 @@ class Fiber:
 
         return potentials
 
-    def measure_cv_raw(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
+    def measure_cv(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
         """Estimate fiber conduction velocity using ap times at specific points.
 
         :param start: Starting position for conduction velocity measurement [0, 1]
@@ -369,6 +369,7 @@ class Fiber:
         # Connect the spike generator to the synapse
         self.nc = h.NetCon(self.stim, self.syn)
         self.nc.weight[0] = netcon_weight
+        self.nc.delay = 0  # no delay
 
 
 class _HomogeneousFiber(Fiber):
