@@ -15,7 +15,6 @@ from __future__ import annotations
 #
 import os
 import sys
-from unittest import mock
 
 os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
 
@@ -47,12 +46,7 @@ extensions = [
     'enum_tools.autoenum',
 ]
 
-MOCK_MODULES = ['numpy', 'pandas']
-
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
-
-autodoc_mock_imports = ['neuron', 'scipy']
+autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
 
 # Add any paths that contain templates here, relative to this directory.
 

@@ -21,6 +21,7 @@ dependencies = [
   "pandas",
   "scipy",
   "seaborn",
+  "nd_line",
   "aenum",
   "importlib_metadata"
 ]
