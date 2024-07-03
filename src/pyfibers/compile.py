@@ -32,7 +32,13 @@ def main() -> None:
         raise RuntimeError("NEURON compilation command (nrnivmodl) failed. Please check the output for errors.")
 
     # check that post compilation files based on OS exist
-    file_to_check = 'nrnmech.dll' if os.name == 'nt' else 'x86_64/special'
+    if os.name == 'nt':
+        file_to_check = 'nrnmech.dll'
+    elif os.uname().machine == 'arm64':
+        file_to_check = 'arm64/special'
+    else:
+        file_to_check = 'x86_64/special'
+
     full_file_to_check = os.path.join(os.getcwd(), file_to_check)
     if not os.path.exists(full_file_to_check):
         raise RuntimeError(f"{file_to_check} not found, install failed. Please check the output for errors.")
