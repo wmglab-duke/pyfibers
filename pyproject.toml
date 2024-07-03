@@ -6,7 +6,6 @@ requires = ["flit_core>=3.4"]
 authors = [{name = "Daniel Marshall"}, {name = "Elie Farah"}, {name = "Eric Musselman"}]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -30,8 +29,8 @@ keywords = ["stimulation", "modeling", "computational", "fibers", "peripheral ne
 license = {file = "LICENSE"}
 name = "pyfibers"
 readme = "README.md"
-requires-python = ">=3.9"
-version = "0.0.dev6"  # This is the only place version should be hard coded
+requires-python = ">=3.10"
+version = "0.1.dev0"  # This is the only place version should be hard coded
 
 [project.optional-dependencies]
 dev = [

@@ -24,7 +24,6 @@ fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=
 # create curve of potentials
 fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 1)
 plt.plot(fiber.potentials)
-sys.exit()
 
 # create biphasic square wave to use as a stimulation waveform
 waveform = np.concatenate((np.ones(10), -np.ones(10), np.zeros(1000000)))
