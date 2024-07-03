@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sys
+from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,11 +11,6 @@ else:
     from aenum import NoAliasEnum
 
 from . import models
-
-if sys.version_info < (3, 10):
-    from importlib_metadata import entry_points
-else:
-    from importlib.metadata import entry_points
 
 
 # Discover plugins using entry points
