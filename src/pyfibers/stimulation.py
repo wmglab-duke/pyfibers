@@ -674,24 +674,31 @@ class ScaledStim(Stimulation):
         # Convert list of processed rows into a 2D numpy array
         self.waveform = np.vstack(processed_waveforms)
 
-    def _potentials_at_time(self: ScaledStim, i: int, fiber: Fiber) -> np.typing.NDArray[np.float64]:
+    def _potentials_at_time(
+        self: ScaledStim, i: int, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+    ) -> np.typing.NDArray[np.float64]:
         """Get potentials at a given time.
 
         :param i: index of time step
         :param fiber: fiber to get potentials for
+        :param stimamps: amplitude(s) to scale the potentials by
         :return: list of potentials at time i
         """
         # go through each waveform and multiply value for this time point by the corresponding potential set
         potentials = np.zeros(fiber.potentials.shape[1])
-        for potential_set, waveform in zip(fiber.potentials, self.waveform):
-            potentials += waveform[i] * potential_set
+        for potential_set, waveform, amp in zip(fiber.potentials, self.waveform, stimamps, strict=True):
+            potentials += amp * waveform[i] * potential_set
         return potentials
 
-    def _validate_scaling_inputs(self: ScaledStim, fiber: Fiber, stimamp_target: StimAmpTarget) -> None:
+    def _validate_scaling_inputs(
+        self: ScaledStim, fiber: Fiber, stimamp_target: StimAmpTarget, stimamps: np.typing.NDArray[np.float64]
+    ) -> np.typing.NDArray[np.float64]:
         """Validate scaling inputs before running simulation.
 
         :param fiber: instance of Fiber class to validate scaling inputs for
         :param stimamp_target: whether to use "stimamp" to scale extracellular or intracellular stimulation
+        :param stimamps: amplitude to be applied to extracellular stimulation
+        :return: array of stimulation amplitudes to apply to each waveform
         """
         self._prep_waveform()
         self._prep_potentials(fiber)
@@ -702,6 +709,7 @@ class ScaledStim(Stimulation):
         if stimamp_target == StimAmpTarget.INTRACELLULAR:
             assert np.all(fiber.potentials == 0), 'Intracellular stimulation requires all fiber potentials to be zero'
             assert np.all(self.waveform == 0), 'Intracellular stimulation requires all waveforms to be zero'
+            assert len(stimamps.shape) == 0, 'Intracellular stimulation requires a single float stimamp'
         # checks for extracellular stimulation
         elif stimamp_target == StimAmpTarget.EXTRACELLULAR:
             assert (
@@ -711,11 +719,14 @@ class ScaledStim(Stimulation):
                 fiber.potentials == 0
             ), 'Extracellular stimulation requires at least one non-zero fiber potential'
             assert not np.all(self.waveform == 0), 'Extracellular stimulation requires at least one non-zero waveform'
-        # here is where could add a "both" option for stimamp_target TODO
+        if len(stimamps.shape) == 0:  # if single float, apply to all sources
+            return np.array([stimamps] * len(self.waveform))
+        assert len(stimamps) == len(self.waveform), 'Number of stimamps does not match number of waveforms'
+        return np.array(stimamps)
 
     def run_sim(
         self: ScaledStim,
-        stimamp: float,
+        stimamp: float | list[float],
         fiber: Fiber,
         ap_detect_location: float = 0.9,
         exit_func: Callable = lambda *x, **y: False,
@@ -728,6 +739,9 @@ class ScaledStim(Stimulation):
         """Run a simulation for a single stimulation amplitude.
 
         :param stimamp: amplitude to be applied to extracellular stimulation
+            - Should be a single float for one source
+            - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
+            - If stimamp is a list of floats, each float is applied to the corresponding source
         :param fiber: fiber to be stimulated
         :param ap_detect_location: location to detect action potentials (percent along fiber)
         :param exit_func: function to call to check if simulation should be exited
@@ -744,27 +758,27 @@ class ScaledStim(Stimulation):
             - if None, do not check for end excitation
         :return: number of detected aps and time of last detected ap
         """
-        print('Running:', round(stimamp, 3))
+        stimamps = np.array(stimamp)
+        print('Running: ', stimamps.round(3))
 
-        self._validate_scaling_inputs(fiber, stimamp_target)
+        stimamps = self._validate_scaling_inputs(fiber, stimamp_target, stimamps)
 
         self.pre_run_setup(fiber)
 
         exit_func_kws = exit_func_kws or {}
 
-        # set stimamps  # TODO move to fxn above
-        extracellular_stimamp = stimamp if stimamp_target == StimAmpTarget.EXTRACELLULAR else 0
-
         # if stimamp_is_intra, scale istim current
         if stimamp_target == StimAmpTarget.INTRACELLULAR:  # TODO move to fxn above
             assert self.istim is not None, 'Intracellular stimulation is not enabled for this ScaledStim instance.'
-            if stimamp < 0:
+            if stimamps < 0:
                 warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
-            self.istim.amp *= stimamp
+            assert len(stimamps) == 1, 'Intracellular stimulation requires a single float stimamp'
+            self.istim.amp *= stimamps
+            stimamp *= 0
 
         # Run simulation
         for i in range(self.n_timesteps):
-            timestep_potentials = extracellular_stimamp * self._potentials_at_time(i, fiber)
+            timestep_potentials = self._potentials_at_time(i, fiber, stimamps)  # need to support list of stimamps
             self._update_extracellular(fiber, timestep_potentials)
 
             h.fadvance()

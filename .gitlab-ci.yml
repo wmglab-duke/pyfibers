@@ -87,12 +87,6 @@ tox_py311_w_cov:
     paths:
     - coverage_html_report/
 
-tox_py39:
-  script:
-  - pip install "tox<=4.8.0"
-  - tox -e py39-neuron{8}
-  image: python:3.9
-
 tox_py310:
   script:
   - pip install "tox<=4.8.0"

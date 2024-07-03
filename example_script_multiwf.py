@@ -52,3 +52,6 @@ print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
 # run a finite amp (i.e., one amplitude, not in a bisection search as was done above)
 ap, time = stimulation.run_sim(-1, fiber)
+
+# run with multiple stim amps
+ap, time = stimulation.run_sim([-1, 1], fiber)
