@@ -615,6 +615,8 @@ class ScaledStim(Stimulation):
         """
         assert fiber.potentials is not None, 'No fiber potentials found'
 
+        fiber.potentials = np.array(fiber.potentials)
+
         # Check if potentials is a single 1D numpy array and wrap it in a list
         if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
             fiber.potentials = [fiber.potentials]
