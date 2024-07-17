@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from neuron import h
 
 from pyfibers.fiber import Fiber
@@ -20,8 +21,10 @@ def create_mock_section(vext_value, length, xraxial_value):
 def test_calculate_periaxonal_current():
     from_sec = create_mock_section(vext_value=5.0, length=100, xraxial_value=1.0)
     to_sec = create_mock_section(vext_value=0.0, length=100, xraxial_value=1.0)
+    from_vext = from_sec(0.5).vext[0]
+    to_vext = to_sec(0.5).vext[0]
 
-    result = Fiber.calculate_periaxonal_current(from_sec, to_sec)
+    result = Fiber.calculate_periaxonal_current(from_sec, to_sec, from_vext, to_vext)
 
     expected_result = 5.0 / (1e6 * 1e-2)  # [mA]
 
@@ -32,6 +35,7 @@ def test_membrane_currents():
     class MockFiber(Fiber):
         def __init__(self):
             self.im = [[0.01, 0.02, 0.03], [0.04, 0.05, 0.06]]  # section 1  # section 2
+            self.vext = [[5.0, 5.0, 5.0], [0.0, 0.0, 0.0]]  # section 1  # section 2
             self.time = [0, 1, 2]
             self.sections = [
                 create_mock_section(vext_value=5.0, length=100, xraxial_value=1.0),
@@ -40,7 +44,7 @@ def test_membrane_currents():
             self.myelinated = True
 
     fiber = MockFiber()
-    membrane_currents_result = fiber.membrane_currents(downsample=1)
+    membrane_currents_result, _ = fiber.membrane_currents(downsample=1)
 
     expected_result = np.array([[-0.0003333, 0.00033358], [-0.00033327, 0.00033365], [-0.00033324, 0.00033371]])
 
@@ -72,13 +76,17 @@ def test_record_sfap():
             self.myelinated = True
 
         def membrane_currents(self, downsample=1):
-            return np.array([[0.001, 0.002], [0.003, 0.004], [0.005, 0.006]])
+            return np.array([[0.001, 0.002], [0.003, 0.004], [0.005, 0.006]]), None
 
     fiber = MockFiber()
     rec_potentials = [0.5, 1.5]
 
-    result = fiber.record_sfap(rec_potentials, downsample=1)
+    result, _ = fiber.record_sfap(rec_potentials, downsample=1)
 
     expected_result = 1e3 * np.array([0.0035, 0.0075, 0.0115])  # [uV]
 
     assert np.allclose(result, expected_result), f"Expected {expected_result}, but got {result}"
+
+
+if __name__ == "__main__":
+    pytest.main()
