@@ -29,8 +29,8 @@ class RattayFiber(_HomogeneousFiber):
         self.myelinated = False
         self.v_rest = -70  # millivolts
 
-    def generate(self: RattayFiber, n_sections: int, length: float) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(n_sections, length, self.create_rattay)
+    def generate(self: RattayFiber, **kwargs) -> Fiber:  # noqa D102
+        return self.generate_homogeneous(self.create_rattay, **kwargs)
 
     @staticmethod
     def create_rattay(node: h.Section) -> None:

@@ -83,8 +83,8 @@ fiber_parameters_all: FiberParameters = {  # TODO needs comments
         mygm=lambda d: 0.001,
         paranodal_length_2=lambda d: -0.171 * d**2 + 6.48 * d - 0.935,
         delta_z=lambda d: -3.22 * d**2 + 148 * d - 128,
-        nl=lambda d: int(17.4 * d - 1.74),
-        node_diam=lambda d: 0.321 * d + 0.37,
+        nl=lambda d: int(17.4 * (0.553 * d - 0.024) - 1.74),
+        node_diam=lambda d: 0.321 * (0.553 * d - 0.024) + 0.37,
         axon_diam=lambda d: 0.553 * d - 0.024,
     ),
 }
@@ -114,11 +114,10 @@ class MRGFiber(HeterogeneousFiber):
         self.v_rest = -80  # millivolts
         self.get_mrg_params()
 
-    def generate(self: MRGFiber, n_sections: int, length: float) -> Fiber:
+    def generate(self: MRGFiber, **kwargs) -> Fiber:
         """Build fiber model sections with NEURON.
 
-        :param n_sections: number of fiber coordinates
-        :param length: desired length of fiber [um] (mutually exclusive with n_sections)
+        :param kwargs: passed to superclass generate method
         :return: Fiber object
         """
         # Determine geometrical parameters for fiber based on fiber model
@@ -138,7 +137,7 @@ class MRGFiber(HeterogeneousFiber):
             lambda ind: self.create_mysa(ind),
         ]
 
-        return super().generate(n_sections, length, function_list)
+        return super().generate(function_list, **kwargs)
 
     def get_mrg_params(self: MRGFiber) -> None:
         """Get geometrical parameters for MRG fiber model and save to self.
@@ -165,7 +164,7 @@ class MRGFiber(HeterogeneousFiber):
             }
             if self.diameter < 2 or self.diameter > 16:
                 raise ValueError("Diameter for MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
-        elif self.fiber_model == "SMALL_MRG_INTERPOLATION":
+        elif self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
             fiber_param_interp = fiber_parameters_all["SMALL_MRG_INTERPOLATION"]
             self.mrg_params = {
                 param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
@@ -220,23 +219,23 @@ class MRGFiber(HeterogeneousFiber):
         mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
         mygm = self.mrg_params["mygm"]  # lamella membrane conductance [uF/cm2]
         nl = self.mrg_params["nl"]  # number of myelin lemella
-        flut_diam = self.mrg_params["axon_diam"]  # diameter of main section of paranode fiber segment (FLUT) [um]
+        axon_diam = self.mrg_params["axon_diam"]  # diameter of main section of paranode fiber segment (FLUT) [um]
         flut_length = self.mrg_params[
             "paranodal_length_2"
         ]  # Length of main section of paranode fiber segment (FLUT) [um]
 
         space_p2 = 0.004  # Thickness of periaxonal space in FLUT sections [um]
         # periaxonal space resistivity for of paranode fiber segment (FLUT) [Mohms/cm]
-        rpn2 = (rhoa * 0.01) / (math.pi * ((((flut_diam / 2) + space_p2) ** 2) - ((flut_diam / 2) ** 2)))
+        rpn2 = (rhoa * 0.01) / (math.pi * ((((axon_diam / 2) + space_p2) ** 2) - ((axon_diam / 2) ** 2)))
 
         flut = h.Section(name="flut " + str(i))
         flut.nseg = 1
         flut.diam = self.diameter
         flut.L = flut_length
-        flut.Ra = rhoa * (1 / (flut_diam / self.diameter) ** 2) / 10000
-        flut.cm = 2 * flut_diam / self.diameter
+        flut.Ra = rhoa * (1 / (axon_diam / self.diameter) ** 2) / 10000
+        flut.cm = 2 * axon_diam / self.diameter
         flut.insert("pas")
-        flut.g_pas = 0.0001 * flut_diam / self.diameter
+        flut.g_pas = 0.0001 * axon_diam / self.diameter
         flut.e_pas = self.v_rest
 
         flut.insert("extracellular")
@@ -256,7 +255,7 @@ class MRGFiber(HeterogeneousFiber):
         mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
         mygm = self.mrg_params["mygm"]  # lamella membrane conductance [uF/cm2]
         nl = self.mrg_params["nl"]  # number of myelin lemella
-        stin_diam = self.mrg_params["axon_diam"]  # diameter of internodal fiber segment (STIN) [um]
+        axon_diam = self.mrg_params["axon_diam"]  # diameter of internodal fiber segment (STIN) [um]
         flut_length = self.mrg_params[
             "paranodal_length_2"
         ]  # Length of main section of paranode fiber segment (FLUT) [um]
@@ -268,16 +267,16 @@ class MRGFiber(HeterogeneousFiber):
 
         space_i = 0.004  # Thickness of periaxonal space in STIN sections [um]
         # periaxonal space resistivity for internodal fiber segment (STIN) [Mohms/cm]
-        rpx = (rhoa * 0.01) / (math.pi * ((((stin_diam / 2) + space_i) ** 2) - ((stin_diam / 2) ** 2)))
+        rpx = (rhoa * 0.01) / (math.pi * ((((axon_diam / 2) + space_i) ** 2) - ((axon_diam / 2) ** 2)))
 
         stin = h.Section(name="stin " + str(i))
         stin.nseg = 1
         stin.diam = self.diameter
         stin.L = interlength
-        stin.Ra = rhoa * (1 / (stin_diam / self.diameter) ** 2) / 10000
-        stin.cm = 2 * stin_diam / self.diameter
+        stin.Ra = rhoa * (1 / (axon_diam / self.diameter) ** 2) / 10000
+        stin.cm = 2 * axon_diam / self.diameter
         stin.insert("pas")
-        stin.g_pas = 0.0001 * stin_diam / self.diameter
+        stin.g_pas = 0.0001 * axon_diam / self.diameter
         stin.e_pas = self.v_rest
 
         stin.insert("extracellular")
@@ -334,7 +333,7 @@ class MRGFiber(HeterogeneousFiber):
             node.xc[0] = 0  # short circuit
             node.xg[0] = 1e10  # short circuit
             # adjust conductances (SMALL_MRG_INTERPOLATION  only)
-            if self.fiber_model == "SMALL_MRG_INTERPOLATION":
+            if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
                 node.gnabar_axnode_myel = 2.333333
                 node.gkbar_axnode_myel = 0.115556
 

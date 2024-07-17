@@ -14,12 +14,12 @@ sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
 
 from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
-n_sections = 133
+n_nodes = 200
 
-model = FiberModel.MRG_INTERPOLATION  # type of fiber model
+model = FiberModel.RATTAY  # type of fiber model
 
 # create fiber
-fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=n_sections, passive_end_nodes=2)
+fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=n_nodes, passive_end_nodes=2)
 
 # create curve of potentials
 fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 1)
@@ -57,3 +57,5 @@ plt.sca(ax2)
 plt.plot(stimulation.time, fiber.vm[fiber.loc_index(0.6)], label='vm', color='k')
 plt.ylabel('Vm')
 plt.xlim(0, 4)
+
+str(fiber)

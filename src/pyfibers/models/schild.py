@@ -50,11 +50,10 @@ class SchildFiber(_HomogeneousFiber):
             self.gating_variables["h_nas"] = "h_nas97mean"
             self.gating_variables.pop("j_naf")
 
-    def generate(self, n_sections: int, length: float) -> Fiber:  # noqa D102
+    def generate(self, **kwargs) -> Fiber:  # noqa D102
         return self.generate_homogeneous(
-            n_sections,
-            length,
             self.create_schild,
+            **kwargs,
             model_type=self.fiber_model.name,
             celsius=self.temperature,
             ca_l=self.delta_z,

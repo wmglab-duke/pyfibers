@@ -9,5 +9,10 @@ Welcome to PyFibers's documentation!
 
    extracellular_potentials
    custom
-   tutorials/index
    autodoc/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   tutorials/index

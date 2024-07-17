@@ -30,8 +30,8 @@ class SundtFiber(_HomogeneousFiber):
         self.myelinated = False
         self.v_rest = -60  # millivolts
 
-    def generate(self: SundtFiber, n_sections: int, length: float) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(n_sections, length, self.create_sundt)
+    def generate(self: SundtFiber, **kwargs) -> Fiber:  # noqa D102
+        return self.generate_homogeneous(self.create_sundt, **kwargs)
 
     @staticmethod
     def create_sundt(node: h.Section) -> None:

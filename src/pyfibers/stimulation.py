@@ -216,14 +216,15 @@ class Stimulation:
             'loc': loc,
         }
 
-    def pre_run_setup(self: Stimulation, fiber: Fiber) -> None:
+    def pre_run_setup(self: Stimulation, fiber: Fiber, ap_detect_threshold: float = -30) -> None:
         """Set up simulation before running.
 
         :param fiber: instance of Fiber class to set up simulation for
+        :param ap_detect_threshold: threshold for detecting action potentials [mV]
         """
         h.celsius = fiber.temperature  # Set simulation temperature
         h.finitialize(fiber.v_rest)  # Initialize the simulation
-        fiber.apcounts()  # record action potentials
+        fiber.apcounts(thresh=ap_detect_threshold)  # record action potentials
         if fiber.fiber_model == FiberModel.TIGERHOLM:  # Balance membrane currents if Tigerholm
             fiber.balance()
         self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
@@ -236,6 +237,7 @@ class Stimulation:
         fiber: Fiber,
         ap_detect_location: float = 0.9,
         precision: int = 3,
+        check_all_apc: bool = True,
     ) -> tuple[int, float]:
         """Check to see if an action potential occurred at the end of a run.
 
@@ -244,14 +246,21 @@ class Stimulation:
         :param fiber: instance of fiber class
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
         :param precision: number of decimal places to round to
+        :param check_all_apc: If True, check for activation at nodes other than the detect location
         :return: number of action potentials that occurred
         """
         # Determine user-specified location along axon to check for action potential
-        detect_apc = fiber.apc[fiber.loc_index(ap_detect_location)]
+        ind = fiber.loc_index(ap_detect_location)
+        if 'passive' in fiber[ind].name():
+            warnings.warn(
+                "Set to check for action potentials on passive node. This is likely to lead to erroneous results.",
+                stacklevel=2,
+            )
+        detect_apc = fiber.apc[ind]
         detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
         if detect_time:
             assert detect_time > 0, 'Action potentials at t<=0 should be impossible'
-        if np.any([apc.n > 0 for apc in fiber.apc]) and not bool(detect_apc.n):
+        if check_all_apc and not bool(detect_apc.n) and np.any([apc.n > 0 for apc in fiber.apc]):
             warnings.warn(  # TODO only warn on last run of threshold search
                 "APs detected at locations other than the set detection location. "
                 "This could mean your stimamp is high enough for virtual anode block.",
@@ -266,6 +275,7 @@ class Stimulation:
         ap_detect_location: float = 0.9,
         block_delay: float = 0,
         thresh_num_aps: int = 1,
+        check_all_apc: bool = True,
     ) -> bool:
         """Check if stimulation was above or below threshold.
 
@@ -274,12 +284,15 @@ class Stimulation:
         :param ap_detect_location: is the location (decimal % of fiber length) where APs are detected for threshold
         :param block_delay: time after start of simulation to check for block [ms]
         :param thresh_num_aps: number of action potentials for threshold search
+        :param check_all_apc: passed to ap checker
         :raises NotImplementedError: if block and thresh_num_aps != 1
         :return: True if stim was supra-threshold, False if sub-threshold
         """
         assert thresh_num_aps > 0, 'thresh_num_aps must be greater than 0'
         # Determine user-specified location along axon to check for action potential
-        detect_n, detect_time = ScaledStim.ap_checker(fiber, ap_detect_location=ap_detect_location)
+        detect_n, detect_time = ScaledStim.ap_checker(
+            fiber, ap_detect_location=ap_detect_location, check_all_apc=check_all_apc
+        )
         if block:
             if thresh_num_aps != 1:
                 raise NotImplementedError(
@@ -350,7 +363,7 @@ class Stimulation:
         iterations = 0
         while iterations < max_iterations:
             (
-                print(f'Search bounds: top={round(stimamp_top,3)}, bottom={round(stimamp_bottom,3)}')
+                print(f'Search bounds: top={round(stimamp_top,6)}, bottom={round(stimamp_bottom,6)}')
                 if not silent
                 else None
             )
@@ -409,7 +422,7 @@ class Stimulation:
         print('Beginning bisection search') if not silent else None
         while True:
             (
-                print(f'Search bounds: top={round(stimamp_top,3)}, bottom={round(stimamp_bottom,3)}')
+                print(f'Search bounds: top={round(stimamp_top,6)}, bottom={round(stimamp_bottom,6)}')
                 if not silent
                 else None
             )
@@ -436,7 +449,7 @@ class Stimulation:
             if tolerance < thresh_resoln:
                 if not suprathreshold:
                     stimamp = stimamp_prev
-                print('Threshold found at stimamp =', round(stimamp, 3)) if not silent else None
+                print('Threshold found at stimamp =', round(stimamp, 6)) if not silent else None
                 print('Validating threshold...') if not silent else None
                 # Run one more time at threshold to save run variables, get n_aps, and confirm above threshold
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
@@ -493,7 +506,9 @@ class Stimulation:
         :param thresh_num_aps: number of action potentials for threshold search
         :return: True if threshold is reached, False otherwise
         """
-        return self.threshold_checker(fiber, ap_detect_location=ap_detect_location, thresh_num_aps=thresh_num_aps)
+        return self.threshold_checker(
+            fiber, ap_detect_location=ap_detect_location, thresh_num_aps=thresh_num_aps, check_all_apc=False
+        )
 
     @staticmethod
     def end_excitation_checker(
@@ -737,6 +752,7 @@ class ScaledStim(Stimulation):
         use_exit_t: bool = False,
         stimamp_target: StimAmpTarget = StimAmpTarget.EXTRACELLULAR,
         fail_on_end_excitation: bool = True,
+        ap_detect_threshold: float = -30,
     ) -> tuple[int, float]:
         """Run a simulation for a single stimulation amplitude.
 
@@ -758,14 +774,15 @@ class ScaledStim(Stimulation):
             - if True, raise error if end excitation is detected
             - if False, continue simulation if end excitation is detected
             - if None, do not check for end excitation
+        :param ap_detect_threshold: threshold for detecting action potentials (default: -30 mV)
         :return: number of detected aps and time of last detected ap
         """
         stimamps = np.array(stimamp)
-        print('Running: ', stimamps.round(3))
+        print('Running:', stimamps.round(6), end='')
 
         stimamps = self._validate_scaling_inputs(fiber, stimamp_target, stimamps)
 
-        self.pre_run_setup(fiber)
+        self.pre_run_setup(fiber, ap_detect_threshold=ap_detect_threshold)
 
         exit_func_kws = exit_func_kws or {}
 
@@ -802,5 +819,6 @@ class ScaledStim(Stimulation):
         # check for end excitation. None means don't check at all
         if fail_on_end_excitation is not None:
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
-
-        return self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
+        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
+        print(f'\tN aps: {int(n_ap)}, time {time}')
+        return n_ap, time

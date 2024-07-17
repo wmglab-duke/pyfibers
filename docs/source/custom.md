@@ -12,7 +12,7 @@ Homogeneous fibers have identical sections throughout the model. You can create 
 
 1. **Inherit from `_HomogeneousFiber`**: Your new class should inherit from `_HomogeneousFiber`.
 
-2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters.
+2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters. Additionally, add any "submodels" that are part of the fiber model (must be at least 1). Each submodel will be added as a different FiberModel.
 
 3. **Define the `generate` Method**: Implement the `generate` method to call `generate_homogeneous` with appropriate arguments.
 
@@ -29,6 +29,8 @@ h.load_file("stdrun.hoc")
 
 
 class MyHomogeneousFiber(_HomogeneousFiber):
+    submodels = ["MY_HOMOGENEOUS_FIBER_MODEL"]
+
     def __init__(self, fiber_model: FiberModel, diameter: float, **kwargs):
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
@@ -60,7 +62,7 @@ Heterogeneous fibers have different types of sections throughout the model. You 
 
 1. **Inherit from `HeterogeneousFiber`**: Your new class should inherit from `HeterogeneousFiber`.
 
-2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters.
+2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters. Additionally, add any "submodels" that are part of the fiber model (must be at least 1). Each submodel will be added as a different FiberModel.
 
 3. **Define the `generate` Method**: Implement the `generate` method to call `generate` with the appropriate function list.
 
@@ -77,6 +79,8 @@ h.load_file("stdrun.hoc")
 
 
 class MyHeterogeneousFiber(HeterogeneousFiber):
+    submodels = ["MY_HETEROGENEOUS_FIBER_MODEL"]
+
     def __init__(self, fiber_model: FiberModel, diameter: float, **kwargs):
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {

@@ -50,8 +50,8 @@ class TigerholmFiber(_HomogeneousFiber):
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes: bool = False
 
-    def generate(self: TigerholmFiber, n_sections: int, length: float) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(n_sections, length, self.create_tigerholm, celsius=self.temperature)
+    def generate(self: TigerholmFiber, **kwargs) -> Fiber:  # noqa D102
+        return self.generate_homogeneous(self.create_tigerholm, **kwargs, celsius=self.temperature)
 
     @staticmethod
     def create_tigerholm(node: h.Section, celsius: int) -> None:
