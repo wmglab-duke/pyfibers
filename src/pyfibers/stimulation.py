@@ -516,9 +516,16 @@ class Stimulation:
     ) -> bool_:
         """Check for end excitation.
 
+        Takes the times from apc (which records the time of only the most recent detected ap),
+        and finds local minima. If the local minima is a passive node or the end excitable nodes,
+        this means that that node has the earliest AP time, and end excitation occurred.
+
         :param fiber: Fiber object to check for end excitation
         :param multi_site_check: If True, warn if multiple activation sites are detected
-        :param fail_on_end_excitation: If True, raise error if end excitation is detected
+        :param fail_on_end_excitation: behavior for end excitation detection
+            - if True, raise error if end excitation is detected
+            - if False, continue simulation if end excitation is detected
+            - if None, do not check for end excitation
         :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is True
         :return: True if end excitation occurs, error otherwise
         """
@@ -527,16 +534,20 @@ class Stimulation:
         times[np.where(times == 0)] = float('Inf')
 
         # find number of local minima in the aploc_data
-        init_nodes = argrelextrema(times, np.less)[0]
+        init_nodes = argrelextrema(times, np.less, mode='wrap')[0]
 
         # check if aps initiated in multiple places
         if len(init_nodes) > 1 and multi_site_check:
             warnings.warn('Found multiple activation sites.', RuntimeWarning, stacklevel=2)
 
-        end_excitation = np.any(init_nodes <= 1) or np.any(init_nodes >= len(times - 2))
+        end_excitation = np.any(init_nodes <= int(fiber.passive_end_nodes)) or np.any(
+            init_nodes >= len(times) - int(fiber.passive_end_nodes) - 1
+        )
 
-        if end_excitation and fail_on_end_excitation:
-            raise RuntimeError('End excitation occurred.')
+        if end_excitation and fail_on_end_excitation is not None:
+            if fail_on_end_excitation:
+                raise RuntimeError(f'End excitation detected on fiber.nodes{init_nodes}.')
+            warnings.warn(f'End excitation detected on fiber.nodes{init_nodes}.', stacklevel=2)
         return end_excitation
 
     def threshsim(
