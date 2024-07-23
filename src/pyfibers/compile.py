@@ -14,10 +14,10 @@ def main() -> None:
     """
     # Change to MOD directory
     os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "MOD"))
-    # Copy all txt files and rename to .mod
-    # remove all .mod and .c files
+
+    # remove all non .mod files
     for file in os.listdir():
-        if not file.endswith(".mod"):
+        if not file.endswith(".mod") and not os.path.isdir(file):
             os.remove(file)
 
     # Check for nrnivmodl
