@@ -286,6 +286,7 @@ class Stimulation:
         :param thresh_num_aps: number of action potentials for threshold search
         :param check_all_apc: passed to ap checker
         :raises NotImplementedError: if block and thresh_num_aps != 1
+        :raises RuntimeError: if no action potentials detected at all in block simulation
         :return: True if stim was supra-threshold, False if sub-threshold
         """
         assert thresh_num_aps > 0, 'thresh_num_aps must be greater than 0'
@@ -297,6 +298,13 @@ class Stimulation:
             if thresh_num_aps != 1:
                 raise NotImplementedError(
                     'Block threshold only supports thresh_num_aps=1, since NEURON APCount only records time of last AP.'
+                )
+            if detect_time is None:
+                raise RuntimeError(
+                    'No action potentials detected for block threshold. Your intrinsic activity weight may be too low.'
+                    'If you are running a block threshold search that does not cause ANY excitation, '
+                    ' try setting your block delay after the stimulation should start blocking, '
+                    'and your intrinsic activity start time before the stimulation starts.'
                 )
             # if no action potentials detected after block delay, stimulation is supra-threshold
             return detect_time <= block_delay  # True if no aps detected after block delay, False otherwise
