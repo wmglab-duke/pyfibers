@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, TypedDict
+from collections.abc import Callable
+from typing import TypedDict
 
 from neuron import h
 

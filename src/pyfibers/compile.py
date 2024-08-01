@@ -34,7 +34,7 @@ def main() -> None:
     # check that post compilation files based on OS exist
     if os.name == 'nt':
         file_to_check = 'nrnmech.dll'
-    elif os.uname().machine == 'arm64':
+    elif os.uname().machine == 'arm64':  # type: ignore
         file_to_check = 'arm64/special'
     else:
         file_to_check = 'x86_64/special'

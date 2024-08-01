@@ -5,7 +5,8 @@ from __future__ import annotations
 import math
 import typing
 import warnings
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 from nd_line.nd_line import nd_line
