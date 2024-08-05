@@ -84,6 +84,7 @@ repos:
     - flake8-annotations
     - flake8-annotations-complexity
     - flake8-return
+    - flake8-pytest-style
 # lint notebooks
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.8.5
