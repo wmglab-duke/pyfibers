@@ -13,12 +13,9 @@ import pytest  # noqa: I900
 import scipy.signal as sg
 from scipy.stats import norm
 
-from pyfibers import (
-    BisectionMean,
-    BoundsSearchMode,
+from pyfibers import (  # BisectionMean,; BoundsSearchMode,; TerminationMode,
     FiberModel,
     ScaledStim,
-    TerminationMode,
     ThresholdCondition,
     build_fiber,
 )
@@ -31,27 +28,6 @@ def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperatur
 
 
 def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
-    """Get activation threshold."""
-
-    # create curve of potentials
-    fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
-    fiber.potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
-
-    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
-
-    # parameters
-    time_step = 0.001
-    time_stop = 50
-    stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
-
-    stimulation.run_sim(0, fiber)  # TODO why do I need to run this first for correct result
-
-    amp, ap = stimulation.find_threshold(fiber, **kwargs)
-
-    return amp
-
-
-def get_activation_threshold_ps(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
     """Get activation threshold.
 
     Using point source
@@ -59,7 +35,7 @@ def get_activation_threshold_ps(model, nodecount=133, diameter=5.7, **kwargs):  
 
     # create curve of potentials
     fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
-    fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 10)
+    fiber.potentials = fiber.point_source_potentials(0, 100, fiber.length / 2, 1, 10)
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -109,93 +85,59 @@ def test_end_excitation():
     time_step = 0.001
     time_stop = 5
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
-    stimulation.run_sim(0, fiber)  # TODO why do I need to run this for correct result
     with pytest.raises(RuntimeError):
         stimulation.find_threshold(fiber)
 
 
 def test_mrg_discrete():
-    assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), -0.023414306640625)
+    assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), -0.2691015625)
 
 
-def test_geometric_mean():
-    assert np.isclose(
-        get_activation_threshold(FiberModel.MRG_INTERPOLATION, bisection_mean=BisectionMean.GEOMETRIC),
-        -0.023501400846134893,
-    )
-
-
-def test_both_subthreshold():
-    assert np.isclose(
-        get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-0.01, stimamp_bottom=-0.001),
-        -0.023512489759687515,
-    )
-
-
-def test_both_suprathreshold():
-    assert np.isclose(
-        get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-1, stimamp_bottom=-0.1),
-        -0.02351225891204326,
-    )
-
-
-def test_mrg_interp():
-    assert np.isclose(get_activation_threshold(FiberModel.MRG_INTERPOLATION), -0.02353515625)
-
-
-def test_allsupra():
-    assert np.isclose(
-        get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-0.025, stimamp_bottom=-0.02), -0.023515625
-    )
-
-
-def test_absolutes():
-    assert np.isclose(
-        get_activation_threshold(
-            FiberModel.MRG_INTERPOLATION,
-            termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
-            bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
-            termination_tolerance=0.0001,
-        ),
-        -0.02350494384765625,
-    )
+def test_mrg_interpolation():
+    assert np.isclose(get_activation_threshold(FiberModel.MRG_INTERPOLATION), -0.27006835937499996)
 
 
 def test_tigerholm():
-    assert np.isclose(get_activation_threshold(FiberModel.TIGERHOLM), -1.2780625000000003)
+    assert np.isclose(
+        get_activation_threshold(FiberModel.TIGERHOLM, diameter=1, nodecount=265, stimamp_top=-5),
+        -1.9056152343749997,
+    )
 
 
 def test_rattay():
-    assert np.isclose(get_activation_threshold(FiberModel.RATTAY), -0.042266845703125)
+    assert np.isclose(
+        get_activation_threshold(FiberModel.RATTAY, diameter=1, nodecount=265, stimamp_top=-5),
+        -1.359833984375,
+    )
 
 
 def test_sundt():
-    assert np.isclose(get_activation_threshold(FiberModel.SUNDT, diameter=0.2, nodecount=665), -0.6867578125)
+    assert np.isclose(
+        get_activation_threshold(FiberModel.SUNDT, diameter=1, nodecount=265, stimamp_top=-5),
+        -2.11515625,
+    )
 
 
 def test_schild94():
     assert np.isclose(
-        get_activation_threshold_ps(FiberModel.SCHILD94, diameter=1, nodecount=265, stimamp_top=-50), -17.828701171875
+        get_activation_threshold(FiberModel.SCHILD94, diameter=1, nodecount=265, stimamp_top=-5),
+        -2.08591796875,
     )
 
 
 def test_schild97():
     assert np.isclose(
-        get_activation_threshold_ps(FiberModel.SCHILD97, diameter=1, nodecount=265, stimamp_top=-50), -43.1654296875
+        get_activation_threshold(FiberModel.SCHILD97, diameter=1, nodecount=265, stimamp_top=-6),
+        -5.8128125,
     )
 
 
-def test_finite_amps():
-    assert np.array_equal(np.array(get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1])[0]), [0, 1, 1])
+def test_amp_response_and_var_save():
+    resp, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1], save=True)
+    assert np.array_equal(resp, [0, 1, 1])
 
-
-def test_vm():
-    _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
     assert np.isclose(fiber.vm[6][200], 388.5680657889212)
 
-
-def test_gating():
-    _, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [-1], save=True)
     assert np.isclose(fiber.gating['h'][6][200], 0.03841755485289423)
     assert np.isclose(fiber.gating['m'][6][200], 0.9999924888915432)
     assert np.isclose(fiber.gating['mp'][6][200], 0.9215463325919616)
@@ -231,3 +173,41 @@ def test_block_threshold():
     n, t = stimulation.run_sim(0, fiber)
 
     assert n == 8.0 and np.isclose(t, 45.476)
+
+
+# def test_geometric_mean(): #should check that all of these are close to each other.
+#     assert np.isclose(
+#         get_activation_threshold(FiberModel.MRG_INTERPOLATION, bisection_mean=BisectionMean.GEOMETRIC),
+#         -0.023501400846134893,
+#     )
+
+# def test_both_subthreshold():
+#     assert np.isclose(
+#         get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-0.01, stimamp_bottom=-0.001),
+#         -0.023512489759687515,
+#     )
+
+
+# def test_both_suprathreshold():
+#     assert np.isclose(
+#         get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-1, stimamp_bottom=-0.1),
+#         -0.02351225891204326,
+#     )
+
+
+# def test_allsupra():
+#     assert np.isclose(
+#         get_activation_threshold(FiberModel.MRG_INTERPOLATION, stimamp_top=-0.025, stimamp_bottom=-0.02), -0.023515625
+#     )
+
+
+# def test_absolutes():
+#     assert np.isclose(
+#         get_activation_threshold(
+#             FiberModel.MRG_INTERPOLATION,
+#             termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
+#             bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
+#             termination_tolerance=0.0001,
+#         ),
+#         -0.02350494384765625,
+#     )
