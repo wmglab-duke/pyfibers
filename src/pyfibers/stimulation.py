@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from neuron import h
 from numpy import bool_
-from scipy.signal import argrelextrema
+from scipy.signal import find_peaks
 
 if TYPE_CHECKING:
     from pyfibers import Fiber
@@ -539,25 +539,35 @@ class Stimulation:
         :return: True if end excitation occurs, error otherwise
         """
         # get times of apc
-        times = np.array([apc.time for apc in fiber.apc])
+        times = np.array([0] + [apc.time for apc in fiber.apc] + [0])
         times[np.where(times == 0)] = float('Inf')
 
-        # find number of local minima in the aploc_data
-        init_nodes = argrelextrema(times, np.less, mode='wrap')[0]
+        # find troughs and edges of local minima in the aploc_data
+        troughs, edges = find_peaks(-times, plateau_size=(0, float('inf')))
+
+        # mark every node between each set of edges as an init site
+        init_nodes = []
+        for left_edge, right_edge in zip(edges['left_edges'], edges['right_edges']):
+            # Need to adjust edges for extra [0] padding
+            init_nodes += list(range(left_edge - 1, right_edge))
+        init_nodes = np.array(init_nodes)
 
         # check if aps initiated in multiple places
-        if len(init_nodes) > 1 and multi_site_check:
+        if len(troughs) > 1 and multi_site_check:
             warnings.warn('Found multiple activation sites.', RuntimeWarning, stacklevel=2)
 
-        end_excitation = np.any(init_nodes <= int(fiber.passive_end_nodes)) or np.any(
-            init_nodes >= len(times) - int(fiber.passive_end_nodes) - 1
-        )
+        # check passive nodes and their neighbors for excitation. Adjust for [0] padding
+        end_excited_nodes = init_nodes[
+            (init_nodes <= int(fiber.passive_end_nodes)) | (init_nodes >= len(times) - int(fiber.passive_end_nodes) - 3)
+        ]
 
-        if end_excitation and fail_on_end_excitation is not None:
+        if len(end_excited_nodes) and fail_on_end_excitation is not None:
             if fail_on_end_excitation:
-                raise RuntimeError(f'End excitation detected on fiber.nodes{init_nodes}.')
-            warnings.warn(f'End excitation detected on fiber.nodes{init_nodes}.', stacklevel=2)
-        return end_excitation
+                raise RuntimeError(f'End excitation detected on fiber.nodes{end_excited_nodes}.')
+            warnings.warn(f'End excitation detected on fiber.nodes{end_excited_nodes}.', stacklevel=2)
+
+        # if any found, then end excitation
+        return bool(len(end_excited_nodes))
 
     def threshsim(
         self: Stimulation,

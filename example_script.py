@@ -14,9 +14,9 @@ sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
 
 from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
-n_nodes = 200
+n_nodes = 21
 
-model = FiberModel.RATTAY  # type of fiber model
+model = FiberModel.MRG_INTERPOLATION  # type of fiber model
 
 # create fiber
 fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=n_nodes, passive_end_nodes=2)
