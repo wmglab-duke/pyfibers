@@ -1,73 +1,131 @@
 from __future__ import annotations
 
-import numpy as np
 import pytest
 from neuron import h
 
-from pyfibers.fiber import Fiber
-
-
-# Mock class to test Fiber without dependencies
-class MockFiber(Fiber):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.sections = [h.Section(name=f"section{i}") for i in range(5)]
-        for sec in self.sections:
-            sec.L = 10
-            sec.diam = 1
-            sec.insert('extracellular')
-            sec.insert('pas')
-        self.nodes = self.sections
-        self.delta_z = 10
-        self.nodecount = 5
-        self.coordinates = np.array([0, 10, 20, 30, 40])
-        self.length = 40
-        self.passive_end_nodes = 1
+from pyfibers import FiberModel, build_fiber
 
 
 @pytest.fixture
-def mock_fiber():
-    return MockFiber(fiber_model=None, diameter=1.0)
+def setup_fiber():
+    """Set up an actual MRG Fiber instance for testing."""
+    # Create the fiber instance
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=10)
+
+    # Mock NEURON vector record to avoid hocobj_call error
+    fiber.time = h.Vector().record(h._ref_t)
+
+    return fiber
 
 
-def test_record_values_vm(mock_fiber):
-    mock_fiber.set_save_vm()
-    assert mock_fiber.vm is not None
-    assert len(mock_fiber.vm) == len(mock_fiber.nodes)
-
-    for i in range(len(mock_fiber.nodes)):
-        if i < mock_fiber.passive_end_nodes or i >= len(mock_fiber.nodes) - mock_fiber.passive_end_nodes:
-            assert mock_fiber.vm[i] is None
-        else:
-            assert isinstance(mock_fiber.vm[i], type(h.Vector))
+def test_apcounts(setup_fiber):
+    """Test the apcounts method."""
+    fiber = setup_fiber
+    fiber.apcounts(thresh=-30)
+    assert len(fiber.apc) == len(fiber.nodes)
+    for apc in fiber.apc:
+        assert apc.thresh == -30
 
 
-def test_record_values_im(mock_fiber):
-    mock_fiber.set_save_im()
-    assert mock_fiber.im is not None
-    assert len(mock_fiber.im) == len(mock_fiber.nodes)
-
-    for i in range(len(mock_fiber.nodes)):
-        if i < mock_fiber.passive_end_nodes or i >= len(mock_fiber.nodes) - mock_fiber.passive_end_nodes:
-            assert mock_fiber.im[i] is None
-        else:
-            assert isinstance(mock_fiber.im[i], type(h.Vector))
+def test_record_values_missing_attr_error(setup_fiber):
+    """Test that AttributeError is raised if the attribute is not in the section and allow_missing is False."""
+    fiber = setup_fiber
+    ref_attr = '_ref_non_existent_attr'
+    with pytest.raises(AttributeError):
+        fiber.record_values(ref_attr=ref_attr, allsec=True, allow_missing=False)
 
 
-def test_record_values_custom_variable(mock_fiber):
-    mock_fiber.gating_variables = {"i_pas": "i_pas"}
-    mock_fiber.set_save_gating()
-    assert mock_fiber.gating is not None
-    assert len(mock_fiber.gating) == 1
-    assert "i_pas" in mock_fiber.gating
+def test_record_values_missing_attr_none(setup_fiber):
+    """Test that None is returned if the attribute is not in the section and allow_missing is True."""
+    fiber = setup_fiber
+    ref_attr = '_ref_non_existent_attr'
+    indices = [0, 1, 2]
+    recorded_values = fiber.record_values(ref_attr=ref_attr, allsec=True, indices=indices, allow_missing=True)
+    assert len(recorded_values) == len(indices)
+    for record in recorded_values:
+        assert record is None
 
-    for recordings in mock_fiber.gating.values():
-        assert len(recordings) == len(mock_fiber.nodes)
-        for i in range(len(mock_fiber.nodes)):
-            if i < mock_fiber.passive_end_nodes or i >= len(mock_fiber.nodes) - mock_fiber.passive_end_nodes:
-                assert recordings[i] is None
-            else:
-                assert isinstance(recordings[i], type(h.Vector))
+
+def test_record_values_allsec(setup_fiber):
+    """Test the record_values method with allsec=True."""
+    fiber = setup_fiber
+    ref_attr = '_ref_v'
+    indices = [0, 1, 2]
+    recorded_values = fiber.record_values(ref_attr=ref_attr, allsec=True, indices=indices)
+    assert len(recorded_values) == len(indices)
+    for record in recorded_values:
+        assert record is not None
+
+
+def test_record_values_nodes(setup_fiber):
+    """Test the record_values method with allsec=False."""
+    fiber = setup_fiber
+    ref_attr = '_ref_v'
+    indices = [0, 1, 2]
+    recorded_values = fiber.record_values(ref_attr=ref_attr, allsec=False, indices=indices)
+    assert len(recorded_values) == len(indices)
+    for record in recorded_values:
+        assert record is not None
+
+
+def test_record_vm(setup_fiber):
+    """Test the record_vm method."""
+    fiber = setup_fiber
+    indices = [0, 1, 2]
+    vm = fiber.record_vm(allsec=True, indices=indices)
+    assert len(vm) == len(indices)
+    for v in vm:
+        assert v is not None
+
+
+def test_record_im(setup_fiber):
+    """Test the record_im method."""
+    fiber = setup_fiber
+    indices = [0, 1, 2]
+    im = fiber.record_im(allsec=True, indices=indices)
+    assert len(im) == len(indices)
+    for i in im:
+        assert i is not None
+
+
+def test_record_vext(setup_fiber):
+    """Test the record_vext method."""
+    fiber = setup_fiber
+    vext = fiber.record_vext()
+    assert len(vext) == len(fiber.sections)
+    for ve in vext:
+        assert ve is not None
+
+
+def test_record_gating(setup_fiber):
+    """Test the record_gating method."""
+    fiber = setup_fiber
+    fiber.gating_variables = {'Na': 'm', 'K': 'h'}
+    gating = fiber.record_gating(allsec=False)
+    assert len(gating) == len(fiber.gating_variables)
+    for name in fiber.gating_variables:
+        assert gating[name] is not None
+        assert len(gating[name]) == len(fiber.nodes)
+
+
+def test_record_values_empty_indices(setup_fiber):
+    """Test the record_values method with empty indices."""
+    fiber = setup_fiber
+    ref_attr = '_ref_v'
+    with pytest.raises(
+        ValueError,
+        match="Indices cannot be an empty list. If you want to record from all nodes, omit the indices argument.",
+    ):
+        fiber.record_values(ref_attr=ref_attr, allsec=True, indices=[])
+
+
+def test_bad_indices(setup_fiber):
+    """Test that ValueError is raised if the indices are out of bounds."""
+    fiber = setup_fiber
+    ref_attr = '_ref_v'
+    indices = [len(fiber.sections)]
+    with pytest.raises(IndexError):
+        fiber.record_values(ref_attr=ref_attr, allsec=True, indices=indices)
 
 
 if __name__ == "__main__":

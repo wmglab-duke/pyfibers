@@ -327,45 +327,66 @@ class Fiber:
         for apc in self.apc:
             apc.thresh = thresh
 
-    def record_values(self: Fiber, ref_attr: str, allsec: bool = False) -> list[h.Vector]:
+    def record_values(
+        self: Fiber, ref_attr: str, allsec: bool = False, indices: list[int] = None, allow_missing: bool = True
+    ) -> list[h.Vector | None]:
         """Record values from all nodes along the axon.
 
         :param ref_attr: attribute to record from each node
         :param allsec: if True, record from all sections, not just nodes
-        :return: list of NEURON vectors for recording values during simulation
+        :param indices: list of indices to record from (defaults to all nodes/sections depending on allsec)
+            - if allsec is True, indices are section indices
+            - if allsec is False, indices are node indices
+        :param allow_missing: if True, return None for sections without the attribute, otherwise raise AttributeError
+        :raises ValueError: if indices is an empty list
+        :return: list of NEURON vectors for recording values during simulation, with None for nonexistent attributes
         """
-        if allsec:
-            return [h.Vector().record(getattr(sec(0.5), ref_attr)) for sec in self.sections]
-        if self.passive_end_nodes:
-            return (
-                [None] * self.passive_end_nodes
-                + [
-                    h.Vector().record(getattr(node(0.5), ref_attr))
-                    for node in self.nodes[self.passive_end_nodes : -self.passive_end_nodes]
-                ]
-                + [None] * self.passive_end_nodes
+
+        def safe_record(section: h.Section, ref_attr: str) -> h.Vector | None:
+            try:
+                return h.Vector().record(getattr(section(0.5), ref_attr))
+            except AttributeError as e:
+                if not allow_missing:
+                    raise e
+                return None
+
+        if indices == []:
+            raise ValueError(
+                "Indices cannot be an empty list. If you want to record from all nodes, omit the indices argument."
             )
-        return [h.Vector().record(getattr(node(0.5), ref_attr)) for node in self.nodes]
+        if allsec:
+            return [safe_record(self.sections[i], ref_attr) for i in indices or range(len(self.sections))]
 
-    def set_save_vm(self: Fiber, allsec: bool = False) -> None:
-        """Record membrane voltage (mV) along the axon."""  # noqa: DAR101
-        self.vm = self.record_values('_ref_v', allsec=allsec)
+        return [safe_record(self.nodes[i], ref_attr) for i in indices or range(len(self.nodes))]
 
-    def set_save_im(self: Fiber, allsec: bool = False) -> None:
-        """Record membrane current (nA) along the axon."""  # noqa: DAR101
-        self.im = self.record_values('_ref_i_membrane', allsec=allsec)
+    def record_vm(self: Fiber, **kwargs) -> list[h.Vector | None]:
+        """Record membrane voltage (mV) along the axon, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
+        self.vm = self.record_values('_ref_v', **kwargs)
+        return self.vm
 
-    def set_save_vext(self: Fiber) -> None:
-        """Record extracellular potential (mV) along the axon."""
+    def record_im(self: Fiber, **kwargs) -> list[h.Vector | None]:
+        """Record membrane current (nA) along the axon, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
+        self.im = self.record_values('_ref_i_membrane', **kwargs)
+        return self.im
+
+    def record_vext(self: Fiber) -> list[h.Vector]:
+        """Record extracellular potential (mV) along the axon."""  # noqa: DAR101, DAR201
         self.vext = [h.Vector().record(sec(0.5)._ref_vext[0]) for sec in self.sections]
+        return self.vext
 
-    def set_save_gating(self: Fiber) -> None:
-        """Record gating parameters for axon nodes."""
+    def record_gating(self: Fiber, **kwargs) -> dict[str, h.Vector]:
+        """Record gating parameters for axon nodes, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
         self.gating = {}
         for name, var in self.gating_variables.items():
-            self.gating[name] = self.record_values(f"_ref_{var}")
+            self.gating[name] = self.record_values(f"_ref_{var}", **kwargs)
+        return self.gating
+
+    set_save_im = record_im  # alias to maintain old functionality
+    set_save_vext = record_vext  # alias to maintain old functionality
+    set_save_vm = record_vm  # alias to maintain old functionality
+    set_save_gating = record_gating  # alias to maintain old functionality
 
     def point_source_potentials(
         self: Fiber,
@@ -525,13 +546,13 @@ class Fiber:
         """
         assert (
             self.im is not None
-        ), "Membrane currents not saved. Call set_save_im(allsec=True) before running the simulation."
+        ), "Membrane currents not saved. Call record_im(allsec=True) before running the simulation."
         assert (
             self.vext is not None
-        ), "Extracellular potentials not saved. Call set_save_vext() before running the simulation."
+        ), "Extracellular potentials not saved. Call record_vext() before running the simulation."
         assert len(self.im) == len(
             self.sections
-        ), "Membrane currents not saved for all sections, call set_save_im(allsec=True) before running the simulation."
+        ), "Membrane currents not saved for all sections, call record_im(allsec=True) before running the simulation."
 
         time_vector = np.array(self.time)
         downsampled_time = time_vector[::downsample]
