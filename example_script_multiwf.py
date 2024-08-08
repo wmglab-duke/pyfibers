@@ -41,8 +41,8 @@ time_stop = 15  # duration of simulation
 stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
 # turn on saving gating parameters and Vm before running the simulations for thresholds
-fiber.set_save_gating()
-fiber.set_save_vm()
+fiber.record_gating()
+fiber.record_vm()
 
 # run threshold search
 amp, ap = stimulation.find_threshold(fiber)

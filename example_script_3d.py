@@ -105,8 +105,8 @@ time_stop = 15
 stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
 # Setup and run simulation
-fiber.set_save_gating()
-fiber.set_save_vm()
+fiber.record_gating()
+fiber.record_vm()
 amp, ap = stimulation.find_threshold(fiber)
 print(f'Threshold for 5.7 micron {model}: {amp} mA')
 

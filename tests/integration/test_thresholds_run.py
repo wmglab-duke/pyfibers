@@ -59,8 +59,8 @@ def get_amp_responses(model, stimamps, save=False):
     fiber.potentials = norm.pdf(np.linspace(-1, 1, nodecount), 0, 0.05) * 100
 
     if save:
-        fiber.set_save_gating()
-        fiber.set_save_vm()
+        fiber.record_gating()
+        fiber.record_vm()
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
 
@@ -155,7 +155,7 @@ def test_block_threshold():
     n_sections = 265
 
     fiber = build_fiber(FiberModel.MRG_INTERPOLATION, diameter=10, n_sections=n_sections)
-    fiber.set_save_vm()
+    fiber.record_vm()
     fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 10)
 
     # Create new stimulation object
@@ -172,7 +172,8 @@ def test_block_threshold():
     # Run simulation with no stimulation
     n, t = stimulation.run_sim(0, fiber)
 
-    assert n == 8.0 and np.isclose(t, 45.476)
+    assert n == 8.0
+    assert np.isclose(t, 45.476)
 
 
 # def test_geometric_mean(): #should check that all of these are close to each other.
