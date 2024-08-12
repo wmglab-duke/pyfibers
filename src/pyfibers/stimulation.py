@@ -230,8 +230,10 @@ class Stimulation:
             fiber.balance()
         self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
         self._steady_state()  # Allow system to reach steady-state before simulation
-        if hasattr(self, 'istim_params') and self.istim_params:  # add istim train if specified
+        if self.istim_params:  # add istim train if specified
             self._add_istim(fiber, **self.istim_params)  # type: ignore
+        else:  # remove istim if not specified
+            self.istim = self.istim_record = None
 
     @staticmethod
     def ap_checker(
@@ -425,7 +427,11 @@ class Stimulation:
                     **kwargs,
                 )
         else:
-            raise RuntimeError(f"Reached maximum number of iterations ({max_iterations}) without finding threshold.")
+            raise RuntimeError(
+                f"Reached maximum number of iterations ({max_iterations}) without finding search bounds. "
+                f"Stimamp top of {stimamp_top} is {'supra' if supra_top else 'sub'}-threshold, "
+                f"and stimamp bottom of {stimamp_bottom} is {'supra' if supra_bot else 'sub'}-threshold."
+            )
 
         # Now that bounds are set, enter bisection search
         print('Beginning bisection search') if not silent else None

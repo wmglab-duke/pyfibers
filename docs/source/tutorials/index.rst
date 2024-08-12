@@ -5,8 +5,8 @@ tutorials
    :maxdepth: 1
    :caption: Basic Tutorials
 
-   1_finite_amp
-   2_activation_threshold
+   1_create_fiber
+   2_sim_and_activation
    3_analysis
    7_recording
 

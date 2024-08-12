@@ -1,10 +1,11 @@
-Note add badges
+#TODO: Add badges
+#TODO: rewrite the README
 
 # PyFibers
 This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols.
 
 We have implemented the following models:
-- MRG
+- MRG (McIntyre, Richardson, and Grill)
    - MRG-discrete
    - MRG-interpolation
    - Small MRG-interpolation
@@ -16,7 +17,7 @@ We have implemented the following models:
    - Schild 1997
 
 ## Installation
-*Note that these instructions are temporary for development*
+*Note that these instructions are temporary for development* #TODO update this section once the package is on PyPI
 *Currently, it is recommended that you use NEURON v8.2.3 and Python 3.11*
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
 2. Clone the package to your machine
