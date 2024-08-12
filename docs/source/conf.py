@@ -44,6 +44,7 @@ extensions = [
     'sphinx_rtd_dark_mode',
     'sphinx.ext.autosummary',
     'enum_tools.autoenum',
+    'sphinxcontrib.bibtex'
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
@@ -84,3 +85,8 @@ default_dark_mode = False
 
 # Comment out line below to not generate autosummary files
 autosummary_generate = True
+
+bibtex_bibfiles = ['refs.bib']
+
+bibtex_reference_style = 'author_year'
+

@@ -5,3 +5,4 @@ myst-parser
 nbsphinx
 sphinx-copybutton
 sphinx-rtd-dark-mode
+sphinxcontrib-bibtex

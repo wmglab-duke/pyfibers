@@ -1,4 +1,4 @@
-Welcome to PyFibers's documentation!
+Welcome to the PyFibers documentation!
 =========================================
 
 .. include:: ../../README.md
@@ -7,12 +7,30 @@ Welcome to PyFibers's documentation!
 .. toctree::
    :maxdepth: 2
 
+   tutorials/index
    extracellular_potentials
    custom
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
    autodoc/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: Tutorials
+   :caption: Reference
 
-   tutorials/index
+   pubs_using
+   references
+
+.. toctree::
+   :maxdepth: 2
+   :caption: External Links
+
+   The Grill Lab <https://grill-lab.pratt.duke.edu>
+
+..
+   PyFibers Publication <TODO>
+   ASCENT on GitHub <TODO>
+..
