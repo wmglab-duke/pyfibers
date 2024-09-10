@@ -6,20 +6,21 @@ import warnings
 
 from neuron import h
 
-from pyfibers.fiber import Fiber, _HomogeneousFiber
+from pyfibers.fiber import Fiber
 
 h.load_file('stdrun.hoc')
 
 
-class TigerholmFiber(_HomogeneousFiber):
+class TigerholmFiber(Fiber):
     """Tigerholm Fiber model."""
 
     submodels = ['TIGERHOLM']
 
-    def __init__(self: TigerholmFiber, diameter: float, **kwargs) -> None:
+    def __init__(self: TigerholmFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize TigerholmFiber class.
 
         :param diameter: fiber diameter [microns]
+        :param delta_z: node spacing [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)
@@ -45,21 +46,23 @@ class TigerholmFiber(_HomogeneousFiber):
         }
         self.myelinated = False
         self.v_rest = -55  # millivolts
+        self.delta_z = delta_z
 
         if self.passive_end_nodes:
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes: bool = False
 
     def generate(self: TigerholmFiber, **kwargs) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(self.create_tigerholm, **kwargs, celsius=self.temperature)
+        return super().generate([self.create_tigerholm], **kwargs)
 
-    @staticmethod
-    def create_tigerholm(node: h.Section, celsius: int) -> None:
+    def create_tigerholm(self: TigerholmFiber, ind: int, node_type: str) -> h.Section:
         """Create a TIGERHOLM node.
 
-        :param celsius: model temperature [celsius]
-        :param node: NEURON section
+        :param ind: node index in fiber
+        :param node_type: node type ('active' or 'passive')
+        :return: NEURON section with TIGERHOLM mechanism
         """
+        node = self.nodebuilder(ind, node_type)
         node.insert('ks')
         node.insert('kf')
         node.insert('h')
@@ -86,14 +89,16 @@ class TigerholmFiber(_HomogeneousFiber):
         node.smalla_nakpump = -0.0047891
         node.gbar_kdrTiger = 0.018002
 
-        node.celsiusT_ks = celsius
-        node.celsiusT_kf = celsius
-        node.celsiusT_h = celsius
-        node.celsiusT_nattxs = celsius
-        node.celsiusT_nav1p8 = celsius
-        node.celsiusT_nav1p9 = celsius
-        node.celsiusT_nakpump = celsius
-        node.celsiusT_kdrTiger = celsius
+        node.celsiusT_ks = self.temperature
+        node.celsiusT_kf = self.temperature
+        node.celsiusT_h = self.temperature
+        node.celsiusT_nattxs = self.temperature
+        node.celsiusT_nav1p8 = self.temperature
+        node.celsiusT_nav1p9 = self.temperature
+        node.celsiusT_nakpump = self.temperature
+        node.celsiusT_kdrTiger = self.temperature
+
+        return node
 
     def balance(self: TigerholmFiber) -> None:
         """Balance membrane currents for Tigerholm model."""

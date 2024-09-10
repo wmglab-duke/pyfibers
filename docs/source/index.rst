@@ -9,6 +9,7 @@ Welcome to the PyFibers documentation!
 
    tutorials/index
    extracellular_potentials
+   fiber_models
    custom
 
 .. toctree::

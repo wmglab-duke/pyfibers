@@ -5,20 +5,21 @@ from __future__ import annotations
 import numpy as np
 from neuron import h
 
-from pyfibers.fiber import Fiber, _HomogeneousFiber
+from pyfibers.fiber import Fiber
 
 h.load_file('stdrun.hoc')
 
 
-class SchildFiber(_HomogeneousFiber):
+class SchildFiber(Fiber):
     """Schild fiber model."""
 
     submodels = ['SCHILD97', 'SCHILD94']
 
-    def __init__(self: SchildFiber, diameter: float, **kwargs) -> None:
+    def __init__(self: SchildFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize SchildFiber class.
 
         :param diameter: fiber diameter [microns]
+        :param delta_z: node spacing [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)
@@ -42,6 +43,7 @@ class SchildFiber(_HomogeneousFiber):
             "c": "c_kca",
         }
         self.v_rest = -48
+        self.delta_z = delta_z
         # update gating variables for Schild 1997 model
         if self.fiber_model.name == 'SCHILD97':
             self.gating_variables["m_naf"] = "m_naf97mean"
@@ -50,30 +52,19 @@ class SchildFiber(_HomogeneousFiber):
             self.gating_variables["h_nas"] = "h_nas97mean"
             self.gating_variables.pop("j_naf")
 
-    def generate(self, **kwargs) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(
-            self.create_schild,
-            **kwargs,
-            model_type=self.fiber_model.name,
-            celsius=self.temperature,
-            ca_l=self.delta_z,
-            ca_nseg=1,
-        )
+    def generate(self: SchildFiber, **kwargs) -> Fiber:  # noqa D102
+        return super().generate([self.create_schild], **kwargs)
 
-    @staticmethod
-    def create_schild(
-        node: h.Section, celsius: float, model_type: str = 'SCHILD94', ca_l: float = 8.3333, ca_nseg: int = 1
-    ) -> None:
+    def create_schild(self: SchildFiber, ind: int, node_type: str) -> h.Section:
         """Create a SCHILD node.
 
-        :param celsius: model temperature [celsius]
-        :param node: NEURON section
-        :param model_type: model type string, either 'SCHILD97' or 'SCHILD94'
-        :param ca_l: length of node for calculating conductances
-        :param ca_nseg: number of node segments for calculating conductances
+        :param ind: node index in the fiber
+        :param node_type: node type ('active' or 'passive')
+        :return: created node with SCHILD mechanisms
         """
         R = 8314  # noqa: N806 # molar gas constant
         F = 96500  # noqa: N806 # faraday's constant
+        node = self.nodebuilder(ind, node_type)
         node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
         node.insert('kd')
         node.insert('ka')
@@ -86,7 +77,7 @@ class SchildFiber(_HomogeneousFiber):
         node.insert('CaPump')
         node.insert('NaCaPump')
         node.insert('NaKpumpSchild')
-        if model_type == 'SCHILD97':
+        if self.fiber_model.name == 'SCHILD97':
             node.insert('naf97mean')
             node.insert('nas97mean')
         else:
@@ -99,16 +90,16 @@ class SchildFiber(_HomogeneousFiber):
         node.ko = 5.4  # [mM] External K Concentration
         node.ki = 145.0  # [mM] Internal K Concentration
         h.ion_style("k_ion", 1, 2, 0, 0, 0, sec=node)  # Allows ek to be calculated manually
-        node.ek = ((R * (celsius + 273.15)) / F) * np.log(
+        node.ek = ((R * (self.temperature + 273.15)) / F) * np.log(
             node.ko / node.ki
         )  # Manual Calculation of ek in order to use Schild F and R values
         node.nao = 154  # [mM] External Na Concentration
         node.nai = 8.9  # [mM] Internal Na Concentration
         h.ion_style("na_ion", 1, 2, 0, 0, 0, sec=node)  # Allows ena to be calculated manually
-        node.ena = ((R * (celsius + 273.15)) / F) * np.log(
+        node.ena = ((R * (self.temperature + 273.15)) / F) * np.log(
             node.nao / node.nai
         )  # Manual Calculation of ena in order to use Schild F and R values
-        if model_type == 'SCHILD97':
+        if self.fiber_model.name == 'SCHILD97':
             node.gbar_naf97mean = (
                 0.022434928  # [S/cm^2] This block sets the conductance to the conductances in Schild 1997
             )
@@ -124,7 +115,7 @@ class SchildFiber(_HomogeneousFiber):
         node.Ra = 100
         node.cm = 1.326291192
 
-        node.L_caintscale = ca_l
-        node.nseg_caintscale = ca_nseg
-        node.L_caextscale = ca_l
-        node.nseg_caextscale = ca_nseg
+        node.L_caintscale = node.L_caextscale = self.delta_z  # length of node for calculating conductances
+        node.nseg_caintscale = node.nseg_caextscale = 1  # number of node segments for calculating conductances
+
+        return node

@@ -63,6 +63,13 @@ def build_fiber(
 
     assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
 
+    if fiber_instance.diameter > 2 and not fiber_instance.myelinated:
+        warnings.warn(
+            "Unmyelinated fibers are typically <=2 um in diameter, "
+            f"received D={fiber_instance.diameter}. Proceed with caution.",
+            stacklevel=2,
+        )
+
     return fiber_instance
 
 
@@ -151,13 +158,15 @@ class Fiber:
 
         # fiber attributes
         self.myelinated: bool = None
+        self.v_rest = None
         self.nodecount: int = None
         self.delta_z: float = None
         self.sections: list = []
         self.nodes: list = []
-        self.coordinates: ndarray = np.array([])
         self.length: float = None
+        self.coordinates: ndarray = np.array([])
         self.potentials: ndarray = np.array([])
+        self.longitudinal_coordinates: ndarray = np.array([])
 
     def __call__(self: Fiber, loc: float, target: str = 'nodes') -> h.Section:
         """Call the fiber nodes/sections with NEURON style indexing.
@@ -683,131 +692,15 @@ class Fiber:
             inplace=inplace,
         )
 
-    # Heterogeneous and Homogeneous Fiber Classes #
+    # Fiber creation methods #
 
-
-class _HomogeneousFiber(Fiber):
-    """Initialize Homogeneous (all sections are identical) class."""
-
-    def __init__(
-        self: _HomogeneousFiber, fiber_model: FiberModel, diameter: float, delta_z: float = 8.333, **kwargs
-    ) -> None:
-        """Initialize _HomogeneousFiber class.
-
-        :param fiber_model: name of fiber model type
-        :param diameter: fiber diameter [microns]
-        :param delta_z: length of each node/section
-        :param kwargs: keyword arguments to pass to the base class
-        """
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
-        self.delta_z: float = delta_z
-        self.v_rest: int = None
-
-    def generate_homogeneous(
-        self: _HomogeneousFiber, modelfunc: Callable, n_nodes: int, n_sections: int, length: float, *args, **kwargs
-    ) -> Fiber:
-        """Build fiber model sections with NEURON.
-
-        :param n_nodes: number of nodes in the fiber
-        :param n_sections: number of fiber coordinates from COMSOL
-        :param length: length of fiber [um] (mutually exclusive with n_sections)
-        :param modelfunc: function to generate fiber model (mechanisms and attributes)
-        :param args: arguments to pass to modelfunc
-        :param kwargs: keyword arguments to pass to modelfunc
-        :return: Fiber object
-        """
-        if self.diameter > 2:
-            warnings.warn(
-                f"C fibers are typically <=2 um in diameter, received D={self.diameter}. Proceed with caution.",
-                stacklevel=2,
-            )
-
-        # Determine number of nodecount
-        self.nodecount = int(n_nodes or n_sections or math.floor(length / self.delta_z))
-
-        # Create fiber sections
-        self.sectionbuilder(modelfunc, *args, **kwargs)
-
-        # use section attribute L to generate fiber coordinates for NEURON calculations
-        self._calculate_coordinates()
-
-        return self
-
-    def nodebuilder(self: _HomogeneousFiber, nodefunc: Callable) -> Callable:
-        """Generate a node and apply the specific model described by nodefunc.
-
-        :param nodefunc: function to build node
-        :return: nrn.h.Section
-        """
-
-        def wrapper(*args, name: str = 'node', **kwargs) -> None:
-            node = h.Section(name=name)
-            self.sections.append(node)
-
-            node.diam = self.diameter
-            node.nseg = 1
-            node.L = self.delta_z
-            node.insert('extracellular')
-            node.xc[0] = 0  # short circuit
-            node.xg[0] = 1e10  # short circuit
-            node.v = self.v_rest
-
-            return nodefunc(node, *args, **kwargs)
-
-        return wrapper
-
-    @staticmethod
-    def passive_node(node: h.Section, v_rest: int) -> None:
-        """Set passive properties for a node.
-
-        :param node: section object to set passive properties for
-        :param v_rest: resting membrane potential [mV]
-        """
-        node.insert('pas')
-        node.g_pas = 0.0001
-        node.e_pas = v_rest
-        node.Ra = 1e10
-
-    def sectionbuilder(self: _HomogeneousFiber, modelnodefunc: Callable, *args, **kwargs) -> None:
-        """Create and connect NEURON sections for an unmyelinated fiber.
-
-        :param modelnodefunc: function to build node mechanisms and attributes
-        :param args: arguments to pass to modelnodefunc
-        :param kwargs: keyword arguments to pass to modelnodefunc
-        """
-        self.sections = []
-        for i in range(self.nodecount):
-            if self.passive_end_nodes and (i < self.passive_end_nodes or i >= self.nodecount - self.passive_end_nodes):
-                name = f"passive node {i}"
-                self.nodebuilder(self.passive_node)(self.v_rest, name=name)
-            else:
-                name = f"active node {i}"
-                self.nodebuilder(modelnodefunc)(*args, name=name, **kwargs)
-        self._connect_sections()
-        self.nodes = self.sections
-
-
-class HeterogeneousFiber(Fiber):
-    """Superclass for different types of fiber models."""
-
-    def __init__(self: HeterogeneousFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
-        """Initialize HeterogeneousFiber class.
-
-        :param fiber_model: fiber model to use
-        :param diameter: fiber diameter [um]
-        :param kwargs: keyword arguments to pass to the fiber model class
-        """
-        super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
-        self.delta_z = None
-        self.v_rest = None
-
-    def generate(
-        self: HeterogeneousFiber,
+    def generate(  # TODO change to underscore
+        self: Fiber,
         function_list: list[Callable],
         n_nodes: int = None,
         n_sections: int = None,
         length: float = None,
-    ) -> HeterogeneousFiber:
+    ) -> Fiber:
         """Build fiber model sections with NEURON.
 
         :param n_nodes: number of nodes in the fiber
@@ -834,28 +727,86 @@ class HeterogeneousFiber(Fiber):
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 
         # Create fiber sections
-        self.create_sections(function_list)
+        self._create_sections(function_list)
 
         # Generate fiber coordinates and validate them
         self._calculate_coordinates()
 
         return self
 
-    def create_sections(self: HeterogeneousFiber, function_list: list[Callable]) -> HeterogeneousFiber:
+    def _create_sections(self: Fiber, function_list: list[Callable]) -> Fiber:
         """Create and connect NEURON sections for a myelinated fiber type using specified functions.
 
         :param function_list: list of functions to generate fiber sections. Each function should generate a section.
             the function list should start with the node of Ranvier and end with the section before the next node
         :return: generated instance of fiber model class
         """
-        nsegments = (self.nodecount - 1) * len(function_list) + 1
-        for ind in range(1, nsegments + 1):
-            function = function_list[(ind - 1) % len(function_list)]
-            section = function(ind)
-            if (ind - 1) % len(function_list) == 0:
+        # calculate total number of sections
+        nsec = (self.nodecount - 1) * len(function_list) + 1
+        for ind in range(nsec):
+            # get function for creating this section
+            function = function_list[ind % len(function_list)]
+            if (ind) % len(function_list) == 0:  # node of Ranvier
+                # if this node is passive
+                if (
+                    self.passive_end_nodes
+                    and ind / len(function_list) < self.passive_end_nodes
+                    or self.nodecount - 1 - ind / len(function_list) < self.passive_end_nodes
+                ):
+                    section = self._make_passive(function(ind, 'passive'))
+                # otherwise, regular node
+                else:
+                    section = function(ind, 'active')
                 self.nodes.append(section)
+            else:
+                section = function(ind)
+            # always append to sections
             self.sections.append(section)
 
         self._connect_sections()
 
         return self
+
+    def _make_passive(self: Fiber, node: h.Section) -> h.Section:
+        """Convert a node of Ranvier section to a passive node of Ranvier.
+
+        Strips all mechanisms from the section and adds a passive mechanism.
+        This is done to allow the fiber model to still dictate the structure of the node.
+
+        :param node: the node of Ranvier section
+        :return: the node of Ranvier section with passive properties set
+        """
+        assert 'passive' in node.name(), "Passive node name must contain 'passive'"
+        mt = h.MechanismType(0)
+        for mechanism in node.psection()['density_mechs']:
+            if mechanism == 'extracellular':
+                continue
+            mt.select(mechanism)
+            mt.remove(sec=node)
+        node.insert('pas')
+        node.g_pas = 0.0001  # [S/cm^2]
+        node.e_pas = self.v_rest  # [mV]
+        node.Ra = 1e10  # [Ohm*cm]
+        node.cm = 1  # [uF/cm^2]
+        return node
+
+    def nodebuilder(self: Fiber, ind: int, node_type: str) -> h.Section:
+        """Generate a generic node of Ranvier.
+
+        After calling this function,
+        specific mechanisms and parameters for your fiber model should be added to the node.
+
+        :param ind: section index of the node along the fiber
+        :param node_type: type of node ('active' or 'passive')
+        :return: the node of Ranvier section
+        """
+        node = h.Section(name=f"{node_type} node {ind}")
+        node.L = self.delta_z
+        node.diam = self.diameter
+        node.nseg = 1
+        node.insert('extracellular')
+        node.xc[0] = 0  # short circuit
+        node.xg[0] = 1e10  # short circuit
+        node.v = self.v_rest
+
+        return node

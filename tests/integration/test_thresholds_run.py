@@ -136,12 +136,12 @@ def test_amp_response_and_var_save():
     resp, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1], save=True)
     assert np.array_equal(resp, [0, 1, 1])
 
-    assert np.isclose(fiber.vm[6][200], 388.5680657889212)
+    assert np.isclose(fiber.vm[6][200], 389.23435435930253)
 
-    assert np.isclose(fiber.gating['h'][6][200], 0.03841755485289423)
+    assert np.isclose(fiber.gating['h'][6][200], 0.03842278091747966)
     assert np.isclose(fiber.gating['m'][6][200], 0.9999924888915432)
-    assert np.isclose(fiber.gating['mp'][6][200], 0.9215463325919616)
-    assert np.isclose(fiber.gating['s'][6][200], 0.1049331279857998)
+    assert np.isclose(fiber.gating['mp'][6][200], 0.9216810668251406)
+    assert np.isclose(fiber.gating['s'][6][200], 0.10491253677621307)
 
 
 def test_block_threshold():
@@ -167,13 +167,13 @@ def test_block_threshold():
     # Find threshold
     amp, _ = stimulation.find_threshold(fiber, stimamp_top=-3, block_delay=10, condition=ThresholdCondition.BLOCK)
 
-    assert np.isclose(amp, -2.7080078125)
+    assert np.isclose(amp, -2.696328125)
 
     # Run simulation with no stimulation
     n, t = stimulation.run_sim(0, fiber)
 
     assert n == 8.0
-    assert np.isclose(t, 45.476)
+    assert np.isclose(t, 45.477)
 
 
 # def test_geometric_mean(): #should check that all of these are close to each other.

@@ -47,7 +47,8 @@ dev = [
   "sphinx-rtd-dark-mode",
   "moviepy",
   "IPython",
-  "enum-tools[sphinx]"
+  "enum-tools[sphinx]",
+  "sphinxcontrib-bibtex"
 ]
 
 [project.scripts]
