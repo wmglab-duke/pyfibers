@@ -11,7 +11,7 @@ from typing import TypedDict
 
 from neuron import h
 
-from pyfibers.fiber import Fiber, HeterogeneousFiber
+from pyfibers.fiber import Fiber
 
 h.load_file("stdrun.hoc")
 
@@ -91,7 +91,7 @@ fiber_parameters_all: FiberParameters = {  # TODO needs comments
 }
 
 
-class MRGFiber(HeterogeneousFiber):
+class MRGFiber(Fiber):
     """Implementation of the MRG fiber model."""
 
     submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION']
@@ -125,17 +125,17 @@ class MRGFiber(HeterogeneousFiber):
         self.get_mrg_params()
         # Function list for section order
         function_list = [
-            lambda ind: self.create_node(ind),
-            lambda ind: self.create_mysa(ind),
-            lambda ind: self.create_flut(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_stin(ind),
-            lambda ind: self.create_flut(ind),
-            lambda ind: self.create_mysa(ind),
+            self.create_node,
+            self.create_mysa,
+            self.create_flut,
+            self.create_stin,
+            self.create_stin,
+            self.create_stin,
+            self.create_stin,
+            self.create_stin,
+            self.create_stin,
+            self.create_flut,
+            self.create_mysa,
         ]
 
         return super().generate(function_list, **kwargs)
@@ -287,55 +287,38 @@ class MRGFiber(HeterogeneousFiber):
 
         return stin
 
-    def create_node(self: MRGFiber, index: int) -> h.Section:
+    def create_node(self: MRGFiber, index: int, node_type: str) -> h.Section:
         """Create a node of Ranvier for MRG_DISCRETE fiber type.
 
         :param index: index of fiber segment
+        :param node_type: type of node (active or passive)
         :return: nrn.h.Section
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]
-        mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
-        mygm = self.mrg_params["mygm"]  # lamella membrane conductance [uF/cm2]
-        nl = self.mrg_params["nl"]  # number of myelin lemella
         node_diam = self.mrg_params["node_diam"]  # diameter of node of Ranvier fiber segment [um]
         nodelength = self.mrg_params["node_length"]  # Length of nodes of Ranvier [um]
 
-        # check if this is a passive node
-        passive = self.passive_end_nodes and (
-            (index - 1) / 11 < self.passive_end_nodes
-            or (self.nodecount - 1) - (index - 1) / 11 < self.passive_end_nodes
-        )
-
-        space_p1 = 0.002  # Thickness of periaxonal space in MYSA sections [um]
-        # periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
-        rpn0 = (rhoa * 0.01) / (math.pi * ((((node_diam / 2) + space_p1) ** 2) - ((node_diam / 2) ** 2)))
-
-        name = f"active node {index}" if not passive else f"passive node {index}"
+        name = f"{node_type} node {index}"
         node = h.Section(name=name)
         node.nseg = 1
         node.diam = node_diam
         node.L = nodelength
         node.Ra = rhoa / 10000
+        node.cm = 2
 
-        if passive:  # TODO, see if can change to generalized passive function
-            node.cm = 2
-            node.insert("pas")
-            node.g_pas = 0.0001
-            node.e_pas = self.v_rest
-            node.insert("extracellular")
-            node.xc[0] = mycm / (nl * 2)
-            node.xg[0] = mygm / (nl * 2)
+        space_p1 = 0.002  # Thickness of periaxonal space in MYSA sections [um]
+        # periaxonal space resistivity for node of Ranvier fiber segment [Mohms/cm]
+        rpn0 = (rhoa * 0.01) / (math.pi * ((((node_diam / 2) + space_p1) ** 2) - ((node_diam / 2) ** 2)))
 
-        else:
-            node.cm = 2
-            node.insert("axnode_myel")
-            node.insert("extracellular")
-            node.xraxial[0] = rpn0
-            node.xc[0] = 0  # short circuit
-            node.xg[0] = 1e10  # short circuit
-            # adjust conductances (SMALL_MRG_INTERPOLATION  only)
-            if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
-                node.gnabar_axnode_myel = 2.333333
-                node.gkbar_axnode_myel = 0.115556
+        node.insert("axnode_myel")
+        node.insert("extracellular")
+        node.xraxial[0] = rpn0
+        node.xc[0] = 0  # short circuit
+        node.xg[0] = 1e10  # short circuit
+
+        # adjust conductances (SMALL_MRG_INTERPOLATION  only)
+        if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
+            node.gnabar_axnode_myel = 2.333333
+            node.gkbar_axnode_myel = 0.115556
 
         return node

@@ -4,20 +4,21 @@ from __future__ import annotations
 
 from neuron import h
 
-from pyfibers.fiber import Fiber, _HomogeneousFiber
+from pyfibers.fiber import Fiber
 
 h.load_file('stdrun.hoc')
 
 
-class RattayFiber(_HomogeneousFiber):
+class RattayFiber(Fiber):
     """Rattay fiber model."""
 
     submodels = ['RATTAY']
 
-    def __init__(self: RattayFiber, diameter: float, **kwargs) -> None:
+    def __init__(self: RattayFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize RattayFiber class.
 
         :param diameter: Fiber diameter [microns].
+        :param delta_z: Node spacing [microns].
         :param kwargs: Keyword arguments to pass to the base class.
         """
         super().__init__(diameter=diameter, **kwargs)
@@ -28,19 +29,23 @@ class RattayFiber(_HomogeneousFiber):
         }
         self.myelinated = False
         self.v_rest = -70  # millivolts
+        self.delta_z = delta_z
 
     def generate(self: RattayFiber, **kwargs) -> Fiber:  # noqa D102
-        return self.generate_homogeneous(self.create_rattay, **kwargs)
+        return super().generate([self.create_rattay], **kwargs)
 
-    @staticmethod
-    def create_rattay(node: h.Section) -> None:
+    def create_rattay(self: RattayFiber, ind: int, node_type: str) -> h.Section:
         """Create a RATTAY node.
 
-        :param node: NEURON section
+        :param ind: Node index in the fiber.
+        :param node_type: Node type ('active' or 'passive').
+        :return: Created node with Rattay mechanisms.
         """
+        node = self.nodebuilder(ind, node_type)
         node.insert('RattayAberham')
 
-        node.Ra = 100  # required for propagation; less than 100 does not propagate
-        node.cm = 1
-        node.ena = 45
-        node.ek = -82
+        node.Ra = 100  # Ohm*cm
+        node.cm = 1  # uF/cm^2
+        node.ena = 45  # mV, sodium reversal potential
+        node.ek = -82  # mV, potassium reversal potential
+        return node

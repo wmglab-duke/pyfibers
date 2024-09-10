@@ -1,37 +1,53 @@
 # Extending Functionality
 
-##  How to Create a New Fiber Model
+## How to Create a New Fiber Model
 
-Creating a new fiber model involves defining a subclass that inherits from either `_HomogeneousFiber` or `HeterogeneousFiber`, depending on whether the fiber model has homogeneous or heterogeneous sections. Below are the simplified steps and examples for each type of fiber.
+Creating a new fiber model involves defining a subclass of `Fiber` and implementing methods that describe the specific mechanisms and ultrastructure of the fiber. This section provides a step-by-step guide on how to create a new fiber model.
 
-### Creating a New Homogeneous Fiber Model
+### Steps to Create a New Fiber Model
 
-Homogeneous fibers have identical sections throughout the model. You can create a new homogeneous fiber model by inheriting from `_HomogeneousFiber`.
+Note that these steps will differ if you are creating a "homogeneous" fiber model (i.e., all sections of the fiber are identical, typically unmyelinated fibers) or a "heterogeneous" fiber model (i.e., sections of the fiber have different properties, such as nodes and myelin). We will begin with an example of creating a homogeneous fiber model and then extend it to a heterogeneous fiber model.
 
-#### Steps to Create a New Homogeneous Fiber Model
+1. **Inherit from `Fiber`**: Your new class should inherit from `Fiber`.
 
-1. **Inherit from `_HomogeneousFiber`**: Your new class should inherit from `_HomogeneousFiber`.
+2. **Specify the Submodels**: Define the `submodels` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and only letters and underscores; these strings are used to define the name of each fiber model as accessed from the FiberModel enum (in the example below, one would access the FiberModel by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as in ```{py:class} pyfibers.models.MRGFiber```), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the self.fiber_model attribute. Check the name by accessing self.fiber_model.name.
 
-2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters. Additionally, add any "submodels" that are part of the fiber model (must be at least 1). Each submodel will be added as a different FiberModel.
+2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters. At minimum, set self.v_rest (resting membrane potential) and self.myelinated (whether the fiber is myelinated). It also is recommended to specify gating variables if you want to be able to record these values during simulations. Finally, set the delta_z parameter, which is the distance from the center of one node to the next node.
 
-3. **Define the `generate` Method**: Implement the `generate` method to call `generate_homogeneous` with appropriate arguments.
+3. **Define the Node Creation Method(s)**: Implement method(s) that create the specific sections of the fiber model. For a homogeneous fiber model, you will create a single method. For a heterogeneous fiber model, you will create multiple methods. These methods should return a NEURON section object representing the node or section.
 
-4. **Define the Node Creation Method**: Implement a static method for creating the specific node type for the fiber model.
+4. **Define the `generate` Method**: Implement the `generate` method, which calls the superclass `generate` method with a list of functions that create the specific sections of the fiber model. For a homogeneous fiber model, you will pass a single function in the list. For a heterogeneous fiber model, you will pass a list of functions.
 
-#### Example
+```{note}
+You may create a fiber model in the /models directory, or in a separate folder (e.g., `/plugins`) and make it discoverable as a plugin (recommended). To make your fiber model discoverable as a plugin, follow [these instructions](#making-your-fiber-model-discoverable-as-a-plugin).
+```
+
+### Example
+
+#### Creating a New Homogeneous Fiber Model
+
+If your model consists of identical sections throughout (typically unmyelinated fibers), you will pass a single function in the list to the `generate` method. For these models it is recommended to use `{py:method} pyfibers.fiber.Fiber.nodebuilder` to create the nodes, then add/override any mechanisms or properties as needed.
 
 ```python
 from neuron import h
 from pyfibers import FiberModel
-from pyfibers.fiber import _HomogeneousFiber
+from pyfibers.fiber import Fiber, nodebuilder
 
 h.load_file("stdrun.hoc")
 
 
-class MyHomogeneousFiber(_HomogeneousFiber):
+class MyHomogeneousFiber(Fiber):
     submodels = ["MY_HOMOGENEOUS_FIBER_MODEL"]
 
-    def __init__(self, fiber_model: FiberModel, diameter: float, **kwargs):
+    def __init__(
+        self, fiber_model: FiberModel, diameter: float, delta_z: float = 8.333, **kwargs
+    ):
+        """Initialize MyHomogeneousFiber class.
+
+        :param diameter: Fiber diameter [microns]
+        :param delta_z: Length of each segment [microns]
+        :param kwargs: Keyword arguments to pass to the base class
+        """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_myModel",
@@ -39,49 +55,57 @@ class MyHomogeneousFiber(_HomogeneousFiber):
             "n": "n_myModel",
         }
         self.myelinated = False
-        self.delta_z = 10.0
         self.v_rest = -65
+        self.delta_z = delta_z
 
-    def generate(self, n_sections: int, length: float) -> _HomogeneousFiber:
-        return self.generate_homogeneous(n_sections, length, self.create_my_node)
+    def generate(self, **kwargs) -> Fiber:
+        """Generate the fiber model sections with NEURON.
 
-    @staticmethod
-    def create_my_node(node: h.Section) -> None:
+        :param kwargs: Arguments to pass to the base class generate method
+        :return: Fiber object
+        """
+        return super().generate([self.create_my_node], **kwargs)
+
+    def create_my_node(self, ind: int, node_type: str) -> h.Section:
+        """Create a node for MyHomogeneousFiber model.
+
+        :param ind: Index of the node
+        :param node_type: Type of the node
+        :return: NEURON section representing the node
+        """
+        node = self.nodebuilder(ind, node_type)
         node.insert("myModel")
-        node.Ra = 150
+        node.Ra = 100
         node.cm = 1.0
         node.ena = 50
         node.ek = -77
+        return node
 ```
 
-### Creating a New Heterogeneous Fiber Model
+#### Creating a New Heterogeneous Fiber Model
 
-Heterogeneous fibers have different types of sections throughout the model. You can create a new heterogeneous fiber model by inheriting from `HeterogeneousFiber`.
-
-#### Steps to Create a New Heterogeneous Fiber Model
-
-1. **Inherit from `HeterogeneousFiber`**: Your new class should inherit from `HeterogeneousFiber`.
-
-2. **Initialize the Subclass**: Define the `__init__` method, call the superclass initializer, and set any model-specific parameters. Additionally, add any "submodels" that are part of the fiber model (must be at least 1). Each submodel will be added as a different FiberModel.
-
-3. **Define the `generate` Method**: Implement the `generate` method to call `generate` with the appropriate function list.
-
-4. **Define Section Creation Methods**: Implement methods to create the various sections (e.g., nodes, myelin, etc.) required for the fiber model.
-
-#### Example
+For fibers with multiple section types (e.g., nodes, myelin), you will pass a list of functions to the `generate` method. You MUST calculate delta_z (the distance from the center of one node to the next node) here in order to allow PyFibers to verify that the fiber is correctly built. You may still use `{py:method} pyfibers.fiber.Fiber.nodebuilder` to create the nodes, then add/override any mechanisms or properties as needed.
 
 ```python
 from neuron import h
 from pyfibers import FiberModel
-from pyfibers.fiber import HeterogeneousFiber
+from pyfibers.fiber import Fiber, nodebuilder
 
 h.load_file("stdrun.hoc")
 
 
-class MyHeterogeneousFiber(HeterogeneousFiber):
+class MyHeterogeneousFiber(Fiber):
     submodels = ["MY_HETEROGENEOUS_FIBER_MODEL"]
 
-    def __init__(self, fiber_model: FiberModel, diameter: float, **kwargs):
+    def __init__(
+        self, fiber_model: FiberModel, diameter: float, delta_z: float = 8.333, **kwargs
+    ):
+        """Initialize MyHeterogeneousFiber class.
+
+        :param diameter: Fiber diameter [microns]
+        :param delta_z: Length of each segment [microns]
+        :param kwargs: Keyword arguments to pass to the base class
+        """
         super().__init__(fiber_model=fiber_model, diameter=diameter, **kwargs)
         self.gating_variables = {
             "h": "h_myModel",
@@ -90,29 +114,54 @@ class MyHeterogeneousFiber(HeterogeneousFiber):
         }
         self.myelinated = True
         self.v_rest = -80
+        self.delta_z = 1.5 + self.diameter * 100
 
-    def generate(self, n_sections: int, length: float) -> HeterogeneousFiber:
+    def generate(self, **kwargs) -> Fiber:
+        """Generate the fiber model sections with NEURON.
+
+        :param kwargs: Arguments to pass to the base class generate method
+        :return: Fiber object
+        """
         function_list = [
             self.create_node,
             self.create_myelin,
         ]
-        return super().generate(n_sections, length, function_list)
 
-    def create_node(self, ind: int) -> h.Section:
-        section = h.Section(name=f"node{ind}")
-        section.insert("myModel")
-        section.cm = 2.5
-        section.Ra = 54.7
-        return section
+        return super().generate(function_list, **kwargs)
 
-    def create_myelin(self, ind: int) -> h.Section:
-        section = h.Section(name=f"myelin{ind}")
+    def create_node(self, ind: int, node_type: str) -> h.Section:
+        """Create a node for MyHeterogeneousFiber model.
+
+        :param ind: Index of the node
+        :param node_type: Type of the node
+        :return: NEURON section representing the node
+        """
+        name = f"{node_type} node {index}"
+        node = h.Section(name=name)
+        node.diam = self.diameter * 0.7
+        node.L = 1.5
+        node.insert("extracellular")
+        node.insert("myModel")
+        node.cm = 2.5
+        node.Ra = 54.7
+        return node
+
+    def create_myelin(self, ind: int, node_type: str) -> h.Section:
+        """Create a myelin section for MyHeterogeneousFiber model.
+
+        :param ind: Index of the section
+        :param node_type: Type of the section
+        :return: NEURON section representing the myelin section
+        """
+        name = f"myelin {index}"
+        section = h.Section(name=name)
+        section = self.nodebuilder(ind, node_type)
         section.cm = 0
         section.Ra = 54.7
         return section
 ```
 
-By following these simplified steps, you can create new fiber models based on the specific characteristics of your desired fiber. Define the necessary methods and parameters that match your fiber model requirements.
+By following these steps, you can create new fiber models based on the specific characteristics of your desired fiber. Define the necessary methods and parameters that match your fiber model requirements.
 
 ### Making your fiber model discoverable as a plugin
 Other research groups may wish to create their own fiber models in the PyFibers environment, and publish them as a separate repository. Such fiber models can be made discoverable as plugins which will become automatically available in PyFibers after installation. To make your fiber model discoverable as a plugin, follow these steps:
@@ -122,7 +171,7 @@ Other research groups may wish to create their own fiber models in the PyFibers 
 2. Specify the entry point for your fiber model. The entry point tells pyfibers that your fiber model should be imported, and where to find the class that defines it. Entry points can be specified in multiple ways, here we will provide an example using pyproject.toml:
 
 ```toml
-[project.entry-points."pyfibers.plugins"]
+[project.entry-points."pyfibers.fiber_plugins"]
 my_fiber_model = "my_fiber_model_package.my_fiber_model_module:MyFiberModelClass"
 ```
 3. Make the NEURON mechanisms available to the Python interpreter. This requires (1) compiling the NEURON mechanisms (see PyFibers's compile script for an example of how to do this) and (2) making the compiled mechanisms available to the Python interpreter (by calling neuron.load_mechanisms() in your __init__.py file, see PyFibers's __init__.py for an example of how to do this).

@@ -1,0 +1,85 @@
+"""The copyrights of this software are owned by Duke University."""
+
+from __future__ import annotations
+
+from neuron import h
+
+from pyfibers import FiberModel
+from pyfibers.fiber import Fiber
+
+h.load_file("stdrun.hoc")
+
+
+class SweeneyFiber(Fiber):
+    """Implementation of the Sweeney fiber model."""
+
+    submodels = ["SWEENEY"]
+
+    def __init__(self: SweeneyFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
+        """Initialize SweeneyFiber class.
+
+        :param fiber_model: name of fiber model type
+        :param diameter: fiber diameter [microns]
+        :param kwargs: keyword arguments to pass to the base class
+        """
+        assert "delta_z" not in kwargs, "Cannot specify delta_z for Sweeney Fiber"
+        super().__init__(diameter=diameter, **kwargs)
+        self.gating_variables = {
+            "h": "h_sweeney",
+            "m": "m_sweeney",
+        }
+        self.myelinated = True
+        self.delta_z = self.diameter * 100 + 1.5
+        self.v_rest = -80  # millivolts #TODO find correct value
+
+    def generate(self: SweeneyFiber, **kwargs) -> Fiber:
+        """Build fiber model sections with NEURON.
+
+        :param kwargs: passed to superclass generate method
+        :return: Fiber object
+        """
+        # Function list for section order
+        function_list = [
+            self.create_node,
+            self.create_myelin,
+        ]
+
+        return super().generate(function_list, **kwargs)
+
+    def create_node(self: SweeneyFiber, index: int, node_type: str) -> h.Section:
+        """Create a node of Ranvier.
+
+        :param index: Section index in the fiber.
+        :param node_type: Node type ('active' or 'passive').
+        :return: Created node with Sweeney mechanisms
+        """
+        name = f"{node_type} node {index}"
+        node = h.Section(name=name)
+        node.nseg = 1
+        node.diam = self.diameter * 0.7
+        node.L = 1.5  # um
+        node.insert("sweeney")
+        node.cm = 2.5  # uF/cm^2
+        node.Ra = 54.7  # ohm-cm
+        node.insert('extracellular')
+        node.xc[0] = 0  # short circuit
+        node.xg[0] = 1e10  # short circuit
+        return node
+
+    def create_myelin(self: SweeneyFiber, index: int) -> h.Section:
+        """Create a myelin section.
+
+        :param index: Section index in the fiber.
+        :return: Created myelin section
+        """
+        name = f"myelin {index}"
+        section = h.Section(name=name)
+        section.nseg = 1
+        section.diam = self.diameter * 0.7
+        section.L = 100 * self.diameter
+        section.cm = 0
+        section.Ra = 54.7  # ohm-cm
+        section.insert('extracellular')
+        section.xc[0] = 0  # short circuit
+        section.xg[0] = 1e10  # short circuit
+        return section

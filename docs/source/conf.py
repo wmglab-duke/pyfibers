@@ -44,7 +44,7 @@ extensions = [
     'sphinx_rtd_dark_mode',
     'sphinx.ext.autosummary',
     'enum_tools.autoenum',
-    'sphinxcontrib.bibtex'
+    'sphinxcontrib.bibtex',
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
@@ -57,7 +57,7 @@ autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 # uncomment the line below to exclude all tutorials from the documentation build
-# exclude_patterns = ['tutorials/**.ipynb'] #noqa: E800
+# exclude_patterns = ['tutorials/**.ipynb']  # noqa: E800
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -89,4 +89,3 @@ autosummary_generate = True
 bibtex_bibfiles = ['refs.bib']
 
 bibtex_reference_style = 'author_year'
-
