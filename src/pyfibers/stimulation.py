@@ -778,7 +778,7 @@ class ScaledStim(Stimulation):
 
     def __init__(
         self: ScaledStim,
-        waveform: list[list[float]] | np.ndarray,
+        waveform: list[float] | Callable,
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
@@ -809,9 +809,13 @@ class ScaledStim(Stimulation):
         :param truncate_waveform: If True, truncate the waveform if it exceeds the simulation time.
         """
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
-        self.waveform = np.array(waveform)
         self.pad = pad_waveform
         self.truncate = truncate_waveform
+        self.n_timesteps: int = None
+        if callable(waveform):
+            times = np.arange(0, self.tstop + self.dt, self.dt)
+            waveform = [self.waveform(x) for x in times]
+        self.waveform: np.typing.NDArray[np.float64] = np.array(waveform)
         self._prep_waveform()
 
     def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
@@ -844,8 +848,6 @@ class ScaledStim(Stimulation):
 
         Also checks if the waveform has a max absolute value of 1 (recommended).
         """
-        self.waveform = np.array(self.waveform)
-
         # recompute timesteps TODO make sure this is done at the start of every sim in intrastim too
         self.n_timesteps = int(self.tstop / self.dt)
 
