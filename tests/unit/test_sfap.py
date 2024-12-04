@@ -36,7 +36,7 @@ def test_membrane_currents():
         def __init__(self):
             self.im = [[0.01, 0.02, 0.03], [0.04, 0.05, 0.06]]  # section 1  # section 2
             self.vext = [[5.0, 5.0, 5.0], [0.0, 0.0, 0.0]]  # section 1  # section 2
-            self.time = [0, 1, 2]
+            self.time = h.Vector([0, 1, 2])
             self.sections = [
                 create_mock_section(vext_value=5.0, length=100, xraxial_value=1.0),
                 create_mock_section(vext_value=0.0, length=200, xraxial_value=1.0),

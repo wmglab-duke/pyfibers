@@ -15,9 +15,7 @@ class MockFiber(Fiber):
         self.nodes = self.sections
         self.delta_z = 10
         self.nodecount = 5
-        self.longitudinal_coordinates = np.array(
-            [0, 10, 20, 30, 40], dtype=float
-        )  # TODO make this not have 0 as a coordinate
+        self.longitudinal_coordinates = np.array([0, 10, 20, 30, 40], dtype=float)
         self.coordinates = np.hstack([np.zeros((5, 1)), np.zeros((5, 1)), self.longitudinal_coordinates[:, None]])
         self.length = 40
 

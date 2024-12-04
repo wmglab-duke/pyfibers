@@ -61,7 +61,7 @@ def test_pointsource():
 
 
 def test_waveform_pad_truncate():
-    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
+    fiber = get_fiber()  # noqa: F841
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
     assert stimulation.waveform.shape[1] == 5000

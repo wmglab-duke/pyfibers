@@ -210,8 +210,10 @@ In this example, we demonstrate how to set up a custom simulation using the NEUR
 
 1. **Create and configure the fiber as above.**
 
-2. **Set up and configure intracellular stimulation**: #TODO add import statements for NEURON
+2. **Set up and configure intracellular stimulation**:
     ```python
+    from neuron import h
+
     stim = h.IClamp(fiber.sections[10](0.5))  # Apply stimulation to the 10th section
     stim.amp = 0.1  # nA
     stim.delay = 1  # ms

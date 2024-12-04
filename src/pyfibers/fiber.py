@@ -109,7 +109,6 @@ def build_fiber_3d(
 
     # Make the 3D fiber coordinates an intrinsic property of the Fiber object.
     fiber_instance.coordinates = np.array([nd.interp(p) for p in fiber_instance.longitudinal_coordinates])
-    # TODO: support shifting fiber coordinates along fiber path
 
     return fiber_instance
 
@@ -117,7 +116,7 @@ def build_fiber_3d(
 class Fiber:
     """Base class for model fibers."""
 
-    def __init__(  # TODO update tests
+    def __init__(
         self: Fiber,
         fiber_model: FiberModel,
         diameter: float,
@@ -149,7 +148,7 @@ class Fiber:
         self.apc: list = None
         self.im: list = None
         self.vext: list = None
-        self.time: list = None
+        self.time: h.Vector = None
 
         # intrinsic activity
         self.nc: h.NetCon = None
@@ -383,7 +382,7 @@ class Fiber:
         self.vext = [h.Vector().record(sec(0.5)._ref_vext[0]) for sec in self.sections]
         return self.vext
 
-    def record_gating(self: Fiber, **kwargs) -> dict[str, h.Vector]:
+    def record_gating(self: Fiber, **kwargs) -> dict[str, list[h.Vector | None]]:
         """Record gating parameters for axon nodes, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
@@ -551,17 +550,19 @@ class Fiber:
         """Calculate membrane currents, including periaxonal currents for myelinated fibers.
 
         :param downsample: the downsample rate for the time vector
+        :raises RuntimeError: if membrane currents, extracellular potentials, or simulation records are not found
         :return: membrane current matrix, consisting of membrane currents for all sections for every time point
         """
-        assert (
-            self.im is not None
-        ), "Membrane currents not saved. Call record_im(allsec=True) before running the simulation."
-        assert (
-            self.vext is not None
-        ), "Extracellular potentials not saved. Call record_vext() before running the simulation."
-        assert len(self.im) == len(
-            self.sections
-        ), "Membrane currents not saved for all sections, call record_im(allsec=True) before running the simulation."
+        if self.im is None:
+            raise RuntimeError("Membrane currents not saved. Call record_im(allsec=True) before running simulation.")
+        if self.vext is None:
+            raise RuntimeError("Extracellular potentials not saved. Call record_vext() before running simulation.")
+        if len(self.im) != len(self.sections):
+            raise RuntimeError(
+                "Membrane currents not saved for all sections, call record_im(allsec=True) before running simulation."
+            )
+        if len(self.time.as_numpy()) == 0:
+            raise RuntimeError("No record of simulation found. Run a simulation before calling this method.")
 
         time_vector = np.array(self.time)
         downsampled_time = time_vector[::downsample]
@@ -587,7 +588,7 @@ class Fiber:
                 peri_i_right = np.zeros(len(self.sections))
 
                 # Calculate periaxonal current from left compartment
-                peri_i_left[1:] = np.array(  # TODO perhaps the problem is here? Go back to previous code.
+                peri_i_left[1:] = np.array(
                     [
                         self.calculate_periaxonal_current(
                             self.sections[sec_idx - 1], self.sections[sec_idx], v_ext[sec_idx - 1], v_ext[sec_idx]
@@ -642,7 +643,8 @@ class Fiber:
         """Set the x and y coordinates of the fiber.
 
         This assumes that the fiber is straight and centered at the xy origin.
-        Do not use with 3D fibers (provided path_coordinates at initialization)
+        By default, fibers are created with the first section centered at z=0, extending in the positive z direction.
+        Not recommended to use with 3D fibers.
 
         :param x: x-coordinate of the fiber [um]
         :param y: y-coordinate of the fiber [um]
@@ -694,7 +696,7 @@ class Fiber:
 
     # Fiber creation methods #
 
-    def generate(  # TODO change to underscore
+    def generate(
         self: Fiber,
         function_list: list[Callable],
         n_nodes: int = None,

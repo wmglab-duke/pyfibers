@@ -1,7 +1,4 @@
-"""Implementation of the MRG fiber model.
-
-#TODO need refs for all models
-"""
+"""Implementation of the MRG fiber model."""
 
 from __future__ import annotations
 
@@ -22,7 +19,6 @@ class MRGDiscreteParameters(TypedDict):  # noqa: D101
     diameters: list[float]
     delta_z: list[int]
     paranodal_length_2: list[int]
-    # gs: list[None | float] #TODO: check why this is not used
     axon_diam: list[float]
     node_diam: list[float]
     nl: list[int]
@@ -50,7 +46,7 @@ class FiberParameters(TypedDict):  # noqa: D101
     SMALL_MRG_INTERPOLATION: MRGInterpolationParameters
 
 
-fiber_parameters_all: FiberParameters = {  # TODO needs comments
+fiber_parameters_all: FiberParameters = {
     "MRG_DISCRETE": MRGDiscreteParameters(
         node_length=[1.0] * 11,
         paranodal_length_1=[3.0] * 11,
@@ -171,7 +167,7 @@ class MRGFiber(Fiber):
                 param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
             }
             if self.diameter < 1.011 or self.diameter > 16:
-                raise ValueError("Diameter for SMALL_MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
+                raise ValueError("Diameter for SMALL_MRG_INTERPOLATION must be between 1.011 and 16 um (inclusive)")
             if self.diameter > 5.7:
                 print(f"WARNING - {self.fiber_model} fiber model is not recommended for fiber diameters above 5.7 um")
         self.delta_z = self.mrg_params["delta_z"]
