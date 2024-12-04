@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from neuron import h
 
-from pyfibers import FiberModel
 from pyfibers.fiber import Fiber
 
 h.load_file("stdrun.hoc")
@@ -15,10 +14,9 @@ class SweeneyFiber(Fiber):
 
     submodels = ["SWEENEY"]
 
-    def __init__(self: SweeneyFiber, fiber_model: FiberModel, diameter: float, **kwargs) -> None:
+    def __init__(self: SweeneyFiber, diameter: float, **kwargs) -> None:
         """Initialize SweeneyFiber class.
 
-        :param fiber_model: name of fiber model type
         :param diameter: fiber diameter [microns]
         :param kwargs: keyword arguments to pass to the base class
         """
@@ -29,8 +27,8 @@ class SweeneyFiber(Fiber):
             "m": "m_sweeney",
         }
         self.myelinated = True
-        self.delta_z = self.diameter * 100 + 1.5
-        self.v_rest = -80  # millivolts #TODO find correct value
+        self.delta_z = self.diameter * 100
+        self.v_rest = -80  # millivolts
 
     def generate(self: SweeneyFiber, **kwargs) -> Fiber:
         """Build fiber model sections with NEURON.
@@ -56,7 +54,7 @@ class SweeneyFiber(Fiber):
         name = f"{node_type} node {index}"
         node = h.Section(name=name)
         node.nseg = 1
-        node.diam = self.diameter * 0.7
+        node.diam = self.diameter * 0.6
         node.L = 1.5  # um
         node.insert("sweeney")
         node.cm = 2.5  # uF/cm^2
@@ -75,8 +73,8 @@ class SweeneyFiber(Fiber):
         name = f"myelin {index}"
         section = h.Section(name=name)
         section.nseg = 1
-        section.diam = self.diameter * 0.7
-        section.L = 100 * self.diameter
+        section.diam = self.diameter * 0.6
+        section.L = 100 * self.diameter - 1.5  # um, -1.5 since 100*D is internodal length
         section.cm = 0
         section.Ra = 54.7  # ohm-cm
         section.insert('extracellular')

@@ -9,7 +9,7 @@ from pyfibers import FiberModel, build_fiber, build_fiber_3d
 class TestFiber3D:
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def _setup(self):
         self.diameter = 10.0  # Example diameter in um
         self.path_coordinates = np.array(
             [[0, 0, 0], [1000, 0, 0], [2000, 1000, 0], [3000, 1000, 1000]]

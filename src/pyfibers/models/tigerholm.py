@@ -25,9 +25,9 @@ class TigerholmFiber(Fiber):
         """
         super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
-            "m1.7": "m_nattxs",  # TODO check
-            "h1.7": "h_nattxs",  # TODO check
-            "s1.7": "s_nattxs",  # TODO check
+            "m1.7": "m_nattxs",
+            "h1.7": "h_nattxs",
+            "s1.7": "s_nattxs",
             "m1.8": "m_nav1p8",
             "h1.8": "h_nav1p8",
             "s1.8": "s_nav1p8",
@@ -36,10 +36,10 @@ class TigerholmFiber(Fiber):
             "h1.9": "h_nav1p9",
             "s1.9": "s_nav1p9",
             "n_kdr": "n_kdrTiger",
-            "ns_km": "ns_ks",  # TODO check
-            "nf_km": "nf_ks",  # TODO check
-            "n_ka": "m_kf",  # TODO check
-            "h_ka": "h_kf",  # TODO check
+            "ns_km": "ns_ks",
+            "nf_km": "nf_ks",
+            "n_ka": "m_kf",
+            "h_ka": "h_kf",
             "ns_h": "ns_h",
             "nf_h": "nf_h",
             "w_kna": "w_kna",

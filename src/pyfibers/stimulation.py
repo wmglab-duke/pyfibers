@@ -106,7 +106,6 @@ class Stimulation:
 
     def __repr__(self: Stimulation) -> str:
         """Return a string representation of the ScaledStim."""  # noqa: DAR201
-        # TODO: make this more informative for developers
         return self.__str__()
 
     def _add_istim(
@@ -705,6 +704,7 @@ class ScaledStim(Stimulation):
         # Process each waveform
         for row in self.waveform:
             row = np.array(row)  # Ensure row is a numpy array
+
             if self.pad and (self.n_timesteps > len(row)):
                 # Extend waveform row until it is of length tstop/dt
                 if row[-1] != 0:
@@ -721,6 +721,14 @@ class ScaledStim(Stimulation):
             assert (
                 len(row) == self.n_timesteps
             ), f'Waveform row length does not match number of time steps {self.tstop / self.dt}'
+
+            # if max abs value is not 1, warn user
+            if np.max(np.abs(row)) != 1:
+                warnings.warn(
+                    'Waveform does not have a max absolute value of 1. '
+                    'This is recommended to simplify scaling of the waveform.',
+                    stacklevel=2,
+                )
 
             processed_waveforms.append(row)  # Append processed row to the list
 
@@ -823,7 +831,7 @@ class ScaledStim(Stimulation):
         exit_func_kws = exit_func_kws or {}
 
         # if stimamp_is_intra, scale istim current
-        if stimamp_target == StimAmpTarget.INTRACELLULAR:  # TODO move to fxn above
+        if stimamp_target == StimAmpTarget.INTRACELLULAR:
             assert self.istim is not None, 'Intracellular stimulation is not enabled for this ScaledStim instance.'
             if stimamps < 0:
                 warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
@@ -846,8 +854,6 @@ class ScaledStim(Stimulation):
                 break
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
                 break
-
-        # TODO makes sense to have all the code after this be in a wrapper function
 
         # get precision from the number of decimal places in self.dt
         precision = len(str(self.dt).split('.')[1])

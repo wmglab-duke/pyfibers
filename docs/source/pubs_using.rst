@@ -1,2 +1,2 @@
-# Publications Utilizing PyFibers
+Publications Utilizing PyFibers
 ==================================
