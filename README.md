@@ -16,8 +16,8 @@ We have implemented the following models:
 ## Installation
 *Note that these instructions are temporary for development*
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
-  - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)\
-  - Check your installation by running the following command: `python -c "import neuron; neuron.test(); quit()"`. If successful, test outputs along with "OK" should be printed to the terminal.
+   - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)\
+   - Check your installation by running the following command: `python -c "import neuron; neuron.test(); quit()"`. If successful, test outputs along with "OK" should be printed to the terminal.
 2. Using git, clone PyFibers to your computer (Once the package is released, this step will be eliminated. Also skip if you downloaded or were provided a zipped copy of the repository)
 3. Install the package using pip
    - Open anaconda prompt
