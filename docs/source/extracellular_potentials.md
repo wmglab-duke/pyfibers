@@ -1,5 +1,5 @@
 # Supplying Extracellular Potentials
-PyFibers works with extracellular potentials imposed by stimulation electrodes. Extracellular potentials can be derived from a number of sources. The two primary methods are analytical calculations (e.g., point source approximation) and numerical simulations (e.g., finite element method). When using numerical simulations, the extracellular potentials are calculated in a separate software package and then imported into PyFibers.
+PyFibers works with extracellular potentials imposed by stimulation electrodes. Extracellular potentials can be derived from a number of sources. The two primary methods are analytical calculations (e.g., point source approximation) and numerical simulations (e.g., finite element method). When using numerical simulations, the extracellular potentials are calculated in a separate software package and then imported into PyFibers. Typically, the extracellular potentials are calculated using a unit stimulus (e.g., 1 mA) and then scaled to the desired stimulus amplitude (e.g., the stimamp parameter of {py:meth}`.ScaledStim.run_sim`).
 
 ## Analytical Calculations
 Each fiber class instance has a method point_source_potentials that calculates the extracellular potentials due to a point source in an infinite homogeneous volume conductor. For the isotropic case:
@@ -7,7 +7,7 @@ Each fiber class instance has a method point_source_potentials that calculates t
 pt_x = 0  # μm
 pt_y = 0  # μm
 pt_z = fiber.length / 2  # μm
-I = 1  # mA
+I = 1  # mA, unit stimulus
 sigma = 0.3  # S/m
 # Calculate extracellular potentials
 fiber.point_source_potentials(pt_x, pt_y, pt_z, I, sigma, inplace=True)
