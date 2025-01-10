@@ -20,44 +20,49 @@ from pyfibers import FiberModel
 h.load_file('stdrun.hoc')
 
 
+### Enumerators to define configuration options ### noqa: E266
+# In Python 3.11+, can instead directly use StrEnum instead of inheriting str
+# For compatibility with 3.10, using Enum and inheriting str
+
+
 @unique
-class ThresholdCondition(Enum):
+class ThresholdCondition(str, Enum):
     """ThresholdCondition."""
 
-    ACTIVATION = 0
-    BLOCK = 1
+    ACTIVATION = "activation"
+    BLOCK = "block"
 
 
 @unique
-class BoundsSearchMode(Enum):
+class BoundsSearchMode(str, Enum):
     """Bounds search modes."""
 
-    PERCENT_INCREMENT = 0
-    ABSOLUTE_INCREMENT = 1
+    PERCENT_INCREMENT = "percent"
+    ABSOLUTE_INCREMENT = "absolute"
 
 
 @unique
-class TerminationMode(Enum):
+class TerminationMode(str, Enum):
     """Termination modes."""
 
-    PERCENT_DIFFERENCE = 0
-    ABSOLUTE_DIFFERENCE = 1
+    PERCENT_DIFFERENCE = "percent"
+    ABSOLUTE_DIFFERENCE = "absolute"
 
 
 @unique
-class BisectionMean(Enum):
+class BisectionMean(str, Enum):
     """Termination modes."""
 
-    GEOMETRIC = 0
-    ARITHMETIC = 1
+    GEOMETRIC = "geometric"
+    ARITHMETIC = "arithmetic"
 
 
 @unique
-class StimAmpTarget(Enum):
+class StimAmpTarget(str, Enum):
     """Stimulation target."""
 
-    INTRACELLULAR = 0
-    EXTRACELLULAR = 1
+    INTRACELLULAR = "intracellular"
+    EXTRACELLULAR = "extracellular"
 
 
 class Stimulation:
@@ -333,22 +338,26 @@ class Stimulation:
     ) -> tuple[float | Any, tuple[float, float]]:
         """Bisection search to find threshold amplitudes. #TODO clean up this docstring.
 
+        Note that enums (ThresholdCondition, BoundsSearchMode, TerminationMode, BisectionMean) can be
+            provided as an enum member (e.g. ThresholdCondition.ACTIVATION) or as
+            the member's string value (e.g. "activation").
+
         :param fiber: instance of Fiber class to apply stimulation to
         :param condition: condition to search for threshold (activation or block)
         :param bounds_search_mode: indicates how to change upper and lower bounds during initial search
         :param bounds_search_step: the incremental increase/decrease of the upper/lower bound in the initial search
-            if bounds_search_mode is 'PERCENT_INCREMENT' this is the percentage increase/decrease,
-            if bounds_search_mode is 'ABSOLUTE_INCREMENT' this is the absolute increase/decrease
+            if bounds_search_mode is "percent" this is the percentage increase/decrease,
+            if bounds_search_mode is "absolute" this is the absolute increase/decrease
         :param termination_mode: indicates when upper and lower bounds converge on a solution of appropriate precision
         :param termination_tolerance: difference between upper and lower bounds that indicates convergence
-            if absolute difference if termination_mode is 'ABSOLUTE_DIFFERENCE',
-            or percentage difference if termination_mode is 'PERCENT_DIFFERENCE'
+            if absolute difference if termination_mode is "absolute",
+            or percentage difference if termination_mode is "percent"
         :param stimamp_top: the upper-bound stimulation amplitude first tested to establish search bounds
         :param stimamp_bottom: the lower-bound stimulation amplitude first tested to establish search bounds
         :param max_iterations: the maximum number of iterations for finding search bounds
         :param exit_t_shift: shift (ms) for detected action potential time to exit subthreshold stimulation.
             This is ignored if condition is BLOCK.
-        :param bisection_mean: the type of mean to use for bisection search (arithmetic or geometric)
+        :param bisection_mean: the type of mean to use for bisection search ("arithmetic" or "geometric")
         :param block_delay: delay from start of stimulation to start checking for block
         :param thresh_num_aps: number of action potentials for threshold search
             - if activation, suprathreshold requires detected aps >= thresh_num_aps
@@ -360,6 +369,11 @@ class Stimulation:
         :return: the threshold amplitude for the given condition, and the number of detected aps
         """
         self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
+        # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
+        assert condition in [mem.value for mem in ThresholdCondition], "Invalid threshold condition."
+        assert bounds_search_mode in [mem.value for mem in BoundsSearchMode], "Invalid bounds search mode."
+        assert termination_mode in [mem.value for mem in TerminationMode], "Invalid termination mode."
+        assert bisection_mean in [mem.value for mem in BisectionMean], "Invalid bisection mean."
 
         # first check stimamps
         supra_top, (_, t) = self.threshsim(

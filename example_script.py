@@ -40,7 +40,7 @@ fiber.record_gating()
 fiber.record_vm()
 
 # run threshold search
-amp, ap = stimulation.find_threshold(fiber)
+amp, ap = stimulation.find_threshold(fiber, condition="activation")
 
 # report the threshold amplitude with print statement to terminal
 print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
