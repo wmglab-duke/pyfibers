@@ -1,4 +1,8 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Defines the Fiber class and helper functions for building fiber models.
+
+This module provides functionality for building and simulating
+both 1D and 3D fiber models in the NEURON environment.
+"""
 
 from __future__ import annotations
 
@@ -27,16 +31,34 @@ def build_fiber(
     n_nodes: int = None,
     **kwargs,
 ) -> Fiber:
-    """Generate a fiber model in NEURON.
+    """Generate a 1D (straight) fiber model in NEURON.
 
-    :param fiber_model: fiber model to use
-    :param diameter: fiber diameter [um]
-    :param n_sections: number of fiber longitudinal coordinates to use
-    :param length: length of the fiber
-    :param n_nodes: number of nodes in the fiber
-    :param kwargs: keyword arguments to pass to the fiber model class
-    :raises ValueError: if more than one of length, n_sections, or n_nodes is provided
-    :return: generated instance of fiber model class
+    This function creates a model fiber using the specified ``fiber_model`` class,
+    with user specified diameter and length
+    (from one of: number of sections, number of nodes, or length in microns).
+    Additional keyword arguments are forwarded to the fiber model class constructor.
+
+    By default, the first section of the fiber is located at the origin (0, 0, 0),
+    and the fiber extends along the z-axis in the positive direction. To change the fiber's location,
+    the method ``set_xyz()`` can be used to translate the fiber along the x, y, or z axes. To create
+    fibers along a custom path in 3D space, use :func:`build_fiber_3d` instead.
+
+    :param fiber_model: FiberModel enumerator specifying the type of fiber to instantiate.
+    :param diameter: The fiber diameter in micrometers (µm).
+    :param length: The total length of the fiber in micrometers (µm), if defining by length.
+    :param n_sections: The total number of sections for discretizing the fiber, if defining by sections.
+    :param n_nodes: The total number of nodes along the fiber, if defining by nodes.
+    :param kwargs: Additional arguments forwarded to the underlying fiber model class.
+    :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified.
+    :return: A Fiber class instance.
+
+    **Example**:
+
+    .. code-block:: python
+
+        from PyFibers import build_fiber, FiberModel
+
+        fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=25)
     """
     # must provide one of length, n_sections, or n_nodes, and only one
     if sum(x is not None for x in [length, n_sections, n_nodes]) != 1:
@@ -50,6 +72,7 @@ def build_fiber(
 
     fiber_instance.generate(n_nodes=n_nodes, n_sections=n_sections, length=length)
 
+    # Set up coordinates and potentials
     fiber_instance.coordinates = np.concatenate(
         (
             np.zeros((len(fiber_instance.longitudinal_coordinates), 1)),
@@ -59,14 +82,14 @@ def build_fiber(
         axis=1,
     )
     fiber_instance.potentials = np.zeros(len(fiber_instance.longitudinal_coordinates))
-    fiber_instance.time = h.Vector().record(h._ref_t)  # TODO move to generate
+    fiber_instance.time = h.Vector().record(h._ref_t)
 
     assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
 
     if fiber_instance.diameter > 2 and not fiber_instance.myelinated:
         warnings.warn(
-            "Unmyelinated fibers are typically <=2 um in diameter, "
-            f"received D={fiber_instance.diameter}. Proceed with caution.",
+            "Unmyelinated fibers are typically <=2 µm in diameter. "
+            f"Received D={fiber_instance.diameter:.2f} µm. Proceed with caution.",
             stacklevel=2,
         )
 
@@ -79,16 +102,44 @@ def build_fiber_3d(
     path_coordinates: ndarray,
     **kwargs,
 ) -> Fiber:
-    """Generate a 3D fiber model in NEURON.
+    """Generate a 3D fiber model in NEURON based on a specified path.
 
-    :param fiber_model: fiber model to use
-    :param diameter: fiber diameter [um]
-    :param path_coordinates: x,y,z-coordinates of the fiber [um] (required)
-    :param kwargs: keyword arguments to pass to the fiber model class
-    :raises ValueError: if n_sections, n_nodes, or length is provided
-    :return: generated instance of fiber model class
+    This function calculates the fiber's length from the user-supplied ``path_coordinates``
+    and uses it internally to instantiate a 3D fiber model. The coordinates are a 2D numpy array of shape
+    (number_of_points, 3),where each row represents a point in 3D space (x, y, z).
+    The fiber model will be created by
+    repeating sections along the path until no more nodes can be added without exceeding the path length.
+    By default, the center of the first section is placed at the origin (0, 0, 0), and the fiber extends
+    along the path.
+
+    :param fiber_model: FiberModel enumerator specifying the type of fiber to instantiate.
+    :param diameter: The fiber diameter in micrometers (µm).
+    :param path_coordinates: Numpy array of shape (N, 3) specifying the 3D coordinates (x, y, z) of the fiber path.
+    :param kwargs: Additional arguments forwarded to the underlying fiber model class.
+    :raises ValueError: If ``path_coordinates`` is not provided, or if ``n_sections``, ``n_nodes``, or ``length``
+        is specified (these are invalid in 3D mode).
+    :return: A fully instantiated 3D fiber model class instance.
+
+    **Example**:
+
+    .. code-block:: python
+
+        import numpy as np
+        from PyFibers import build_fiber_3d, FiberModel
+
+        coords = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [0.0, 1.0, 3.0],
+                [0.0, 2.0, 7.0],
+                # ...
+            ]
+        )
+        fiber = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, path_coordinates=coords
+        )
+        print(fiber)
     """
-    # path_coordinates must be provided
     if path_coordinates is None:
         raise ValueError("path_coordinates must be provided for 3D fibers")
 
@@ -107,14 +158,25 @@ def build_fiber_3d(
     )
     fiber_instance._set_3d()
 
-    # Make the 3D fiber coordinates an intrinsic property of the Fiber object.
+    # Make the 3D fiber coordinates an intrinsic property of the Fiber object
     fiber_instance.coordinates = np.array([nd.interp(p) for p in fiber_instance.longitudinal_coordinates])
 
     return fiber_instance
 
 
 class Fiber:
-    """Base class for model fibers."""
+    """Base class for model fibers.
+
+    The ``Fiber`` class provides functionality for constructing,
+    configuring, and simulating fiber models. It encapsulates key
+    methods for:
+
+    - Generating sections specified by a fiber model subclass
+    - Recording membrane voltage, current, and gating variables
+    - Calculating extracellular potentials and single fiber action potentials
+    - Measuring conduction velocity along the fiber
+    - Handling 3D or 1D fiber geometry
+    """
 
     def __init__(
         self: Fiber,
@@ -124,21 +186,20 @@ class Fiber:
         passive_end_nodes: int | bool = True,
         is_3d: bool = False,
     ) -> None:
-        """Initialize Fiber class.
+        """Initialize the Fiber class.
 
-        :param diameter: fiber diameter [um]
-        :param fiber_model: name of fiber model type
-        :param temperature: temperature of model [degrees celsius]
-        :param passive_end_nodes: if True, set passive properties at the end nodes
-        :param is_3d: if True, fiber is 3D
+        :param fiber_model: The enumerator representing the type of fiber model.
+        :param diameter: The diameter of the fiber (µm).
+        :param temperature: The temperature at which the fiber will be simulated, in Celsius.
+        :param passive_end_nodes: If ``True``, automatically assign passive properties to the end nodes.
+            Can also be an integer specifying how many passive end nodes to include at each end.
+        :param is_3d: If ``True``, fiber coordinates are treated as 3D.
+            Usually set automatically by :func:`build_fiber_3d`.
         """
-        # fiber arguments
         self.diameter = diameter
         self.fiber_model = fiber_model
         self.temperature = temperature
-        self.passive_end_nodes = (
-            passive_end_nodes  # TODO error if longer than half the fiber length, warning if more than a quarter
-        )
+        self.passive_end_nodes = passive_end_nodes
         self.__is_3d = is_3d
 
         # recording
@@ -167,16 +228,20 @@ class Fiber:
         self.potentials: ndarray = np.array([])
         self.longitudinal_coordinates: ndarray = np.array([])
 
+    # MAGIC METHODS #
+
     def __call__(self: Fiber, loc: float, target: str = 'nodes') -> h.Section:
-        """Call the fiber nodes/sections with NEURON style indexing.
+        """Retrieve a node or section at a given normalized position along the fiber.
 
-        Note: Does not consider the length of the sections.
-        Instead, this method returns the section at the loc position in its respective list.
-        For nodes, this is identical to that location along the fiber length.
+        Returns either the node or section nearest to ``loc * (len - 1)`` from the fiber.
+        Note that the indexing is performed on the nodes or sections list.
+        This means that a number is the proportion along the list of nodes or sections, not along the fiber
+        (Though these are generally the same).
 
-        :param loc: location in the fiber (from 0 to 1)
-        :param target: can be nodes or sections
-        :return: node/section at the given location
+        :param loc: Location in the range [0, 1].
+        :param target: Specifies whether to retrieve from ``'nodes'`` or ``'sections'``.
+        :raises AssertionError: If loc is not in [0, 1] or if target is not ``'nodes'`` or ``'sections'``.
+        :return: The chosen node or section.
         """
         assert 0 <= loc <= 1, "Location must be between 0 and 1"
         if target == 'sections':
@@ -184,18 +249,24 @@ class Fiber:
         assert target == 'nodes', 'target can either be "nodes" or "sections"'
         return self.nodes[self.loc_index(loc, target=target)]
 
-    loc = __call__  # alias to maintain old functionality
+    loc = __call__  # alias for backwards compatibility
 
     def __str__(self: Fiber) -> str:
-        """Return a string representation of the fiber."""  # noqa: DAR201
+        """Return a brief string representation of the fiber.
+
+        :return: Description of the fiber model, diameter, length, node count, and section count.
+        """
         return (
-            f"{self.fiber_model.name} fiber of diameter {self.diameter} μm and length {self.length:.2f} μm "
+            f"{self.fiber_model.name} fiber of diameter {self.diameter} µm and length {self.length:.2f} µm "
             f"\n\tnode count: {len(self)}, section count: {len(self.sections)}. "
             f"\n\tFiber is {'' if self.is_3d() else 'not '}3d."
         )
 
     def __repr__(self: Fiber) -> str:
-        """Return a detailed string representation of the fiber."""  # noqa: DAR201
+        """Return a detailed string representation of the fiber.
+
+        :return: Detailed object information suitable for debugging.
+        """
         return (
             f"{self.__class__.__name__}("
             f"fiber_model={self.fiber_model}, "
@@ -214,12 +285,18 @@ class Fiber:
             f"nodes={self.nodes}, "
             f"length={self.length}, "
             f"coordinates={self.coordinates.tolist()}, "
-            f"potentials={self.potentials.tolist()}), "
+            f"potentials={self.potentials.tolist()}, "
             f"longitudinal_coordinates={self.longitudinal_coordinates.tolist()}"
+            ")"
         )
 
     def __len__(self: Fiber, target: str = 'nodes') -> int:
-        """Return the number of nodes/sections in the fiber."""  # noqa: DAR201, DAR101
+        """Return the number of nodes or sections in the fiber.
+
+        :param target: Can be either ``'nodes'`` or ``'sections'``.
+        :return: The count of nodes or sections.
+        :raises AssertionError: If nodecount does not match the actual number of nodes.
+        """
         assert self.nodecount == len(self.nodes), "Node count does not match number of nodes"
         if target == 'sections':
             return len(self.sections)
@@ -227,45 +304,60 @@ class Fiber:
         return len(self.nodes)
 
     def __getitem__(self: Fiber, item: int) -> h.Section:
-        """Return the node at the given index."""  # noqa: DAR201, DAR101
+        """Index into the fiber nodes by integer index.
+
+        :param item: Zero-based index of the node to retrieve.
+        :return: The node (h.Section) at the specified index.
+        """
         return self.nodes[item]
 
     def __iter__(self: Fiber) -> typing.Iterator[h.Section]:
-        """Return an iterator over the nodes in the fiber."""  # noqa: DAR201
+        """Return an iterator over the fiber's nodes.
+
+        :return: Iterator over the node list.
+        """
         return iter(self.nodes)
 
     def __contains__(self: Fiber, item: h.Section) -> bool:
-        """Return True if the section is in the fiber."""  # noqa: DAR201, DAR101
+        """Check if a given section is part of this fiber.
+
+        :param item: NEURON Section to check for membership.
+        :return: ``True`` if the section is in this fiber, else ``False``.
+        """
         return item in self.sections
 
+    # END MAGIC METHODS #
+
     def _connect_sections(self: Fiber) -> None:
-        """Connect the fiber sections."""
+        """Connect all fiber sections together."""
         for i in range(len(self.sections) - 1):
             self.sections[i + 1].connect(self.sections[i])
 
     def _calculate_coordinates(self: Fiber) -> None:
-        """Generate and validate fiber coordinates."""
+        """Generate the internal 1D coordinates for each section and compute fiber length.
+
+        Uses the length (L) of each section to calculate cumulative
+        longitudinal coordinates, then sets ``self.longitudinal_coordinates`` and ``self.length``.
+
+        :raises AssertionError: If the computed center-to-center distance
+            does not match the expected length (based on self.delta_z).
+        """
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
-        self.longitudinal_coordinates: np.ndarray = np.cumsum(  # type: ignore
-            (start_coords + end_coords) / 2
-        )  # center of each section
-        self.length = np.sum([section.L for section in self.sections])  # actual length of fiber
+        self.longitudinal_coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # type: ignore
+        self.length = np.sum([section.L for section in self.sections])
         assert np.isclose(
-            self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0],  # center to center length
-            self.delta_z * (self.nodecount - 1),  # expected length of fiber
+            self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0],
+            self.delta_z * (self.nodecount - 1),
         ), "Fiber length is not correct."
 
     def loc_index(self: Fiber, loc: float, target: str = 'nodes') -> int:
-        """Return the index of the node at the given location (Using the same convention as NEURON).
+        """Convert a normalized location [0, 1] into an integer index for nodes or sections.
 
-        Note: Does not consider the length of the sections.
-        Instead, this method index of the section at the loc position in its respective list.
-        For nodes, this is identical to that location along the fiber length.
-
-        :param loc: location in the fiber (from 0 to 1)
-        :param target: can be nodes or sections
-        :return: index of the node/section at the given location
+        :param loc: Location in the fiber (from 0 to 1).
+        :param target: Indicates whether to index into ``'nodes'`` or ``'sections'``.
+        :raises AssertionError: If loc is not in [0, 1] or if target is invalid.
+        :return: The integer index of the node or section.
         """
         assert 0 <= loc <= 1, "Location must be between 0 and 1"
         if target == 'sections':
@@ -273,10 +365,18 @@ class Fiber:
         assert target == 'nodes', 'target can either be "nodes" or "sections"'
         return int(loc * (len(self) - 1))
 
-    def is_3d(self: Fiber) -> bool:  # noqa: D102
+    def is_3d(self: Fiber) -> bool:
+        """Check if the fiber is using 3D coordinates.
+
+        :return: ``True`` if 3D, otherwise ``False``.
+        """
         return self.__is_3d
 
-    def _set_3d(self: Fiber) -> None:  # noqa: D102
+    def _set_3d(self: Fiber) -> None:
+        """Mark the fiber as 3D.
+
+        Typically called internally by ``build_fiber_3d``.
+        """
         self.__is_3d = True
 
     def resample_potentials(
@@ -286,13 +386,21 @@ class Fiber:
         center: bool = False,
         inplace: bool = False,
     ) -> np.ndarray:
-        """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
+        """Use linear interpolation to resample external potentials onto the fiber's coordinate system (1D).
 
-        :param potentials: high-res potentials
-        :param potential_coords: coordinates of high-res potentials
-        :param center: if True, center the potentials around the fiber midpoint
-        :param inplace: if True, replace the potentials in the fiber with the resampled potentials
-        :return: resampled potentials
+        This is used when extracellular potentials are calculated from an external source,
+        such as a finite element model. The potentials provided by the user should be sampled at high
+        resolution along the fiber's path and provided alongside the corresonding arc-length coordinates.
+
+        If ``center=True``, both the input coordinates and the fiber's coordinates will be
+        shifted such that their midpoints align.
+
+        :param potentials: 1D array of external potential values.
+        :param potential_coords: 1D array of coordinates corresponding to ``potentials``.
+        :param center: If ``True``, center the potentials around the midpoint of each domain.
+        :param inplace: If ``True``, update ``self.potentials`` with the resampled values.
+        :return: Interpolated potential values aligned with ``self.longitudinal_coordinates``.
+        :raises AssertionError: If input array sizes or monotonicity checks fail.
         """
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
@@ -327,9 +435,9 @@ class Fiber:
         return newpotentials
 
     def apcounts(self: Fiber, thresh: float = -30) -> None:
-        """Create a list of NEURON APCount objects at all nodes along the axon.
+        """Create NEURON APCount objects at each node to detect action potentials.
 
-        :param thresh: the threshold value for Vm to pass for an AP to be detected [mV]
+        :param thresh: Threshold voltage (mV) for an action potential.
         """
         self.apc = [h.APCount(node(0.5)) for node in self]
         for apc in self.apc:
@@ -394,22 +502,40 @@ class Fiber:
         return [safe_record(self.nodes[i], ref_attr) for i in indices or range(len(self.nodes))]
 
     def record_vm(self: Fiber, **kwargs) -> list[h.Vector | None]:
-        """Record membrane voltage (mV) along the axon, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
+        """Record membrane voltage (mV) along the fiber.
+
+        :param kwargs: Additional arguments passed to ``record_values``.
+        :return: List of NEURON vectors recording membrane voltage.
+        """
         self.vm = self.record_values('_ref_v', **kwargs)
         return self.vm
 
     def record_im(self: Fiber, **kwargs) -> list[h.Vector | None]:
-        """Record membrane current (nA) along the axon, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
+        """Record membrane current (nA) along the fiber.
+
+        :param kwargs: Additional arguments passed to ``record_values``.
+        :return: List of NEURON vectors recording membrane current.
+        """
         self.im = self.record_values('_ref_i_membrane', **kwargs)
         return self.im
 
     def record_vext(self: Fiber) -> list[h.Vector]:
-        """Record extracellular potential (mV) along the axon."""  # noqa: DAR101, DAR201
+        """Record extracellular potential (mV) from each section along the fiber.
+
+        :return: List of NEURON vectors recording ``vext``.
+        """
         self.vext = [h.Vector().record(sec(0.5)._ref_vext[0]) for sec in self.sections]
         return self.vext
 
     def record_gating(self: Fiber, **kwargs) -> dict[str, list[h.Vector | None]]:
-        """Record gating parameters for axon nodes, kwargs pass to `record_values()`."""  # noqa: DAR101, DAR201
+        """Record gating parameters (ion channel states) from axon nodes.
+
+        The gating variables must be declared in ``self.gating_variables`` within the fiber model class.
+
+        :param kwargs: Additional arguments passed to ``record_values``.
+        :return: Dictionary mapping gating variable names to lists of recorded NEURON Vectors.
+        :raises AssertionError: If ``self.gating_variables`` is empty.
+        """
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
         self.gating = {}
@@ -417,10 +543,10 @@ class Fiber:
             self.gating[name] = self.record_values(f"_ref_{var}", **kwargs)
         return self.gating
 
-    set_save_im = record_im  # alias to maintain old functionality
-    set_save_vext = record_vext  # alias to maintain old functionality
-    set_save_vm = record_vm  # alias to maintain old functionality
-    set_save_gating = record_gating  # alias to maintain old functionality
+    set_save_im = record_im  # alias for backwards compatibility
+    set_save_vext = record_vext  # alias for backwards compatibility
+    set_save_vm = record_vm  # alias for backwards compatibility
+    set_save_gating = record_gating  # alias for backwards compatibility
 
     def point_source_potentials(
         self: Fiber,
@@ -431,16 +557,15 @@ class Fiber:
         sigma: float | tuple,
         inplace: bool = False,
     ) -> np.ndarray:
-        """Calculate extracellular potentials at all fiber coordinates due to a point source.
+        """Compute extracellular potentials at the fiber's coordinates due to a point source stimulus.
 
-        :param x: x-coordinate of point source [um]
-        :param y: y-coordinate of point source [um]
-        :param z: z-coordinate of point source [um]
-        :param i0: current of point source [mA]
-        :param sigma: conductivity of extracellular medium [S/m].
-            Float for isotropic, tuple of length 3 (x,y,z) for anisotropic
-        :param inplace: whether to update self.potentials in-place, defaults to False
-        :return: potentials at all fiber coordinates [mV]
+        :param x: x-coordinate of the source in µm.
+        :param y: y-coordinate of the source in µm.
+        :param z: z-coordinate of the source in µm.
+        :param i0: Magnitude of the point-source current (mA).
+        :param sigma: Conductivity (S/m). Float for isotropic or (sigma_x, sigma_y, sigma_z) for anisotropic.
+        :param inplace: If ``True``, update the fiber's ``potentials`` in-place. #TODO update all attrs to use xref
+        :return: Extracellular potentials at each fiber coordinate, in mV.
         """
         # Calculate distance between source and sections
         xs = x - self.coordinates[:, 0]
@@ -454,8 +579,8 @@ class Fiber:
         if isinstance(sigma, (float, int)):
             # Isotropic case
             potentials = i0 / (4 * np.pi * sigma * np.sqrt(xs**2 + ys**2 + zs**2))
-        else:  # TODO double check that this is correct
-            # Anisotropic case
+        else:
+            # Anisotropic case (approximate)
             sigma_x, sigma_y, sigma_z = sigma
             potentials = i0 / (
                 4 * np.pi * np.sqrt(sigma_y * sigma_z * xs**2 + sigma_x * sigma_z * ys**2 + sigma_x * sigma_y * zs**2)
@@ -467,25 +592,29 @@ class Fiber:
         return potentials
 
     def measure_cv(self: Fiber, start: float = 0.25, end: float = 0.75, tolerance: float = 0.005) -> float:
-        """Estimate fiber conduction velocity using ap times at specific points.
+        """Estimate conduction velocity (m/s) by measuring AP times at two points (start and end).
 
-        :param start: Starting position for conduction velocity measurement [0, 1]
-        :param end: Ending position for conduction velocity measurement [0, 1]
-        :param tolerance: Default tolerance for determining linearity (ms)
-        :raises ValueError: if conduction is not (roughly) linear between start and end
-        :return: Conduction velocity [m/s]
+        This method calculates the conduction velocity by comparing the
+        action potential times at two specified normalized locations (NEURON indexing).
+        It also checks for linear conduction between the two points, with a specified tolerance.
+
+        :param start: Starting position for conduction velocity measurement (from 0 to 1).
+        :param end: Ending position for conduction velocity measurement (from 0 to 1).
+        :param tolerance: Tolerance (ms) for checking linearity of AP times.
+        :raises ValueError: If conduction is not approximately linear between ``start`` and ``end``.
+        :raises AssertionError: If no APs are detected at one or both of the measurement nodes.
+        :return: Conduction velocity in meters per second (m/s).
         """
-        # Check that both nodes (start and end) have detected APs
         start_ind, end_ind = self.loc_index(start), self.loc_index(end)
         for ind in [start_ind, end_ind]:
             assert self.apc[ind].n > 0, f"No detected APs at node {ind}."
 
-        # Check that conduction is linear between start and end nodelist
+        # Check linearity
         aptimes = [self.apc[ind].time for ind in range(start_ind, end_ind + 1)]
         if not np.allclose(np.diff(aptimes), np.diff(aptimes)[0], atol=tolerance):
             raise ValueError("Conduction is not linear between the specified nodes.")
 
-        # Calculate conduction velocity from AP times
+        # Calculate conduction velocity
         coords = [self.longitudinal_coordinates[i] for i, section in enumerate(self.sections) if section in self.nodes]
         distance = np.abs(coords[start_ind] - coords[end_ind])
         time = np.abs(aptimes[-1] - aptimes[0])
@@ -506,64 +635,58 @@ class Fiber:
         synapse_reversal_potential: float = 0,
         netcon_weight: float = 0.1,
     ) -> None:
-        """Add intrinsic activity to a fiber.
+        """Add a spike-generating synapse to the fiber for intrinsic activity.
 
-        Intrinsic activity is generated by:
-            - a spike generator (NetStim)
-            - a synapse (ExpSyn) on a fiber node
-            - a network connection (NetCon) between the spike generator and the synapse
+        The synapse is generated via a NetStim (spike generator), which
+        is connected to an ExpSyn (exponential synapse) on the chosen node.
+        A NetCon object links them together, injecting an exponentially decaying current
+        upon each spike event.
+        See the NEURON documentation for more information on these objects:
+        - `NetStim <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html#NetStim>`_
+        - `ExpSyn <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/mechanisms/mech.html#ExpSyn>`_
+        - `NetCon <https://nrn.readthedocs.io/en/latest/hoc/modelspec/programmatic/network/netcon.html#>`_
 
-        When the synapse receives a spike, it inject an exponentially decaying current.
-        The strength of the current injection is affected by the weight of the connection (netcon_weight).
-        Since the time constant, reversal potential, and weight all affect the current injection,
-        the default values may not always be sufficient.
-        See NEURON documentation for more details.
-
-        :param loc: location in the fiber (from 0 to 1). Mutually exclusive with loc_index.
-        :param loc_index: index of the node at the given location. Mutually exclusive with loc.
-        :param avg_interval: average interval between spikes [ms]
-        :param num_stims: number of spikes to deliver
-        :param start_time: time to start delivering spikes [ms]
-        :param noise: noise distribution of spike intervals
-            for regular intervals (no randomness), set to 0
-            for poisson process, set to 1
-            for semi-random, set between 0 and 1
-        :param synapse_tau: time constant for decay of the synapse current [ms]
-        :param synapse_reversal_potential: reversal potential of the synapse current [mV]
-        :param netcon_weight: weight of connection between spike generator and node stimulus [uS]
+        :param loc: Normalized location along the fiber where the synapse is placed ([0,1]).
+        :param loc_index: Alternatively, specify an integer index of the node.
+        :param avg_interval: Average interval between NetStim spikes (ms).
+        :param num_stims: Number of spikes to deliver.
+        :param start_time: Time to start delivering spikes (ms).
+        :param noise: Noise parameter for spike intervals (0 = regular, 1 = Poisson).
+        :param synapse_tau: Time constant (ms) for synaptic current decay.
+        :param synapse_reversal_potential: Reversal potential (mV) of the synapse.
+        :param netcon_weight: Weight of the NetCon between the spike generator and synapse.
+        :raises AssertionError: If neither loc nor loc_index is specified, or if both are specified.
         """
-        # Get the node at the specified location
         assert (loc is None) != (loc_index is None), "Must specify either loc or loc_index"
         node = self[loc_index] if loc_index is not None else self(loc)
 
-        # create the spike generator
+        # Create spike generator
         self.stim = h.NetStim()
         self.stim.interval = avg_interval
         self.stim.number = num_stims
         self.stim.start = start_time
         self.stim.noise = noise
 
-        # create the synapse on the node
+        # Create synapse
         self.syn = h.ExpSyn(node(0.5))
         self.syn.tau = synapse_tau
         self.syn.e = synapse_reversal_potential
-        # Record the current injected by the synapse
         self.syn_current = h.Vector().record(self.syn._ref_i)
 
-        # Connect the spike generator to the synapse
+        # Connect generator to synapse
         self.nc = h.NetCon(self.stim, self.syn)
         self.nc.weight[0] = netcon_weight
-        self.nc.delay = 0  # no delay
+        self.nc.delay = 0
 
     @staticmethod
     def calculate_periaxonal_current(from_sec: h.Section, to_sec: h.Section, vext_from: float, vext_to: float) -> float:
-        """Calculate the periaxonal current between two compartments.
+        """Compute the periaxonal current between two compartments for myelinated models.
 
-        :param from_sec: the section from which the current is flowing
-        :param to_sec: the section to which the current is flowing
-        :param vext_from: the periaxonal potential at the from_sec [mV]
-        :param vext_to: the periaxonal potential at the to_sec [mV]
-        :return: the periaxonal current between the two compartments [mA]
+        :param from_sec: The NEURON Section from which current flows.
+        :param to_sec: The NEURON Section receiving current.
+        :param vext_from: Extracellular (periaxonal) potential at ``from_sec`` (mV).
+        :param vext_to: Extracellular (periaxonal) potential at ``to_sec`` (mV).
+        :return: The periaxonal current in mA.
         """
         length_from = 1e-4 * from_sec.L  # [cm]
         xraxial_from = from_sec.xraxial[0]  # [megaOhm/cm]
@@ -573,11 +696,22 @@ class Fiber:
         return (vext_from - vext_to) / r_periaxonal  # I = V/R [mA]
 
     def membrane_currents(self: Fiber, downsample: int = 1) -> np.ndarray:
-        """Calculate membrane currents, including periaxonal currents for myelinated fibers.
+        """Compute membrane currents at each section for each time point in the simulation.
 
-        :param downsample: the downsample rate for the time vector
-        :raises RuntimeError: if membrane currents, extracellular potentials, or simulation records are not found
-        :return: membrane current matrix, consisting of membrane currents for all sections for every time point
+        Uses the methods described in Pena et. al 2024: http://dx.doi.org/10.1371/journal.pcbi.1011833
+
+        For myelinated fibers, this calculation includes periaxonal currents between adjacent
+        sections (based on ``xraxial``). The result is a matrix of shape:
+        [``num_timepoints``, ``num_sections``].
+
+        This method returns a tuple consisting of:
+        1. A 2D array (time steps x number of sections) of membrane currents in mA.
+        2. The array of time points corresponding to those currents (downsampled by the specified factor).
+
+        :param downsample: Factor to reduce the temporal resolution (e.g., downsample=2 takes every 2nd time step).
+        :return: A tuple (``i_membrane_matrix``, ``downsampled_time``). The matrix contains total currents (mA).
+            The time array contains the corresponding simulation times (ms).
+        :raises RuntimeError: If membrane currents or extracellular potentials were not recorded properly.
         """
         if self.im is None:
             raise RuntimeError("Membrane currents not saved. Call record_im(allsec=True) before running simulation.")
@@ -590,96 +724,119 @@ class Fiber:
         if len(self.time.as_numpy()) == 0:
             raise RuntimeError("No record of simulation found. Run a simulation before calling this method.")
 
+        # Extract the full time vector and compute downsample indices
         time_vector = np.array(self.time)
         downsampled_time = time_vector[::downsample]
         downsample_idx = np.arange(0, len(time_vector), downsample)
 
-        # Precompute lengths and diameters for all sections
+        # Precompute geometry factors for each section (convert from µm to cm)
         sections_length = np.array([1e-4 * sec.L for sec in self.sections])  # [cm]
         sections_diameter = np.array([1e-4 * sec.diam for sec in self.sections])  # [cm]
 
+        # Initialize the output matrix for membrane currents
         i_membrane_matrix = np.zeros((len(downsampled_time), len(self.sections)))
 
+        # Loop through each time index of interest (downsampled)
         for time_idx in downsample_idx:
-            downsampled_idx = time_idx // downsample
+            # Convert time index to downsampled row index
+            downsampled_row = time_idx // downsample
+
+            # specific_i_membrane is the membrane current density [mA/cm^2] for each section at this instant
             specific_i_membrane = np.array(
                 [self.im[sec_idx][time_idx] for sec_idx in range(len(self.sections))]
-            )  # [mA/cm^2]
-            i_membrane = np.pi * sections_length * sections_diameter * specific_i_membrane  # [mA]
-            v_ext = np.array([self.vext[sec_idx][time_idx] for sec_idx in range(len(self.sections))])  # [mV]
+            )  # shape: (num_sections,)
 
+            # Multiply current density by surface area (π * diameter * length) to get total current in mA
+            i_membrane = np.pi * sections_length * sections_diameter * specific_i_membrane  # [mA]
+
+            # Extract the recorded extracellular potentials [mV] at this time point
+            v_ext = np.array(
+                [self.vext[sec_idx][time_idx] for sec_idx in range(len(self.sections))]
+            )  # shape: (num_sections,)
+
+            # If fiber is myelinated, include periaxonal currents between adjacent sections
             if self.myelinated:
-                # Initialize periaxonal currents
+                # Initialize left/right periaxonal currents for all sections
                 peri_i_left = np.zeros(len(self.sections))
                 peri_i_right = np.zeros(len(self.sections))
 
-                # Calculate periaxonal current from left compartment
+                # For each section (except the first), compute the current flowing from the previous section
                 peri_i_left[1:] = np.array(
                     [
                         self.calculate_periaxonal_current(
-                            self.sections[sec_idx - 1], self.sections[sec_idx], v_ext[sec_idx - 1], v_ext[sec_idx]
+                            self.sections[sec_idx - 1],
+                            self.sections[sec_idx],
+                            v_ext[sec_idx - 1],
+                            v_ext[sec_idx],
                         )
                         for sec_idx in range(1, len(self.sections))
                     ]
                 )
-                # Calculate periaxonal current from right compartment
+
+                # For each section (except the last), compute the current flowing from the next section
                 peri_i_right[:-1] = np.array(
                     [
                         self.calculate_periaxonal_current(
-                            self.sections[sec_idx + 1], self.sections[sec_idx], v_ext[sec_idx + 1], v_ext[sec_idx]
+                            self.sections[sec_idx + 1],
+                            self.sections[sec_idx],
+                            v_ext[sec_idx + 1],
+                            v_ext[sec_idx],
                         )
                         for sec_idx in range(len(self.sections) - 1)
                     ]
                 )
 
-                # Calculate net current
+                # The net current at each section is the membrane current plus currents from both neighbors
                 net_i_extra = i_membrane + peri_i_left + peri_i_right  # [mA]
             else:
-                net_i_extra = i_membrane  # [mA]
+                net_i_extra = i_membrane  # Unmyelinated: no periaxonal current
 
-            # Add current to matrix
-            i_membrane_matrix[downsampled_idx] = net_i_extra
+            # Store the results in the output matrix
+            i_membrane_matrix[downsampled_row] = net_i_extra
 
+        # Return the membrane current matrix along with the downsampled time vector
         return i_membrane_matrix, downsampled_time
 
     @staticmethod
     def sfap(current_matrix: np.ndarray, potentials: np.ndarray) -> np.ndarray:
-        """Calculate SFAP from a membrane current matrix and recording potentials.
+        """Compute the Single-Fiber Action Potential (SFAP) by multiplying currents with recording potentials.
 
-        :param current_matrix: rows are time points, columns are sections
-        :param potentials: the extracellular potentials at all fiber coordinates
-        :return: the single fiber action potential across all time points
+        :param current_matrix: 2D array of shape [timepoints, sections], containing currents in mA.
+        :param potentials: 1D array of potentials (mV) at each section, length = number of sections.
+        :raises AssertionError: If matrix columns do not match the length of potentials.
+        :return: The computed SFAP in microvolts (µV).
         """
         assert (
             len(potentials) == current_matrix.shape[1]
         ), "Potentials and current matrix columns must have the same length"
-        return 1e3 * np.dot(current_matrix, potentials)  # [uV]
+        return 1e3 * np.dot(current_matrix, potentials)  # Convert to µV
 
     def record_sfap(self: Fiber, rec_potentials: list | ndarray, downsample: int = 1) -> np.ndarray:
-        """Potential over time from fiber at a recording electrode.
+        """Compute the SFAP time course at a given electrode location.
 
-        :param rec_potentials: the extracellular potentials from recording electrode
-        :param downsample: the downsample rate for the time vector
-        :return: the single fiber action potential across all time points
+        :param rec_potentials: 1D array of precomputed potentials (mV) at each fiber section
+            due to the electrode placement.
+        :param downsample: Downsampling factor for the time vector (applies to current matrix).
+        :return: A tuple (``sfap_trace``, ``downsampled_time``). ``sfap_trace`` is the computed single-fiber
+            action potential in microvolts (µV) across the downsampled time.
         """
         membrane_currents, downsampled_time = self.membrane_currents(downsample)
         return self.sfap(membrane_currents, rec_potentials), downsampled_time
 
     def set_xyz(self: Fiber, x: float = 0, y: float = 0, z: float = 0) -> None:
-        """Set the x and y coordinates of the fiber.
+        """Assign new (x, y, z) shift to a straight (1D) fiber.
 
-        This assumes that the fiber is straight and centered at the xy origin.
-        By default, fibers are created with the first section centered at z=0, extending in the positive z direction.
-        Not recommended to use with 3D fibers.
+        The fiber is assumed to be along the z-axis initially, with x=0 and y=0.
+        This method sets x and y coordinates to the specified values and shifts z by the given amount.
 
-        :param x: x-coordinate of the fiber [um]
-        :param y: y-coordinate of the fiber [um]
-        :param z: amount to shift the z-coordinate of the fiber [um]
+        :param x: Shift in the x-direction (µm).
+        :param y: Shift in the y-direction (µm).
+        :param z: Shift in the z-direction (µm).
+        :raises AssertionError: If this fiber is a 3D fiber (since this method is for 1D only).
         """
         assert not self.__is_3d, "set_xyz() is not compatible with 3D fibers"
-        # warn if the x coordinates are not all the same or the y coordinates are not all the same
         if not np.allclose(self.coordinates[:, 0], x) or not np.allclose(self.coordinates[:, 1], y):
-            warnings.warn("X or Y coordinates vary, you may be running this on a fiber with a 3D path", stacklevel=2)
+            warnings.warn("X or Y coordinates vary, you may be operating on a 3D fiber path.", stacklevel=2)
         self.coordinates[:, 0] = x
         self.coordinates[:, 1] = y
         self.coordinates[:, 2] += z
@@ -693,29 +850,41 @@ class Fiber:
         center: bool = False,
         inplace: bool = False,
     ) -> np.ndarray:
-        """Use linear interpolation to resample the high-res potentials to the proper fiber coordinates.
+        """Interpolate external potentials onto a 3D fiber coordinate system.
 
-        :param potentials: high-res potentials
-        :param potential_coords: x, y, z coordinates of high-res potentials. Must be along the fiber path
-        :param center: if True, center the potentials around the fiber midpoint
-        :param inplace: if True, replace the potentials in the fiber with the resampled potentials
-        :return: resampled potentials
+        A wrapper around ``resample_potentials`` but handles 3D coordinates by first computing
+        the arc length of the provided coordinate array. As with the 1D version, this method
+        is used to resample external potentials (e.g., from a finite element model) onto the fiber.
+
+        At present, this does not check that the input coordinates are along the 3D fiber path.
+        Therefore, it is recommended you use the same to construct the fiber as you use here.
+        Alternatively, you can create a 1D fiber and calculate the coordinate arc lengths.
+        For more information, see :doc:`/extracellular_potentials`.
+
+        :param potentials: 1D array of external potential values.
+        :param potential_coords: 2D array of shape (N, 3) representing the (x, y, z) coordinates
+            where ``potentials`` are measured or computed.
+        :param center: If ``True``, center the potentials around the midpoint of each domain.
+        :param inplace: If ``True``, update ``self.potentials`` with the resampled values.
+        :return: Interpolated potential values aligned with the fiber's 3D arc-length coordinates.
+        :raises AssertionError: If called on a non-3D fiber or if input coordinate shapes are invalid.
         """
         assert self.__is_3d, "resample_potentials_3d() is only compatible with 3D fibers"
 
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
-        # if shape of potential coords is 2D, calculate arc lengths and replace
         assert len(potential_coords.shape) == 2, (
             "Potential coordinates must be a 2D array. " "If using arc lengths, use resample_potentials() instead."
         )
         assert potential_coords.shape[1] == 3, "Must provide exactly 3 coordinates for x,y,z"
 
-        # TODO need some way to ensure that the potential_coords are along the fiber path
+        # Convert (x, y, z) into cumulative arc length
+        line = nd_line(potential_coords)
+        arc_lengths = line.cumul
 
         return self.resample_potentials(
             potentials=potentials,
-            potential_coords=nd_line(potential_coords).cumul,
+            potential_coords=arc_lengths,
             center=center,
             inplace=inplace,
         )
@@ -729,80 +898,79 @@ class Fiber:
         n_sections: int = None,
         length: float = None,
     ) -> Fiber:
-        """Build fiber model sections with NEURON.
+        """Build the fiber model sections in NEURON according to a specified generation strategy.
 
-        :param n_nodes: number of nodes in the fiber
-        :param n_sections: number of sections to comprise fiber
-        :param length: length of the fiber
-        :param function_list: list of functions to generate fiber sections. Each function should generate a section.
-            The function list should start with the node of Ranvier and end with the section before the next node.
-            Example: function_list = [node_func, myelin_func]
-        :return: generated instance of fiber model class
+        This method either uses the desired number of nodes (``n_nodes``), the number of sections (``n_sections``),
+        or determines the total number of sections from the fiber length and the spacing ``delta_z``.
+
+        :param function_list: List of callable functions that each create a section.
+            Typically structured as [node_func, myelin_func].
+        :param n_nodes: Number of nodes of Ranvier.
+        :param n_sections: Total number of sections in the fiber.
+        :param length: Total length of the fiber (µm). Overrides n_sections if given.
+        :return: The updated fiber instance after generation.
+        :raises AssertionError: If the computed number of sections does not align with the
+            function_list-based pattern.
         """
-        # Determine geometrical parameters for fiber based on fiber model
         if n_nodes is not None:
             n_sections = (n_nodes - 1) * len(function_list) + 1
         elif length is not None:
             n_sections = math.floor(length / self.delta_z) * len(function_list) + 1
         else:
             assert n_sections is not None
+
         assert (n_sections - 1) % len(function_list) == 0, (
-            f"n_sections must be 1 + {len(function_list)}n where n is an integer one less than the "
-            "number of nodes of Ranvier."
+            f"n_sections must be 1 + {len(function_list)}*n, " "where n is (number_of_nodes - 1)."
         )
 
-        # Determine number of nodecount
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 
-        # Create fiber sections
         self._create_sections(function_list)
-
-        # Generate fiber coordinates and validate them
         self._calculate_coordinates()
 
         return self
 
     def _create_sections(self: Fiber, function_list: list[Callable]) -> Fiber:
-        """Create and connect NEURON sections for a myelinated fiber type using specified functions.
+        """Create and connect NEURON sections for each node or internode in the fiber.
 
-        :param function_list: list of functions to generate fiber sections. Each function should generate a section.
-            the function list should start with the node of Ranvier and end with the section before the next node
-        :return: generated instance of fiber model class
+        The provided ``function_list`` starts with a function for a node, followed
+        by each internodal section in order. Each node is optionally converted to a passive node
+        if it is within the range of ``passive_end_nodes``.
+
+        :param function_list: A list of functions that each return a new NEURON Section.
+        :return: The updated fiber instance.
         """
-        # calculate total number of sections
         nsec = (self.nodecount - 1) * len(function_list) + 1
         for ind in range(nsec):
-            # get function for creating this section
             function = function_list[ind % len(function_list)]
-            if (ind) % len(function_list) == 0:  # node of Ranvier
-                # if this node is passive
+            # If this is a node location (ind % len(function_list) == 0)
+            if ind % len(function_list) == 0:
+                # passive or active node
+                node_type = 'active'
+                # If within the range of passive end nodes
                 if (
                     self.passive_end_nodes
                     and ind / len(function_list) < self.passive_end_nodes
                     or self.nodecount - 1 - ind / len(function_list) < self.passive_end_nodes
                 ):
-                    section = self._make_passive(function(ind, 'passive'))
-                # otherwise, regular node
-                else:
-                    section = function(ind, 'active')
+                    node_type = 'passive'
+                section = function(ind, node_type)
+                if node_type == 'passive':
+                    section = self._make_passive(section)
                 self.nodes.append(section)
             else:
                 section = function(ind)
-            # always append to sections
             self.sections.append(section)
 
         self._connect_sections()
-
         return self
 
     def _make_passive(self: Fiber, node: h.Section) -> h.Section:
-        """Convert a node of Ranvier section to a passive node of Ranvier.
+        """Convert a node section to passive by removing all active mechanisms.
 
-        Strips all mechanisms from the section and adds a passive mechanism.
-        This is done to allow the fiber model to still dictate the structure of the node.
-
-        :param node: the node of Ranvier section
-        :return: the node of Ranvier section with passive properties set
+        :param node: The node section to be made passive.
+        :return: The modified section with a passive mechanism.
+        :raises AssertionError: If the node's name does not contain 'passive'.
         """
         assert 'passive' in node.name(), "Passive node name must contain 'passive'"
         mt = h.MechanismType(0)
@@ -819,14 +987,15 @@ class Fiber:
         return node
 
     def nodebuilder(self: Fiber, ind: int, node_type: str) -> h.Section:
-        """Generate a generic node of Ranvier.
+        """Create a generic node of Ranvier.
 
-        After calling this function,
-        specific mechanisms and parameters for your fiber model should be added to the node.
+        This method sets the node length, diameter, and extracellular mechanism
+        but does not insert ion channel mechanisms. Subclasses or external code
+        should add the relevant channels to define the node's electrophysiological behavior.
 
-        :param ind: section index of the node along the fiber
-        :param node_type: type of node ('active' or 'passive')
-        :return: the node of Ranvier section
+        :param ind: Index of this node in the overall fiber construction.
+        :param node_type: A string identifying the node as 'active' or 'passive'.
+        :return: The newly created node section.
         """
         node = h.Section(name=f"{node_type} node {ind}")
         node.L = self.delta_z

@@ -1,4 +1,4 @@
-"""Install script for pyfibers."""
+"""Install script for PyFibers."""
 
 from __future__ import annotations
 
@@ -14,11 +14,6 @@ def main() -> None:
     """
     # Change to MOD directory
     os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "MOD"))
-
-    # remove all non .mod files
-    for file in os.listdir():
-        if not file.endswith(".mod") and not os.path.isdir(file):
-            os.remove(file)
 
     # Check for nrnivmodl
     if not shutil.which("nrnivmodl"):

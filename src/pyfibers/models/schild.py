@@ -1,4 +1,10 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Implementation of Schild 1994 and 1997 fiber models.
+
+As described in:
+1994 implementation: http://dx.doi.org/10.1152/jn.1994.71.6.2338
+1997 implementation: http://dx.doi.org/10.1152/jn.1997.78.6.3198
+Updated by: http://dx.doi.org/10.1152/jn.00315.2020
+"""
 
 from __future__ import annotations
 

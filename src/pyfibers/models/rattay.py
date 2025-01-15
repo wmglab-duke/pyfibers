@@ -1,4 +1,7 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Implementation of Rattay fiber model.
+
+As described in Rattay 1993: https://doi.org/10.1109/10.250575
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Library of fiber models."""
+"""Library of fiber models included with PyFibers."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 # isort: skip_file
-"""Defines imports for the NEURON_Files module."""
+"""Initializer for core PyFibers code."""
 import os
 
 from contextlib import suppress

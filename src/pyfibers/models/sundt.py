@@ -1,4 +1,7 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Implementation of Sundt Fiber model.
+
+As described in Sundt 2015: https://doi.org/10.1152/jn.00226.2015
+"""
 
 from __future__ import annotations
 

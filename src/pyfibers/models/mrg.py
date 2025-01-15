@@ -1,4 +1,12 @@
-"""Implementation of the MRG fiber model."""
+"""Implementation of the MRG fiber model.
+
+Based on the following papers:
+Original implementation: https://doi.org/10.1152/jn.00353.2001
+Extension to 2 um diameter: TODO
+Extension to 1 um diameter: TODO
+Implementation of interpolation model: TODO
+Implementation of small interpolation model: TODO
+"""
 
 from __future__ import annotations
 
@@ -13,6 +21,7 @@ from pyfibers.fiber import Fiber
 h.load_file("stdrun.hoc")
 
 
+# Classes to enable type hinting for dictionaries
 class MRGDiscreteParameters(TypedDict):  # noqa: D101
     node_length: list[float]
     paranodal_length_1: list[float]
@@ -46,6 +55,7 @@ class FiberParameters(TypedDict):  # noqa: D101
     SMALL_MRG_INTERPOLATION: MRGInterpolationParameters
 
 
+# Parameters that define each fiber model variant
 fiber_parameters_all: FiberParameters = {
     "MRG_DISCRETE": MRGDiscreteParameters(
         node_length=[1.0] * 11,

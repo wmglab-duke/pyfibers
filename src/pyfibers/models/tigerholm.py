@@ -1,4 +1,7 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Implementation of Tigerholm fiber model.
+
+As described in Tigerholm 2014: https://doi.org/10.1152/jn.00777.2012
+"""
 
 from __future__ import annotations
 

@@ -12,6 +12,7 @@ classifiers = [
   "Operating System :: OS Independent"
 ]
 dependencies = [
+  # TODO need to freeze versions for all deps
   "matplotlib",
   "multiprocess",
   # "neuron",
@@ -33,7 +34,7 @@ version = "0.2.0.dev1"  # This is the only place version should be hard coded
 [project.optional-dependencies]
 dev = [
   "mock==4.0.*",
-  "pre-commit==2.20.*",
+  "pre-commit==3.*",
   "pytest==7.1.*",
   "pytest-cov==3.0.*",
   "pytest-sugar",

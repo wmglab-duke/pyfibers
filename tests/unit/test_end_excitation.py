@@ -33,7 +33,7 @@ def test_end_excitation_checker_end_excitation(fiber):
 def test_end_excitation_checker_multiple_activation_sites(fiber):
     fiber.apc[0].time = 1
     fiber.apc[9].time = 1
-    with pytest.warns(RuntimeWarning, match=r'Found multiple activation sites'):
+    with pytest.warns(RuntimeWarning, match=r'Multiple activation sites detected'):
         Stimulation.end_excitation_checker(fiber, multi_site_check=True, fail_on_end_excitation=False)
 
 
