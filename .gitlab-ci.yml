@@ -99,6 +99,12 @@ tox_py312:
   - tox -e py312-neuron{8}
   image: python:3.12
 
+tox_neuron9:
+  script:
+  - pip install "tox<=4.8.0"
+  - tox -e py311-neuron{9}
+  image: python:3.11
+
 # Define the build_docs script as an anchor
 .build_docs: &build_docs
 - apt-get update && apt-get -y install libgl1
