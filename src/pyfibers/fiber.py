@@ -336,22 +336,48 @@ class Fiber:
             apc.thresh = thresh
 
     def record_values(
-        self: Fiber, ref_attr: str, allsec: bool = False, indices: list[int] = None, allow_missing: bool = True
+        self: Fiber,
+        ref_attr: str,
+        allsec: bool = False,
+        indices: list[int] = None,
+        allow_missing: bool = True,
+        recording_dt: float = None,
+        recording_tvec: h.Vector = None,
     ) -> list[h.Vector | None]:
-        """Record values from all nodes along the axon.
+        """Record NEURON variable references (e.g., membrane voltage) along the fiber.
 
-        :param ref_attr: attribute to record from each node
-        :param allsec: if True, record from all sections, not just nodes
-        :param indices: list of indices to record from (defaults to all nodes/sections depending on allsec)
-            - if allsec is True, indices are section indices
-            - if allsec is False, indices are node indices
-        :param allow_missing: if True, return None for sections without the attribute, otherwise raise AttributeError
-        :raises ValueError: if indices is an empty list
-        :return: list of NEURON vectors for recording values during simulation, with None for nonexistent attributes
+        Note that recording_dit and recording_tvec are mutually exclusive.
+        If both are None, the variable is recorded at every simulation timestep.
+        For more info, see the NEURON docs:
+        https://nrn.readthedocs.io/en/latest/python/programming/math/vector.html#Vector.record
+
+        :param ref_attr: The NEURON attribute to record (e.g. ``'_ref_v'``).
+        :param allsec: If ``True``, record from sections (including nodes). Otherwise, only record from nodes.
+        :param indices: Specific indices to record from (if None, record from all).
+        :param allow_missing: If ``True``, allows missing attributes without raising an error (returns None).
+        :param recording_dt: The time step [ms] for recording the values (separate from simulation dt).
+            Should be larger than the simulation dt.
+        :param recording_tvec: NEURON vector of time points at which to record the values. [ms]
+            Note that the user MUST keep this Vector in memory for the duration of the simulation.
+            This means you must assign t to a variable, and that variable must not be overwritted or deleted.
+            For example, to record at time points 0, 1, 2, and 3 ms:
+            .. code-block:: python
+
+                recording_tvec = h.Vector([0, 1, 2, 3])  # store times in a Vector
+                fiber.record_values("_ref_v", recording_tvec=recording_tvec)  # pass Vector to record
+                stimulation.find_threshold(fiber)  # run the simulation
+                plt.plot(recording_tvec, fiber.vm[0])  # plot the recorded values
+        :raises ValueError: If indices is an empty list.
+        :return: A list of NEURON Vectors or None (if allow_missing=True and the requested attribute is missing).
         """
+        assert not (recording_dt and recording_tvec), "Cannot specify both recording_dt and recording_tvec"
 
         def safe_record(section: h.Section, ref_attr: str) -> h.Vector | None:
             try:
+                if recording_dt:
+                    return h.Vector().record(getattr(section(0.5), ref_attr), recording_dt)
+                if recording_tvec is not None:
+                    return h.Vector().record(getattr(section(0.5), ref_attr), recording_tvec)
                 return h.Vector().record(getattr(section(0.5), ref_attr))
             except AttributeError as e:
                 if not allow_missing:
