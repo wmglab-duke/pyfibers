@@ -34,4 +34,5 @@ Welcome to the PyFibers documentation!
 ..
    PyFibers Publication <TODO>
    ASCENT on GitHub <TODO>
+   TODO also add new page on algorithms implementation, then include figure 6 and 7 and 8 from the paper.
 ..

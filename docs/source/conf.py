@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'enum_tools.autoenum',
     'sphinxcontrib.bibtex',
+    "sphinx.ext.autosectionlabel",
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
@@ -64,7 +65,7 @@ exclude_patterns = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
+
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -82,6 +83,10 @@ html_show_sphinx = False
 myst_heading_anchors = 4
 
 default_dark_mode = False
+# Add the extension
+
+# Make sure the target is unique
+autosectionlabel_prefix_document = True
 
 # Comment out line below to not generate autosummary files
 autosummary_generate = True
