@@ -100,6 +100,9 @@ def build_fiber_3d(
     fiber_model: FiberModel,
     diameter: float,
     path_coordinates: ndarray,
+    shift: float = 0,
+    shift_ratio: float = None,
+    center_shift: bool = False,
     **kwargs,
 ) -> Fiber:
     """Generate a 3D fiber model in NEURON based on a specified path.
@@ -107,6 +110,7 @@ def build_fiber_3d(
     This function calculates the fiber's length from the user-supplied ``path_coordinates``
     and uses it internally to instantiate a 3D fiber model. The coordinates are a 2D numpy array of shape
     (number_of_points, 3),where each row represents a point in 3D space (x, y, z).
+
     The fiber model will be created by
     repeating sections along the path until no more nodes can be added without exceeding the path length.
     By default, the center of the first section is placed at the origin (0, 0, 0), and the fiber extends
@@ -115,6 +119,9 @@ def build_fiber_3d(
     :param fiber_model: FiberModel enumerator specifying the type of fiber to instantiate.
     :param diameter: The fiber diameter in micrometers (µm).
     :param path_coordinates: Numpy array of shape (N, 3) specifying the 3D coordinates (x, y, z) of the fiber path.
+    :param shift: shift in microns to apply to the fiber coordinates
+    :param shift_ratio: ratio of the internodal length to shift the fiber coordinates
+    :param center_shift: if True, center the fiber before applying the shift
     :param kwargs: Additional arguments forwarded to the underlying fiber model class.
     :raises ValueError: If ``path_coordinates`` is not provided, or if ``n_sections``, ``n_nodes``, or ``length``
         is specified (these are invalid in 3D mode).
@@ -147,21 +154,79 @@ def build_fiber_3d(
         raise ValueError("For 3D fibers, cannot specify n_sections, n_nodes, or length")
 
     # Calculate the length from path_coordinates
-    nd = nd_line(path_coordinates)
+    fiber_path = nd_line(path_coordinates)
+
+    # Apply shift if relevant
+    shifted_start = _shift_fiber_3d(
+        fiber_path,
+        build_fiber(  # call build fiber to get delta_z
+            fiber_model=fiber_model,
+            diameter=diameter,
+            length=fiber_path.length,
+            **kwargs,
+        ).delta_z,
+        shift,
+        shift_ratio,
+        center_shift,
+    )
 
     # Create the fiber instance using the base class method
     fiber_instance = build_fiber(
         fiber_model=fiber_model,
         diameter=diameter,
-        length=nd.length,
+        length=fiber_path.length - shifted_start,
         **kwargs,
     )
-    fiber_instance._set_3d()
 
-    # Make the 3D fiber coordinates an intrinsic property of the Fiber object
-    fiber_instance.coordinates = np.array([nd.interp(p) for p in fiber_instance.longitudinal_coordinates])
+    # Make the 3D fiber coordinates an intrinsic property of the Fiber object.
+    fiber_instance._set_3d()
+    fiber_instance.coordinates = np.array(
+        [fiber_path.interp(p + shifted_start) for p in fiber_instance.longitudinal_coordinates]
+    )
+    fiber_instance.path = fiber_path
 
     return fiber_instance
+
+
+def _shift_fiber_3d(
+    fiber_path: nd_line,
+    dz: float,
+    shift: float | None = None,
+    shift_ratio: float | None = None,
+    center: bool = False,
+) -> float:
+    """Shift a 3D fiber's coordinates along its path by a specified amount.
+
+    You can specify either:
+    - shift: a shift in microns, OR
+    - shift_ratio: a fraction of self.delta_z (the internodal length).
+
+    If the shift or shift_ratio exceed the internodal length (delta_z),
+    the extra lengths will be removed (only the modulus is applied).
+
+    Finally, if center=True, the shift is applied after the fiber
+    is first centered about the midpoint of the 3D path.
+
+    :param fiber_path: the 3D path of the fiber (nd_line object)
+    :param dz: internodal length of the fiber (um)
+    :param shift: shift distance in microns (um)
+    :param shift_ratio: shift as a ratio of self.delta_z
+    :param center: if True, shift is applied after re-centering
+                the fiber's arc length around the midpoint of the 3D path
+    :raises ValueError: if both shift and shift_ratio are provided
+    :return: the shifted start position of the fiber along the 3D path
+    """
+    if shift_ratio is not None and shift != 0:
+        raise ValueError("Cannot specify both shift and shift_ratio")
+
+    # Shift in microns
+    shift_in_um = shift_ratio * dz if shift_ratio is not None else shift
+
+    # Point to base shifting on
+    point_to_shift = fiber_path.length / 2 if center else 0
+
+    # Return final shifted start position
+    return (point_to_shift + shift_in_um) % dz
 
 
 class Fiber:
@@ -227,6 +292,7 @@ class Fiber:
         self.coordinates: ndarray = np.array([])
         self.potentials: ndarray = np.array([])
         self.longitudinal_coordinates: ndarray = np.array([])
+        self.path: nd_line = None
 
     # MAGIC METHODS #
 
@@ -842,7 +908,6 @@ class Fiber:
         self.coordinates[:, 2] += z
 
     # 3D Fiber functionality #
-
     def resample_potentials_3d(
         self: Fiber,
         potentials: np.ndarray,
