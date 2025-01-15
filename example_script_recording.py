@@ -9,6 +9,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from neuron import h
 
 # sys.path.append(r'C:\nrn\lib\python') #noqa: E800
 sys.path.append(r'/Applications/NEURON-7.8/lib/python')
@@ -43,6 +44,7 @@ stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 fiber.record_gating()
 fiber.record_vm()
 fiber.record_im(allsec=True)
+fiber.record_vext()
 
 
 # run threshold search
@@ -65,8 +67,49 @@ plt.plot(rec_potentials)
 plt.show()
 
 downsample = 1
-sfap = fiber.record_sfap(rec_potentials, downsample=downsample)
+sfap, ds_time = fiber.record_sfap(rec_potentials, downsample=downsample)
 plt.figure()
-plt.plot(np.array(stimulation.time)[::downsample], sfap)
+plt.plot(ds_time, sfap)
+plt.xlim(0, 4)
+plt.show()
+
+# turn on saving gating parameters and Vm before running the simulations for thresholds
+fiber.record_gating(recording_dt=1)
+fiber.record_vm(recording_dt=1)
+
+ds_time = h.Vector().record(h._ref_t, 1)
+
+# run threshold search
+ap, time = stimulation.find_threshold(fiber)
+
+plt.figure()
+for key, value in fiber.gating.items():
+    plt.plot(ds_time, value[fiber.loc_index(0.6)], label=key)
+plt.legend()
+ax2 = plt.gca().twinx()
+plt.sca(ax2)
+plt.plot(ds_time, fiber.vm[fiber.loc_index(0.6)], label='vm', color='k')
+plt.ylabel('Vm')
+plt.xlim(0, 4)
+plt.show()
+
+
+# %% turn on saving gating parameters and Vm before running the simulations for thresholds
+rec_vec = h.Vector([1, 2.5, 3])
+fiber.record_gating(recording_tvec=rec_vec)
+fiber.record_vm(recording_tvec=rec_vec)
+
+
+# run threshold search
+ap, time = stimulation.find_threshold(fiber)
+
+plt.figure()
+for key, value in fiber.gating.items():
+    plt.plot(rec_vec, value[fiber.loc_index(0.6)], label=key)
+plt.legend()
+ax2 = plt.gca().twinx()
+plt.sca(ax2)
+plt.plot(ds_time, fiber.vm[fiber.loc_index(0.6)], label='vm', color='k')
+plt.ylabel('Vm')
 plt.xlim(0, 4)
 plt.show()

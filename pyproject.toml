@@ -20,8 +20,7 @@ dependencies = [
   "scipy",
   "seaborn",
   "nd_line",
-  "aenum",
-  "importlib_metadata"
+  "aenum"
 ]
 description = "Modeling stimulation of peripheral nerve fibers"
 keywords = ["stimulation", "modeling", "computational", "fibers", "peripheral nerve"]
