@@ -112,5 +112,6 @@ no_strict_optional = true
 [tool.rstcheck]
 ignore_directives = [
   "automodule",
+  "bibliography",
   "include"
 ]

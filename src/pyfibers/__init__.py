@@ -20,12 +20,12 @@ from .fiber import Fiber, build_fiber, build_fiber_3d  # noqa: E402
 from .model_enum import FiberModel  # noqa: E402
 from .stimulation import (  # noqa: E402
     ScaledStim,
+    IntraStim,
     Stimulation,
     BoundsSearchMode,
     TerminationMode,
     ThresholdCondition,
     BisectionMean,
-    StimAmpTarget,
 )
 
 __all__ = [
@@ -33,11 +33,11 @@ __all__ = [
     'build_fiber_3d',
     'Fiber',
     'ScaledStim',
+    'IntraStim',
     'Stimulation',
     'FiberModel',
     'BoundsSearchMode',
     'TerminationMode',
     'ThresholdCondition',
     'BisectionMean',
-    'StimAmpTarget',
 ]

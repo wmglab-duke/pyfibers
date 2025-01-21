@@ -209,6 +209,8 @@ my_fiber_model = "my_plugin_folder.custom_model_class:MyFiberModelClass"
 4. **Publish your fiber model package**: Publish your fiber model package to a repository such as PyPI. Once published, other users can install your fiber model package using pip. After installation, your fiber model will be automatically discovered and available for use in PyFibers. The name of the fiber model will be given by the "submodels" attribute of your class (see the instructions for creating fiber models above).
 
 ## Custom simulations
+%TODO update docs here
+
 This section provides examples of how to run custom simulations using fibers. These examples demonstrate different methods, including directly using NEURON's IClamp and h.run, leveraging the Stimulation class with a custom run_sim function, and using the Stimulation.pre_run_setup method with manual assignment of extracellular potentials.
 
 Before running any simulations, we must create a model fiber. An example of how to do so is given below:
@@ -367,50 +369,4 @@ In this example, we demonstrate how to create a subclass of `Stimulation` and ov
 
 These examples demonstrate different ways to set up and run custom simulations using fibers with or without the `Stimulation` class. Each method allows for flexibility in how the simulations are defined and executed.
 
-## Custom Data Recording
-
-This section provides examples of how to record custom data during simulations. These examples demonstrate different methods, including using the fiber method to record a custom variable from all nodes and accessing the `istim` variable from `ScaledStim` to record its current.
-
-### Example 1: Record a Custom Variable from All Nodes
-
-In this example, we demonstrate how to use the fiber method to record a custom variable (e.g., membrane potential) from all nodes.
-
-1. **Set up recording vectors for a custom variable (e.g., membrane potential) from all nodes**:
-    ```python
-    custom_var_vecs = [h.Vector().record(node(0.5)._ref_v) for node in fiber.nodes]
-    ```
-
-2. **Access the recorded data after running a simulation**:
-    ```python
-    for i, vec in enumerate(custom_var_vecs):
-        print(f"Node {i} membrane potential: {vec.to_python()}")
-    ```
-
-### Example 2: Access `istim` Variable from `ScaledStim` and Record Its Current
-%TODO update to reflect intrastim. Also, check for ALL mentions of intracellular stim to make sure that is changed in new MR.
-
-In this example, we demonstrate how to access the `istim` variable from the `ScaledStim` class and record its current.
-
-1. **Set up the `ScaledStim` instance**:
-    ```python
-    from pyfibers import ScaledStim
-    import numpy as np
-
-    # Set up the ScaledStim instance
-    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=20)
-
-    # Add intracellular stimulation
-    stimulation.set_intracellular_stim()
-    ```
-
-2. **Set up recording for `istim` current**:
-    ```python
-    istim_current_vec = h.Vector().record(stimulation.istim._ref_i)
-    ```
-
-3. **Run the simulation and access the recorded data**:
-    ```python
-    stimulation.run_sim(stimamp=0.1, fiber=fiber)
-
-    print(f"istim current: {istim_current_vec.to_python()}")
-    ```
+%TODO add custom data recording section
