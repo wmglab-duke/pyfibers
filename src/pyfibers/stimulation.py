@@ -78,18 +78,6 @@ class BisectionMean(str, Enum):
     ARITHMETIC = "arithmetic"
 
 
-@unique
-class StimAmpTarget(str, Enum):
-    """Target for applying the stimulus amplitude.
-
-    - INTRACELLULAR: Scale the intracellular stim current.
-    - EXTRACELLULAR: Scale the extracellular potentials.
-    """
-
-    INTRACELLULAR = "intracellular"
-    EXTRACELLULAR = "extracellular"
-
-
 class Stimulation:
     """Manage stimulation of NEURON simulations.
 
@@ -123,12 +111,9 @@ class Stimulation:
         self.tstop = tstop
         self.t_init_ss = t_init_ss
         self.dt_init_ss = dt_init_ss
-        self.istim: h.trainIClamp = None
-        self.istim_record = None
-        self.istim_params: dict[str, float | int | None] = {}
         self._exit_t: float = None
         self.custom_run_sim = custom_run_sim  # Store the custom run_sim function
-
+        self.n_timesteps = int(self.tstop / self.dt)
         # Attempt to record the global simulation time
         try:
             self.time = h.Vector().record(h._ref_t)
@@ -141,62 +126,13 @@ class Stimulation:
     def __str__(self: Stimulation) -> str:
         """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
         return (
-            f"{type(self).__name__}: {self.dt * self.tstop} ms (dt={self.dt} ms)"
-            f" (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)"
-            f" istim_params={self.istim_params}"
+            f'{type(self).__name__}: {self.dt * self.tstop} ms (dt={self.dt} ms)'
+            f' (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)'
         )
 
     def __repr__(self: Stimulation) -> str:
         """Return a string representation of the Stimulation instance."""  # noqa: DAR201
         return self.__str__()
-
-    def _add_istim(
-        self: Stimulation,
-        fiber: Fiber,
-        delay: float = 0,
-        pw: float = 0,
-        dur: float = 0,
-        freq: float = 0,
-        amp: float = 0,
-        ind: int | None = None,
-        loc: float | None = None,
-    ) -> Stimulation:
-        """Create an instance of trainIClamp for intracellular stimulation.
-
-        This method is not called by the user, instead use :meth:`set_intracellular_stim`.
-        The parameters from this method inform the trainIClamp object created in the pre_run_setup phase.
-
-        :param fiber: The Fiber object to attach intracellular stimulation to.
-        :param delay: Delay before the stimulation starts (ms).
-        :param pw: Duration of each pulse (ms).
-        :param dur: Total duration over which pulses occur (ms).
-        :param freq: Frequency of pulse trains (Hz).
-        :param amp: Stimulation amplitude (nA).
-        :param ind: Index of the fiber section/node to stimulate (mutually exclusive with loc).
-        :param loc: Normalized location along the fiber in [0,1] (mutually exclusive with ind).
-        :return: The Stimulation instance (self).
-        :raises AssertionError: If both ind and loc are specified or both are None.
-        """
-        assert (ind is None) != (loc is None), "Must specify either ind or loc, but not both"
-        # If loc was provided, convert it to an index
-        ind = ind or fiber.loc_index(loc)
-
-        # Warn if we're about to stimulate a passive end node
-        if (ind == 0 or ind == len(fiber.sections) - 1) and fiber.passive_end_nodes is True:
-            warnings.warn("You are trying to intracellularly stimulate a passive end node.", stacklevel=2)
-
-        # Create the trainIClamp object in the specified section
-        intracellular_stim = h.trainIClamp(fiber[ind](0.5))
-        intracellular_stim.delay = delay
-        intracellular_stim.PW = pw
-        intracellular_stim.train = dur
-        intracellular_stim.freq = freq
-        intracellular_stim.amp = amp
-        self.istim = intracellular_stim
-
-        # Record the stimulus current over time
-        self.istim_record = h.Vector().record(self.istim._ref_i)
-        return self
 
     def _steady_state(self: Stimulation) -> None:
         """Advance the simulation from t_init_ss to 0 ms using a large dt to reach steady-state."""
@@ -240,43 +176,6 @@ class Stimulation:
             "The run_sim method must be overridden by the subclass or provided as a custom function."
         )
 
-    def set_intracellular_stim(
-        self: Stimulation,
-        delay: float,
-        pw: float,
-        dur: float,
-        freq: float,
-        amp: float,
-        ind: int | None = None,
-        loc: float | None = None,
-    ) -> None:
-        """Update intracellular stimulation parameters (trainIClamp) without immediately creating it.
-
-        The trainIClamp object is created during the pre_run_setup phase, not when this method is called.
-
-        Note that trainIClamp is a mod file included in this package. It is an
-        extension of NEURON's built-in IClamp class that allows repeated pulses.
-
-        :param delay: Delay before the stimulation starts (ms).
-        :param pw: Duration of each pulse (ms).
-        :param dur: Total duration over which pulses occur (ms).
-        :param freq: Frequency of pulses (Hz).
-        :param amp: Stimulation amplitude (nA).
-        :param ind: Index of the fiber section/node to stimulate (mutually exclusive with loc).
-        :param loc: Normalized location along the fiber in [0,1] (mutually exclusive with ind).
-        :raises AssertionError: If both ind and loc are specified or both are None.
-        """
-        assert (ind is None) != (loc is None), "Must specify either ind or loc, but not both"
-        self.istim_params = {
-            "delay": delay,
-            "pw": pw,
-            "dur": dur,
-            "freq": freq,
-            "amp": amp,
-            "ind": ind,
-            "loc": loc,
-        }
-
     def pre_run_setup(self: Stimulation, fiber: Fiber, ap_detect_threshold: float = -30) -> None:
         """Prepare the simulation environment before running.
 
@@ -298,19 +197,8 @@ class Stimulation:
         # If the fiber uses the Tigerholm model, balance membrane currents first
         if fiber.fiber_model == FiberModel.TIGERHOLM:
             fiber.balance()
-
-        # Initialize extracellular potentials at zero
-        self._initialize_extracellular(fiber)
-        # Run the steady-state phase
-        self._steady_state()
-
-        # If intracellular stimulus parameters were provided, apply them
-        if self.istim_params:
-            self._add_istim(fiber, **self.istim_params)  # type: ignore
-        else:
-            # Otherwise, ensure no existing istim object is carried over
-            self.istim = None
-            self.istim_record = None
+        self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
+        self._steady_state()  # Allow system to reach steady-state before simulation
 
     @staticmethod
     def ap_checker(
@@ -729,8 +617,156 @@ class Stimulation:
             return is_block, (n_aps, aptime)
 
 
+class IntraStim(Stimulation):
+    """Manage intracellular stimulation of model fibers."""
+
+    def __init__(
+        self: IntraStim,
+        dt: float = 0.001,
+        tstop: float = 50,
+        t_init_ss: float = -200,
+        dt_init_ss: float = 10,
+        istim_ind: int = None,
+        istim_loc: float = None,
+        clamp_kws: dict = None,
+    ) -> None:
+        """Initialize IntracellularStim class.
+
+        :param dt: time step for simulation [seconds]
+        :param tstop: time step for simulation [seconds]
+        :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
+        :param dt_init_ss: the time step used to reach steady state [ms]
+        :param istim_ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
+        :param istim_loc: node location along the fiber (using NEURON style indexing)
+        :param clamp_kws: keyword arguments for the trainIClamp mechanism.
+            All optional, default given in parentheses. See :meth:`_add_istim` for more details.
+            - 'delay': (0) the delay from the start of the simulation to the onset of the intracellular stimulation [ms]
+            - 'pw': (1) the pulse duration of the intracellular stimulation [ms]
+            - 'dur': (50) the duration from the start of the simulation to the end of the intracellular stimulation [ms]
+            - 'freq': (100) the intracellular pulse repetition rate [Hz]
+            - 'amp': (1) the intracellular stimulation amplitude [nA]
+            Note that amp is scaled by the stimamp parameter in run_sim.
+        """
+        super().__init__(dt=dt, tstop=tstop, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
+        self.istim: h.trainIClamp = None
+        self.istim_record = None
+        self.istim_ind, self.istim_loc = istim_ind, istim_loc
+        assert (istim_ind is None) != (istim_loc is None), 'Must specify either ind or loc, but not both'
+        self.istim_params = {'delay': 0, 'pw': 1, 'dur': 50, 'freq': 100, 'amp': 1}
+        self.istim_params.update(clamp_kws or {})  # add user specified clamp parameters
+
+    def _add_istim(self: IntraStim, fiber: Fiber) -> IntraStim:
+        """Create instance of trainIClamp for intracellular stimulation.
+
+        This method is not called by the user, see :meth:`init`.
+        Note that trainIClamp is a mod file included in this package. It is an
+        extension of NEURON's built-in IClamp that allows repeated square pulses.
+
+        :param fiber: The Fiber object to attach intracellular stimulation to.
+        :return: The Stimulation instance (self).
+        """
+        # If loc was provided, convert it to an index
+        ind = self.istim_ind or fiber.loc_index(self.istim_loc)
+
+        # Warn if we're about to stimulate a passive end node
+        if (ind == 0 or ind == len(fiber.sections) - 1) and fiber.passive_end_nodes is True:
+            # TODO this needs to be updated for multiple poassive end nodes
+            warnings.warn('You are trying to intracellularly stimulate a passive end node.', stacklevel=2)
+
+        self.istim = h.trainIClamp(fiber[ind](0.5))
+        # Record the stimulus current over time
+        self.istim_record = h.Vector().record(self.istim._ref_i)
+
+        self.istim.delay = self.istim_params['delay']  # Delay before the stimulation starts (ms)
+        self.istim.PW = self.istim_params['pw']  # Duration of each pulse (ms)
+        self.istim.train = self.istim_params['dur']  # Total duration over which pulses occur (ms)
+        self.istim.freq = self.istim_params['freq']  # Pulse repetition rate (Hz)
+        self.istim.amp = self.istim_params['amp']  # Stimulation amplitude (nA)
+
+        return self
+
+    def run_sim(  # TODO: eliminate duplicated code between here and ScaledStim.run_sim()
+        self: IntraStim,
+        stimamp: float,
+        fiber: Fiber,
+        ap_detect_location: float = 0.9,
+        exit_func: Callable = lambda *x, **y: False,
+        exit_func_interval: int = 100,
+        exit_func_kws: dict = None,
+        use_exit_t: bool = False,
+        fail_on_end_excitation: bool = True,
+        ap_detect_threshold: float = -30,
+    ) -> tuple[int, float]:
+        """Run a simulation for a single stimulation amplitude.
+
+        :param stimamp: amplitude to be applied to extracellular stimulation
+            - Should be a single float for one source
+            - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
+            - If stimamp is a list of floats, each float is applied to the corresponding source
+        :param fiber: fiber to be stimulated
+        :param ap_detect_location: location to detect action potentials (percent along fiber)
+        :param exit_func: function to call to check if simulation should be exited
+        :param exit_func_interval: interval to call exit_func
+        :param exit_func_kws: keyword arguments to pass to exit_func
+        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
+        :raises RuntimeError: if NaNs are detected in fiber potentials
+        :param fail_on_end_excitation: behavior for end excitation detection
+            - if True, raise error if end excitation is detected
+            - if False, continue simulation if end excitation is detected
+            - if None, do not check for end excitation
+        :param ap_detect_threshold: threshold for detecting action potentials (default: -30 mV)
+        :return: number of detected aps and time of last detected ap
+        """
+        self._add_istim(fiber)  # type: ignore
+        self.istim.amp *= stimamp
+        self._validate_inputs(stimamp, fiber)
+        print('Running:', np.array(stimamp).round(6), end='')
+
+        self.pre_run_setup(fiber, ap_detect_threshold=ap_detect_threshold)
+
+        exit_func_kws = exit_func_kws or {}
+
+        # Run simulation
+        for i in range(self.n_timesteps):
+            h.fadvance()
+
+            # check for NaNs in fiber potentials
+            if np.any(np.isnan([s.v for s in fiber.sections])):
+                raise RuntimeError('NaN detected in fiber potentials')
+            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location, **exit_func_kws):
+                break
+            if use_exit_t and self._exit_t and h.t >= self._exit_t:
+                break
+
+        # get precision from the number of decimal places in self.dt
+        precision = len(str(self.dt).split('.')[1])
+
+        # check for end excitation. None means don't check at all
+        if fail_on_end_excitation is not None:
+            self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
+        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
+        print(f'\tN aps: {int(n_ap)}, time {time}')
+
+        return n_ap, time
+
+    def _validate_inputs(self: IntraStim, stimamp: float, fiber: Fiber) -> None:
+        """Validate inputs for intracellular stimulation.
+
+        :param stimamp: the stimulus amplitude
+        :param fiber: the fiber to stimulate
+        """
+        assert np.all(fiber.potentials == 0), 'Fiber potentials must be zero for IntracellularStim'
+        assert self.istim is not None, 'Intracellular stimulation is not enabled.'
+        if stimamp < 0:
+            warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
+        assert isinstance(stimamp, (int, float)), 'stimamp must be a single float or int'
+
+    def _do_timestep(self: IntraStim, timestep: int, fiber: Fiber, stimamps: np.ndarray) -> None:
+        pass
+
+
 class ScaledStim(Stimulation):
-    """Manage extracellular stimulation in NEURON simulations using custom waveform(s).
+    """Manage extracellular stimulation of model fibers.
 
     # TODO add example usage
 
@@ -776,7 +812,6 @@ class ScaledStim(Stimulation):
         self.waveform = np.array(waveform)
         self.pad = pad_waveform
         self.truncate = truncate_waveform
-        self.n_timesteps: int = None
         self._prep_waveform()
 
     def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
@@ -810,8 +845,11 @@ class ScaledStim(Stimulation):
         Also checks if the waveform has a max absolute value of 1 (recommended).
         """
         self.waveform = np.array(self.waveform)
+
+        # recompute timesteps TODO make sure this is done at the start of every sim in intrastim too
         self.n_timesteps = int(self.tstop / self.dt)
 
+        # Initialize list to store processed waveforms
         processed_waveforms = []
 
         # If it's a single 1D array, wrap it in a list
@@ -863,49 +901,27 @@ class ScaledStim(Stimulation):
         return potentials
 
     def _validate_scaling_inputs(
-        self: ScaledStim,
-        fiber: Fiber,
-        stimamp_target: StimAmpTarget,
-        stimamps: np.ndarray,
-    ) -> np.ndarray:
-        """Validate inputs before applying scaled stimulation.
+        self: ScaledStim, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+    ) -> np.typing.NDArray[np.float64]:
+        """Validate scaling inputs before running simulation.
 
-        Ensures that the waveforms and fiber potentials are prepared and that
-        intracellular vs. extracellular usage is consistent with the data.
-
-        :param fiber: The Fiber object to be stimulated.
-        :param stimamp_target: Whether to apply stimamps to intracellular or extracellular stimulation.
-        :param stimamps: Single amplitude or array of amplitudes for each waveform row.
-        :return: Numpy array of stimulation amplitudes broadcasted to match the number of waveforms.
-        :raises AssertionError: If waveform/fiber potentials are empty or if inconsistencies exist.
+        :param fiber: instance of Fiber class to validate scaling inputs for
+        :param stimamps: amplitude to be applied to extracellular stimulation
+        :return: array of stimulation amplitudes to apply to each waveform
         """
         self._prep_waveform()
         self._prep_potentials(fiber)
 
         assert len(fiber.potentials) == len(
             self.waveform
-        ), "Number of fiber potential rows must match number of waveform rows."
+        ), 'Number of fiber potentials sets does not match number of waveforms'
 
-        # Intracellular stimulation requires all-zero potentials/waveforms
-        if stimamp_target == StimAmpTarget.INTRACELLULAR:
-            assert np.all(fiber.potentials == 0), "For intracellular stimulation, the fiber's potentials must be zero."
-            assert np.all(self.waveform == 0), "For intracellular stimulation, the waveform must be zero."
-            assert (
-                len(stimamps.shape) == 0
-            ), "Intracellular stimulation requires a single float for stimamp, not an array."
+        assert not np.all(
+            fiber.potentials == 0
+        ), 'Extracellular stimulation requires at least one non-zero fiber potential'
+        assert not np.all(self.waveform == 0), 'Extracellular stimulation requires at least one non-zero waveform'
 
-        # Extracellular stimulation requires nonzero potentials/waveforms
-        elif stimamp_target == StimAmpTarget.EXTRACELLULAR:
-            assert (
-                not self.istim_params
-            ), "Extracellular stimulation does not support simultaneously configured intracellular parameters."
-            assert not np.all(
-                fiber.potentials == 0
-            ), "For extracellular stimulation, the fiber.potentials must be nonzero."
-            assert not np.all(self.waveform == 0), "For extracellular stimulation, the waveform must be nonzero."
-
-        # If single float is provided, broadcast to match the number of waveforms
-        if len(stimamps.shape) == 0:
+        if len(stimamps.shape) == 0:  # if single float, apply to all sources
             return np.array([stimamps] * len(self.waveform))
 
         assert len(stimamps) == len(self.waveform), "Number of stimamps must match the number of waveform rows."
@@ -920,47 +936,38 @@ class ScaledStim(Stimulation):
         exit_func_interval: int = 100,
         exit_func_kws: dict | None = None,
         use_exit_t: bool = False,
-        stimamp_target: StimAmpTarget = StimAmpTarget.EXTRACELLULAR,
         fail_on_end_excitation: bool | None = True,
         ap_detect_threshold: float = -30,
     ) -> tuple[int, float]:
-        """Run a simulation with a given stimulus amplitude and waveform scaling.
+        """Run a simulation with a given stimulus amplitude(s).
 
-        :param stimamp: Amplitude to scale the waveform.
-            Can be a single float or an array matching the number of waveforms.
+        :param stimamp: Amplitude to scale the product of extracellular potentials and waveform.
+            - Should be a single float for one source
+            - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
+            - If stimamp is a list of floats, each float is applied to the corresponding source
         :param fiber: The Fiber object to stimulate.
         :param ap_detect_location: Normalized location in [0,1] to check for APs.
         :param exit_func: Callback to check if the simulation can be ended early (e.g., upon detection of an AP).
         :param exit_func_interval: How often (in time steps) to call exit_func.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If True, simulation will stop after self._exit_t (if set).
-        :param stimamp_target: Whether to apply stimamp to intracellular or extracellular stimulation.
-        :param fail_on_end_excitation: If True, raise error on end-excitation; False warns; None disables check.
-        :param ap_detect_threshold: Threshold voltage for detecting action potentials (mV).
-        :return: Tuple (number_of_aps, time_of_last_ap).
+        :param fail_on_end_excitation: Behavior for end excitation detection
+            - If True, raise error if end excitation is detected
+            - If False, continue simulation if end excitation is detected
+            - If None, do not check for end excitation
+        :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV)
         :raises RuntimeError: If NaNs are detected in membrane potentials or if required setup (e.g., istim) is missing.
+        :return: Tuple (number_of_aps, time_of_last_ap).
         """
         stimamps = np.array(stimamp)
         print("Running:", stimamps.round(6), end="")
 
-        # Validate waveform and potential data, plus user config
-        stimamps = self._validate_scaling_inputs(fiber, stimamp_target, stimamps)
+        stimamps = self._validate_scaling_inputs(fiber, stimamps)
 
         # Configure the simulation environment
         self.pre_run_setup(fiber, ap_detect_threshold=ap_detect_threshold)
 
         exit_func_kws = exit_func_kws or {}
-
-        # If target is intracellular, scale the amplitude of istim directly
-        if stimamp_target == StimAmpTarget.INTRACELLULAR:
-            assert self.istim is not None, "Intracellular stimulation is requested, but no istim object is configured."
-            if stimamps < 0:
-                warnings.warn("Negative intracellular stimulation amplitude.", stacklevel=2)
-            # Only one amplitude is expected for intracellular mode
-            assert len(stimamps) == 1, "Intracellular stimulation expects a single amplitude."
-            self.istim.amp *= stimamps
-            # Set the main stimamp to zero so we don't apply it to extracellular potentials
-            stimamp *= 0
 
         # Advance the simulation in small steps, updating extracellular potentials each time
         for i in range(self.n_timesteps):

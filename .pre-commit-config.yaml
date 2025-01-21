@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v5.0.0
   hooks:
       # checking for syntax
   - id: check-yaml
@@ -27,19 +27,19 @@ repos:
   - id: flynt
 # strip output from notebooks
 - repo: https://github.com/kynan/nbstripout
-  rev: 0.7.1
+  rev: 0.8.1
   hooks:
   - id: nbstripout
           # format python code
 # pyupgrade (migrate code to newer syntax)
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.17.0
+  rev: v3.19.1
   hooks:
   - id: pyupgrade
     args: [--py310-plus]
 # format python code
 - repo: https://github.com/psf/black
-  rev: 24.4.2
+  rev: 24.10.0
   hooks:
   - id: black
     additional_dependencies:
@@ -47,7 +47,7 @@ repos:
     types_or: [python, pyi, jupyter]
 # format docstrings
 - repo: https://github.com/PyCQA/docformatter
-  rev: v1.7.5   # maintain at 1.5.1 to avoid errors
+  rev: master #update to proper version once fix to work with precommit v5 is released
   hooks:
   - id: docformatter
     additional_dependencies:
@@ -55,14 +55,14 @@ repos:
     args: [--in-place, --config, ./pyproject.toml]
 # format python code in jupyter notebooks (might be redundant with black[jupyter])
 - repo: https://github.com/adamchainz/blacken-docs
-  rev: 1.18.0
+  rev: 1.19.1
   hooks:
   - id: blacken-docs
     additional_dependencies:
     - black==24.4.2
 # lint python code
 - repo: https://github.com/pycqa/flake8
-  rev: 7.1.0
+  rev: 7.1.1
   hooks:
   - id: flake8
     additional_dependencies:
@@ -87,7 +87,7 @@ repos:
     - flake8-pytest-style
 # lint notebooks
 - repo: https://github.com/nbQA-dev/nbQA
-  rev: 1.8.5
+  rev: 1.9.1
   hooks:
   - id: nbqa-flake8
     args: ['--ignore=E402,D100']
@@ -110,7 +110,7 @@ repos:
   - id: nbqa-pyupgrade
 # format and lint markdown
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.41.0
+  rev: v0.43.0
   hooks:
   - id: markdownlint-fix
     args: [--disable, 'md013,md034,md033,md036']
@@ -124,7 +124,7 @@ repos:
     - rstcheck[toml]
 # check config files
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.29.1
+  rev: 0.31.0
   hooks:
   - id: check-gitlab-ci
     args: [--disable-formats, regex]
@@ -138,7 +138,7 @@ repos:
   - id: pretty-format-yaml
     args: [--autofix]
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.11.1
+  rev: v1.14.1
   hooks:
   - id: mypy
         #exclude docs and tests directories
