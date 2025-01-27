@@ -48,7 +48,7 @@ def test_initialize_scaled_stim(mock_neuron):
         assert stim.pad is True
         assert stim.truncate is True
         padded_waveforms = np.vstack([np.concatenate([wf, np.zeros(4995)]) for wf in waveforms])
-        assert np.array_equal(stim.waveform, padded_waveforms)
+        assert np.array_equal(stim._prepped_waveform, padded_waveforms)
 
 
 def test_prep_waveform(mock_neuron):
