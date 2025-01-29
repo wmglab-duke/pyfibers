@@ -864,11 +864,10 @@ class ScaledStim(Stimulation):
             if not all(callable(wf) for wf in self._prepped_waveform):
                 raise RuntimeError("Needs all callable arguments in waveform")
 
-            n_waveforms = len(self._prepped_waveform)
             self._prepped_waveform = np.fromfunction(
                 np.vectorize(lambda i, j: self._prepped_waveform[int(i)](j * self.dt)),
-                (n_waveforms, self.n_timesteps),
-            ).reshape(n_waveforms, -1)
+                (len(self._prepped_waveform), self.n_timesteps),
+            )
         else:
             warnings.warn(
                 """Specifying waveforms using lists/arrays is deprecated. Please specify as callable or list of
