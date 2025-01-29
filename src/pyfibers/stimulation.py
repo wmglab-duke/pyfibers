@@ -859,13 +859,16 @@ class ScaledStim(Stimulation):
         self._prepped_waveform: Any = self.waveform
         if not isinstance(self._prepped_waveform, list | np.ndarray):
             self._prepped_waveform = [self._prepped_waveform]
+
         if any(callable(wf) for wf in self._prepped_waveform):
             if not all(callable(wf) for wf in self._prepped_waveform):
                 raise RuntimeError("Needs all callable arguments in waveform")
+
+            n_waveforms = len(self._prepped_waveform)
             self._prepped_waveform = np.fromfunction(
                 np.vectorize(lambda i, j: self._prepped_waveform[int(i)](j * self.dt)),
-                (len(self._prepped_waveform), self.n_timesteps),
-            )
+                (n_waveforms, self.n_timesteps),
+            ).reshape(n_waveforms, -1)
         else:
             warnings.warn(
                 """Specifying waveforms using lists/arrays is deprecated. Please specify as callable or list of
@@ -875,44 +878,50 @@ class ScaledStim(Stimulation):
             )
             self._prepped_waveform = np.array(self._prepped_waveform)
 
-        # Check if waveform is a single 1D numpy array and wrap it in a list
-        if self._prepped_waveform.ndim == 1:
-            self._prepped_waveform = [self._prepped_waveform]
+            # Check if waveform is a single 1D numpy array and wrap it in a list
+            if self._prepped_waveform.ndim == 1:
+                self._prepped_waveform = [self._prepped_waveform]
 
-        # Initialize list to store processed waveforms
-        processed_waveforms = []
+            # Initialize list to store processed waveforms
+            processed_waveforms = []
 
-        # Process each waveform
-        for row in self._prepped_waveform:
-            row = np.array(row)  # Ensure row is a numpy array
+            # Process each waveform
+            for row in self._prepped_waveform:
+                row = np.array(row)  # Ensure row is a numpy array
 
-            if self.pad and (self.n_timesteps > len(row)):
-                # Extend waveform row until it is of length tstop/dt
-                print(row)
-                if row[-1] != 0:
-                    warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
-                row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
+                if self.pad and (self.n_timesteps > len(row)):
+                    # Extend waveform row until it is of length tstop/dt
+                    if row[-1] != 0:
+                        warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
+                    row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
 
-            if self.truncate and (self.n_timesteps < len(row)):
-                if any(row[self.n_timesteps :]):
-                    warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
-                row = row[: self.n_timesteps]
+                if self.truncate and (self.n_timesteps < len(row)):
 
-            assert (
-                len(row) == self.n_timesteps
-            ), "Processed waveform length must match the number of time steps (tstop / dt)."
+                    if any(row[self.n_timesteps :]):
+                        warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
+                    row = row[: self.n_timesteps]
 
-            if np.max(np.abs(row)) != 1:
-                warnings.warn(
-                    "Waveform does not have a maximum absolute value of 1. " "This is recommended to simplify scaling.",
-                    stacklevel=2,
-                )
-            processed_waveforms.append(row)
 
-        # Combine into a 2D array
-        self._prepped_waveform = np.vstack(processed_waveforms)
+                assert (
+                    len(row) == self.n_timesteps
+                ), "Processed waveform length must match the number of time steps (tstop / dt)."
 
-    def _potentials_at_time(self: ScaledStim, i: int, fiber: Fiber, stimamps: np.ndarray) -> np.ndarray:
+                processed_waveforms.append(row)  # Append processed row to the list
+
+            # Convert list of processed rows into a 2D numpy array
+            self._prepped_waveform = np.vstack(processed_waveforms)
+
+        # if max abs value is not 1, warn user
+        if np.max(np.abs(self._prepped_waveform)) != 1:
+            warnings.warn(
+                'Waveform does not have a max absolute value of 1. '
+                'This is recommended to simplify scaling of the waveform.',
+                stacklevel=2,
+            )
+
+    def _potentials_at_time(
+        self: ScaledStim, i: int, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+    ) -> np.typing.NDArray[np.float64]:
         """Compute the total extracellular potential at time index i.
 
         Each row of the fiber's potentials is multiplied by the corresponding
