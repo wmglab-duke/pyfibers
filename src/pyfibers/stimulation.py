@@ -857,6 +857,7 @@ class ScaledStim(Stimulation):
         self.n_timesteps = int(self.tstop / self.dt)
 
         self._prepped_waveform: Any = self.waveform
+        # wrap waveform in a list in not already a list
         if not isinstance(self._prepped_waveform, list | np.ndarray):
             self._prepped_waveform = [self._prepped_waveform]
 
@@ -864,6 +865,7 @@ class ScaledStim(Stimulation):
             if not all(callable(wf) for wf in self._prepped_waveform):
                 raise RuntimeError("Needs all callable arguments in waveform")
 
+            # process callable(s) into 2d array with shape (len(self._prepped_waveform), self.n_timesteps)
             self._prepped_waveform = np.fromfunction(
                 np.vectorize(lambda i, j: self._prepped_waveform[int(i)](j * self.dt)),
                 (len(self._prepped_waveform), self.n_timesteps),
