@@ -86,9 +86,9 @@ def build_fiber(
 
     assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
 
-    if fiber_instance.diameter > 2 and not fiber_instance.myelinated:
+    if fiber_instance.diameter > 3 and not fiber_instance.myelinated:
         warnings.warn(
-            "Unmyelinated fibers are typically <=2 µm in diameter. "
+            "Unmyelinated fibers are typically <=3 µm in diameter. "
             f"Received D={fiber_instance.diameter:.2f} µm. Proceed with caution.",
             stacklevel=2,
         )
