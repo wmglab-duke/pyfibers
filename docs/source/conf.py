@@ -20,7 +20,7 @@ os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
 
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../src/pyfibers'))
-
+sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
@@ -32,7 +32,7 @@ release = 'alpha'
 
 
 # -- General configuration ---------------------------------------------------
-
+# nitpicky = True # raise warnings for missing references #noqa: E800
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -46,12 +46,17 @@ extensions = [
     'enum_tools.autoenum',
     'sphinxcontrib.bibtex',
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.intersphinx",
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
 
-# Add any paths that contain templates here, relative to this directory.
-
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "neuron": ("https://nrn.readthedocs.io/en/latest", None),
+}
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

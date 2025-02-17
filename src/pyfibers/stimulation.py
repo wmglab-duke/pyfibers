@@ -187,6 +187,8 @@ class Stimulation:
         :param fiber: The Fiber object for which the simulation will be configured.
         :param ap_detect_threshold: The voltage threshold for detecting action potentials (mV).
         """
+        # recompute timesteps
+        self.n_timesteps = int(self.tstop / self.dt)
         # Set simulation temperature based on the fiber's temperature
         h.celsius = fiber.temperature
         # Initialize the simulation to the fiber's rest potential
@@ -236,6 +238,11 @@ class Stimulation:
 
         # If requested, check for APs at other nodes
         if check_all_apc and not bool(detect_apc.n) and np.any([apc.n > 0 for apc in fiber.apc]):
+            warnings.filterwarnings(
+                "always",
+                message="APs detected at locations other than the set detection location. "
+                "This could mean your stimamp is high enough for virtual anode block.",
+            )
             warnings.warn(
                 "APs detected at locations other than the set detection location. "
                 "This could mean your stimamp is high enough for virtual anode block.",
@@ -286,7 +293,7 @@ class Stimulation:
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
         return detect_n >= thresh_num_aps
 
-    def find_threshold(  # noqa: C901 #TODO clean up and reduce complexity
+    def find_threshold(  # noqa: C901
         self: Stimulation,
         fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
@@ -554,8 +561,13 @@ class Stimulation:
         init_nodes = np.array(init_nodes)
 
         # If more than one trough is found, we might have multiple activation sites
-        if len(troughs) > 1 and multi_site_check:  # TODO, separate out from this function
-            warnings.warn("Multiple activation sites detected.", RuntimeWarning, stacklevel=2)
+        if len(troughs) > 1 and multi_site_check:
+            warnings.warn(
+                "Multiple activation sites detected. "
+                "(Can sometimes mean threshold is incorrect due to virtual anode block.)",
+                RuntimeWarning,
+                stacklevel=2,
+            )
 
         # Identify indices near the start or end of the fiber
         end_excited_nodes = init_nodes[
@@ -639,7 +651,7 @@ class IntraStim(Stimulation):
         :param istim_ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
         :param istim_loc: node location along the fiber (using NEURON style indexing)
         :param clamp_kws: keyword arguments for the trainIClamp mechanism.
-            All optional, default given in parentheses. See :meth:`_add_istim` for more details.
+            All optional, default given in parentheses.
             - 'delay': (0) the delay from the start of the simulation to the onset of the intracellular stimulation [ms]
             - 'pw': (1) the pulse duration of the intracellular stimulation [ms]
             - 'dur': (50) the duration from the start of the simulation to the end of the intracellular stimulation [ms]
@@ -665,12 +677,13 @@ class IntraStim(Stimulation):
         :param fiber: The Fiber object to attach intracellular stimulation to.
         :return: The Stimulation instance (self).
         """
-        # If loc was provided, convert it to an index
-        ind = self.istim_ind or fiber.loc_index(self.istim_loc)
+        if self.istim_ind is not None:  # If ind was provided, use it directly
+            ind = self.istim_ind
+        else:  # If loc was provided, convert it to an index
+            ind = fiber.loc_index(self.istim_loc)
 
         # Warn if we're about to stimulate a passive end node
         if (ind == 0 or ind == len(fiber.sections) - 1) and fiber.passive_end_nodes is True:
-            # TODO this needs to be updated for multiple poassive end nodes
             warnings.warn('You are trying to intracellularly stimulate a passive end node.', stacklevel=2)
 
         self.istim = h.trainIClamp(fiber[ind](0.5))
@@ -685,7 +698,7 @@ class IntraStim(Stimulation):
 
         return self
 
-    def run_sim(  # TODO: eliminate duplicated code between here and ScaledStim.run_sim()
+    def run_sim(
         self: IntraStim,
         stimamp: float,
         fiber: Fiber,
@@ -768,8 +781,6 @@ class IntraStim(Stimulation):
 class ScaledStim(Stimulation):
     """Manage extracellular stimulation of model fibers.
 
-    # TODO add example usage
-
     A specialized class that applies user-provided waveform(s)
     (scaled by a specified stimulus amplitude(s)) as an extracellular stimulus.
     Waveforms can be padded or truncated to match simulation time,
@@ -846,7 +857,7 @@ class ScaledStim(Stimulation):
         """
         self.waveform = np.array(self.waveform)
 
-        # recompute timesteps TODO make sure this is done at the start of every sim in intrastim too
+        # recompute timesteps
         self.n_timesteps = int(self.tstop / self.dt)
 
         # Initialize list to store processed waveforms

@@ -1,5 +1,4 @@
 # PyFibers
-%TODO include all figures from manuscript where relevant
 This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols. You can use analytical tools for extracellular potentials, or import from FEM (e.g., COMSOL).
 
 We have implemented the following models:
@@ -18,7 +17,9 @@ We have implemented the following models:
    - Schild 1997
 
 ## Installation
-*Note that these instructions are temporary for development*
+Note: It is recommended you create a new virtual environment for PyFibers. For example, using Anaconda/Miniconda:
+  - `conda create -n pyfibers python=3.10`*
+  - `conda activate pyfibers`
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
    - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)
    - Check your installation by running the following command: `python -c "import neuron; neuron.test(); quit()"`. If successful, test outputs along with "OK" should be printed to the terminal.
@@ -34,7 +35,6 @@ We have implemented the following models:
    - It is normal to see the following message during compilation: `NEURON mechanisms not found in <path>.` Check the NEURON output that follows for a message that the mechanisms were compiled successfully. (e.g., for Windows: `nrnmech.dll was built successfully.`). In the future while using PyFibers, if you see the `NEURON mechanisms not found in <path>.` message, this is cause for concern, as this means PyFibers cannot find the compiled mechanisms. Failed compiles will commonly cause the error message `Argument not a density mechanism name` to appear when trying to create fibers.
    - Careful! Make sure that that the correct NEURON installation is in your path, as the first found installation will be used for compilation. The version used for compilation must be the same version used to run PyFibers code.
    - Note: if you receive a message that the `pyfibers_compile` command is not found, find the executable for this command in the `Scripts` path of your python directory (e.g. `C:\Users\<username>\Anaconda3\envs\pyfibers\Scripts`) and run the executable (e.g., `pyfibers_compile.exe`).
-   - It is normal to see the following message during compilation: `NEURON mechanisms not found in <path>.` Check the NEURON output that follows for a message that the mechanisms were compiled successfully. (e.g., for Windows: `nrnmech.dll was built successfully.`). In the future while using PyFibers, if you see the `NEURON mechanisms not found in <path>.` message, this is cause for concern, as this means PyFibers cannot find the compiled mechanisms. Failed compiles will commonly cause the error message `Argument not a density mechanism name` to appear when trying to create fibers.
 
 
 ## Usage

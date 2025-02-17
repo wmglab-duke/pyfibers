@@ -25,7 +25,6 @@ class TestFiber3D:
         assert fiber.diameter == self.diameter
         expected_length = 3367.9
         assert np.isclose(fiber.length, expected_length)  # Length calculated based on given path_coordinates
-        # TODO check that all coordinates are on line formed by path coords
 
     def test_resample_potentials_3d(self):
         fiber = build_fiber_3d(

@@ -20,14 +20,12 @@ from pyfibers import (  # BisectionMean,; BoundsSearchMode,; TerminationMode,
     build_fiber,
 )
 
-# TODO Change all c fiber model to 1 um
-
 
 def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperature=37, n_sections=133):
     return build_fiber(diameter=diameter, fiber_model=fiber_model, temperature=temperature, n_sections=n_sections)
 
 
-def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
+def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
     """Get activation threshold.
 
     Using point source

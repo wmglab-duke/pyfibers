@@ -13,8 +13,6 @@ import pytest  # noqa: I900
 
 from pyfibers import FiberModel, ScaledStim, build_fiber
 
-# TODO Change all c fiber model to 1 um
-
 
 def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperature=37, n_sections=133):
     return build_fiber(diameter=diameter, fiber_model=fiber_model, temperature=temperature, n_sections=n_sections)
