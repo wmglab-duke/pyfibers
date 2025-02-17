@@ -22,7 +22,7 @@ model = FiberModel.MRG_INTERPOLATION  # type of fiber model
 fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=n_nodes, passive_end_nodes=2)
 
 # create curve of potentials
-fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 1)
+fiber.potentials = fiber.point_source_potentials(0, 2000, fiber.length / 2, 1, 1)
 plt.plot(fiber.potentials)
 
 # create biphasic square wave to use as a stimulation waveform
@@ -40,7 +40,7 @@ fiber.record_gating()
 fiber.record_vm()
 
 # run threshold search
-amp, ap = stimulation.find_threshold(fiber, condition="activation")
+amp, ap = stimulation.find_threshold(fiber, condition="activation", stimamp_top=-200)
 
 # report the threshold amplitude with print statement to terminal
 print(f'Threshold for 5.7 micron {model}: {amp} (mA)')

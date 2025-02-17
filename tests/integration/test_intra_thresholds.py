@@ -13,14 +13,12 @@ import pytest  # noqa: I900
 
 from pyfibers import FiberModel, IntraStim, build_fiber  # BisectionMean,; BoundsSearchMode,; TerminationMode,
 
-# TODO Change all c fiber model to 1 um
-
 
 def get_fiber(diameter=5.7, fiber_model=FiberModel.MRG_INTERPOLATION, temperature=37, n_sections=133):
     return build_fiber(diameter=diameter, fiber_model=fiber_model, temperature=temperature, n_sections=n_sections)
 
 
-def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # TODO test range of diameters
+def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
     """Get activation threshold.
 
     Using intracellular stim
@@ -33,8 +31,6 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):  # T
     time_step = 0.001
     time_stop = 20
     stimulation = IntraStim(istim_loc=0.5, dt=time_step, tstop=time_stop)
-
-    stimulation.run_sim(0, fiber)  # TODO why do I need to run this first for correct result
 
     amp, ap = stimulation.find_threshold(fiber, stimamp_top=1, stimamp_bottom=0, **kwargs)
 

@@ -2,10 +2,10 @@
 
 Based on the following papers:
 Original implementation: https://doi.org/10.1152/jn.00353.2001
-Extension to 2 um diameter: TODO
-Extension to 1 um diameter: TODO
-Implementation of interpolation model: TODO
-Implementation of small interpolation model: TODO
+Extension to 2 um diameter: https://doi.org/10.1152/jn.00989.2003
+Extension to 1 um diameter: https://doi.org/10.1088/1741-2552/aa6a5f
+Implementation of interpolation model: https://doi.org/10.1371/journal.pcbi.1009285
+Implementation of small interpolation model: https://doi.org/10.1371/journal.pcbi.1011833
 """
 
 from __future__ import annotations

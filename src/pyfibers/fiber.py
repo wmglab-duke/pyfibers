@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 from nd_line.nd_line import nd_line
 from neuron import h
-from numpy import ndarray
 
 h.load_file('stdrun.hoc')
 
@@ -99,7 +98,7 @@ def build_fiber(
 def build_fiber_3d(
     fiber_model: FiberModel,
     diameter: float,
-    path_coordinates: ndarray,
+    path_coordinates: np.ndarray,
     shift: float = 0,
     shift_ratio: float = None,
     center_shift: bool = False,
@@ -289,9 +288,9 @@ class Fiber:
         self.sections: list = []
         self.nodes: list = []
         self.length: float = None
-        self.coordinates: ndarray = np.array([])
-        self.potentials: ndarray = np.array([])
-        self.longitudinal_coordinates: ndarray = np.array([])
+        self.coordinates: np.ndarray = np.array([])
+        self.potentials: np.ndarray = np.array([])
+        self.longitudinal_coordinates: np.ndarray = np.array([])
         self.path: nd_line = None
 
     # MAGIC METHODS #
@@ -630,7 +629,7 @@ class Fiber:
         :param z: z-coordinate of the source in µm.
         :param i0: Magnitude of the point-source current (mA).
         :param sigma: Conductivity (S/m). Float for isotropic or (sigma_x, sigma_y, sigma_z) for anisotropic.
-        :param inplace: If ``True``, update the fiber's ``potentials`` in-place. #TODO update all attrs to use xref
+        :param inplace: If ``True``, update the fiber's ``potentials`` in-place.
         :return: Extracellular potentials at each fiber coordinate, in mV.
         """
         # Calculate distance between source and sections
@@ -877,7 +876,7 @@ class Fiber:
         ), "Potentials and current matrix columns must have the same length"
         return 1e3 * np.dot(current_matrix, potentials)  # Convert to µV
 
-    def record_sfap(self: Fiber, rec_potentials: list | ndarray, downsample: int = 1) -> np.ndarray:
+    def record_sfap(self: Fiber, rec_potentials: list | np.ndarray, downsample: int = 1) -> np.ndarray:
         """Compute the SFAP time course at a given electrode location.
 
         :param rec_potentials: 1D array of precomputed potentials (mV) at each fiber section

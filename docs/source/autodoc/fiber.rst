@@ -1,6 +1,6 @@
 fiber
 =====
 
-
-.. automodule:: fiber
+.. automodule:: pyfibers.fiber
    :members:
+   :member-order: bysource

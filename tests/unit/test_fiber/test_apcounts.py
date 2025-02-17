@@ -51,7 +51,5 @@ def test_apcounts_action_potential_detection(mock_fiber):
     assert np.any([apc.n for apc in mock_fiber.apc])
 
 
-# TODO test detecting multiple action potentials
-
 if __name__ == "__main__":
     pytest.main()

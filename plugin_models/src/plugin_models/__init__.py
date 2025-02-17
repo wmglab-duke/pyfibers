@@ -16,6 +16,6 @@ __version__ = importlib.metadata.version(__package__ or __name__)
 # load all NEURON files
 MOD_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'MOD')
 # call nrnivmodl to compile the mod files
-subprocess.run(['nrnivmodl', MOD_dir])
+subprocess.run(['nrnivmodl', MOD_dir], shell=True)
 with suppress(RuntimeError):
     neuron.load_mechanisms(MOD_dir)
