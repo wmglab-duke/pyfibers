@@ -86,7 +86,7 @@ class Stimulation:
     For example, the :class:`ScaledStim` subclass provides extracellular stimulation capabilities.
 
     For more details on using this class to write custom stimulation routines,
-    see :doc:`/custom`.
+    see :doc:`/custom_stim`.
     """
 
     def __init__(
@@ -630,7 +630,36 @@ class Stimulation:
 
 
 class IntraStim(Stimulation):
-    """Manage intracellular stimulation of model fibers."""
+    """Manage intracellular stimulation of model fibers.
+
+    This class extends the Stimulation class to provide intracellular stimulation capabilities.
+    The intracellular stimulation is managed via a custom trainIClamp mechanism in NEURON.
+    This mechanism allows for repeated square pulses of current to be injected into a fiber.
+    Its arguments are provided as clamp_kws when creating an instance of this class.
+
+    ** Example Usage **
+
+    .. code-block:: python
+
+        # Assuming you have already created a fiber "my_fiber"
+        clamp_kws = {
+            "delay": 1,  # ms
+            "pw": 0.1,  # ms
+            "dur": 50,  # ms
+            "freq": 100,  # Hz
+            "amp": 1,  # nA, recommended to set 1 for scaling purposes
+        }
+        istim_ind = 0  # Stimulate the first section
+        dt, tstop = 0.001, 50
+        istim = IntraStim(dt=dt, tstop=tstop, istim_ind=istim_ind, clamp_kws=clamp_kws)
+
+        # Run a simulation with a given stimulation amplitude
+        stimamp = 2
+        istim.run_sim(2, my_fiber)
+
+        # Run a threshold search
+        istim.find_threshold(my_fiber, condition="activation")
+    """
 
     def __init__(
         self: IntraStim,
@@ -781,10 +810,35 @@ class IntraStim(Stimulation):
 class ScaledStim(Stimulation):
     """Manage extracellular stimulation of model fibers.
 
-    A specialized class that applies user-provided waveform(s)
-    (scaled by a specified stimulus amplitude(s)) as an extracellular stimulus.
-    Waveforms can be padded or truncated to match simulation time,
-    and the fiber's extracellular potentials can be scaled accordingly.
+    This class takes one or more waveforms (rows in the waveform array), each of which
+        is expected to match one corresponding set of fiber potentials (i.e., one source)
+        in the fiber being stimulated.
+        Therefore, if you have N potential sets on the fiber, you must provide N rows in
+        the waveform array. Each row describes the timecourse of stimulation for that source.
+
+        The waveform can be either:
+          - A 1D array of shape (time_steps,) if there is only one source.
+          - A 2D array of shape (num_sources, time_steps) if there are multiple sources.
+
+        For more information, see :doc:`/extracellular_potentials`.
+
+    ** Example Usage **
+    .. code-block:: python
+
+        # Assuming you have already created a fiber "my_fiber"
+        # Add potentials to the fiber
+        my_fiber.potentials = electrical_potentials_array
+
+        # Create ScaledStim object
+        dt, tstop = 0.001, 50
+        waveform = np.concatenate([np.zeros(100), np.ones(100), np.zeros(1000)])
+        stim = ScaledStim(waveform, dt=dt, tstop=tstop)
+
+        # Run the simulation
+        stim.run_sim(-1, my_fiber)
+
+        # Check for threshold
+        stim.find_threshold(my_fiber, condition="activation")
     """
 
     def __init__(
@@ -797,19 +851,7 @@ class ScaledStim(Stimulation):
         pad_waveform: bool = True,
         truncate_waveform: bool = True,
     ) -> None:
-        """Initialize the ScaledStim class.
-
-        This class takes one or more waveforms (rows in the waveform array), each of which
-        is expected to match one corresponding set of fiber potentials (i.e., one source)
-        in the fiber being stimulated.
-        Therefore, if you have N potential sets on the fiber, you must provide N rows in
-        the waveform array. Each row describes the timecourse of stimulation for that source.
-
-        The waveform can be either:
-          - A 1D array of shape (time_steps,) if there is only one source.
-          - A 2D array of shape (num_sources, time_steps) if there are multiple sources.
-
-        For more information, see :doc:`/extracellular_potentials`.
+        """Initialize ScaledStim class.
 
         :param waveform: A list or array of amplitude values over time for the simulation.
         :param dt: Main simulation time step (ms).
