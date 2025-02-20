@@ -109,14 +109,13 @@ tox_neuron9:
 .build_docs: &build_docs
 - apt-get update && apt-get -y install libgl1
 - pip install neuron
-- pip install .
+- pip install .[dev]
 - pyfibers_compile
-- pip install -U sphinx mock sphinx-rtd-theme
 - pip install -Ur docs/rtd_requirements.txt
 - apt-get install -y pandoc
 - pip install --upgrade pip ipython ipykernel
 - ipython kernel install --name "python3" --user
-- cd docs/source; sphinx-build -W -b html . ../../public
+- sphinx-build -W -b html docs/source public
 
 test_docs:
   stage: test

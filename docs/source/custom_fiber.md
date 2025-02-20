@@ -32,14 +32,14 @@ After your files are all created and in the proper location, you should install 
 
 ## Examples
 
-Note that the class construction will differ if you are creating a "homogeneous" fiber model (i.e., all sections of the fiber are identical, typically unmyelinated fibers) or a "heterogeneous" fiber model (i.e., sections of the fiber have different properties, such as nodes and myelin). See [](fiber-construction)!! below for a visual representation of the construction of homogeneous and heterogeneous fiber models. We will begin with an example of creating a homogeneous fiber model and then extend it to a heterogeneous fiber model.
+Note that the class construction will differ if you are creating a "homogeneous" fiber model (i.e., all sections of the fiber are identical, typically unmyelinated fibers) or a "heterogeneous" fiber model (i.e., sections of the fiber have different properties, such as nodes and myelin). See the figure below for a visual representation of the construction of homogeneous and heterogeneous fiber models. We will begin with an example of creating a homogeneous fiber model and then extend it to a heterogeneous fiber model.
 
 ```{figure} images/fiber_construction.png
 :name: fiber-construction
 :alt: Homogeneous and heterogeneous fiber models
 :align: center
 
-Construction of a model fiber. **A)** For unmyelinated fibers and myelinated fibers with only one section type (i.e., homogeneous fiber), a fiber model describes a single set of mechanisms and ultrastructure for a node, which is then repeated to the target number of sections. **B)** For fibers with multiple section types (e.g., MRG as shown), a repeating series of sections with heterogeneous membrane mechanisms and ultrastructure is described from one node until just before the next node. This sequence is repeated to one less than the target number of nodes, and a node is added to the end of the fiber for symmetry. Example shown: MRG model fiber with 4 nodes and 11 sections per node, resulting a final section count of n<sub>sections</sub> = (n<sub>nodes</sub> \- 1)\*11 + 1 = (4 - 1) \* 11 + 1 = 34. Figure is not to scale.
+Construction of a model fiber. **A\)** For unmyelinated fibers and myelinated fibers with only one section type (i.e., homogeneous fiber), a fiber model describes a single set of mechanisms and ultrastructure for a node, which is then repeated to the target number of sections. **B\)** For fibers with multiple section types (e.g., MRG as shown), a repeating series of sections with heterogeneous membrane mechanisms and ultrastructure is described from one node until just before the next node. This sequence is repeated to one less than the target number of nodes, and a node is added to the end of the fiber for symmetry. Example shown: MRG model fiber with 4 nodes and 11 sections per node, resulting a final section count of n<sub>sections</sub> = (n<sub>nodes</sub> \- 1)\*11 + 1 = (4 - 1) \* 11 + 1 = 34. Figure is not to scale.
 ```
 
 ### Creating a New Homogeneous Fiber Model

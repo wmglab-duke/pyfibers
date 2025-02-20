@@ -17,6 +17,7 @@ Welcome to the PyFibers documentation!
    autodoc/index
    extracellular_potentials
    fiber_models
+   algorithms
    custom_fiber
    custom_stim
 

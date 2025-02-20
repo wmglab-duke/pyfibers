@@ -9,14 +9,14 @@ stimulation
 .. autoclass:: pyfibers.stimulation.Stimulation
    :members:
    :member-order: bysource
-   :class-doc-from: init
+   :class-doc-from: class
 
 .. autoclass:: pyfibers.stimulation.ScaledStim
    :members:
    :member-order: bysource
-   :class-doc-from: init
+   :class-doc-from: class
 
 .. autoclass:: pyfibers.stimulation.IntraStim
    :members:
    :member-order: bysource
-   :class-doc-from: init
+   :class-doc-from: class
