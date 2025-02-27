@@ -2,9 +2,9 @@
 
 This module provides classes and functionalities to manage stimulation
 of model fibers. It includes enumerations for different threshold,
-termination, and bounds search modes, as well as a base ``Stimulation``
-class and a more specialized ``ScaledStim`` class for
-extracellular stimulation.
+termination, and bounds search modes, as well as a base :class:`Stimulation`
+class and the more specialized :class:`ScaledStim` class for
+extracellular stimulation and :class:`IntraStim` class for intracellular stimulation.
 """
 
 from __future__ import annotations
@@ -34,8 +34,10 @@ h.load_file('stdrun.hoc')
 class ThresholdCondition(str, Enum):
     """Different threshold search conditions.
 
-    - ACTIVATION: Search for the minimal stimulus amplitude required to generate an action potential.
-    - BLOCK: Search for the stimulus amplitude required to block propagation (i.e., prevent action potentials).
+    - :attr:`ThresholdCondition.ACTIVATION`:
+        Search for the minimal stimulus amplitude required to generate an action potential.
+    - :attr:`ThresholdCondition.BLOCK`:
+        Search for the stimulus amplitude required to block propagation (i.e., prevent action potentials).
     """
 
     ACTIVATION = "activation"
@@ -46,8 +48,8 @@ class ThresholdCondition(str, Enum):
 class BoundsSearchMode(str, Enum):
     """Modes for adjusting bounds in the bounds search phase of finding threshold.
 
-    - PERCENT_INCREMENT: Adjust bounds by multiplying/dividing by a percentage factor.
-    - ABSOLUTE_INCREMENT: Adjust bounds by adding/subtracting a fixed increment.
+    - :attr:`BoundsSearchMode.PERCENT_INCREMENT`: Adjust bounds by multiplying/dividing by a percentage factor.
+    - :attr:`BoundsSearchMode.ABSOLUTE_INCREMENT`: Adjust bounds by adding/subtracting a fixed increment.
     """
 
     PERCENT_INCREMENT = "percent"
@@ -58,8 +60,8 @@ class BoundsSearchMode(str, Enum):
 class TerminationMode(str, Enum):
     """Modes for determining when to terminate bisection search phase of finding threshold.
 
-    - PERCENT_DIFFERENCE: Convergence is based on percentage difference between bounds.
-    - ABSOLUTE_DIFFERENCE: Convergence is based on the absolute difference between bounds.
+    - :attr:`TerminationMode.PERCENT_DIFFERENCE`: Convergence is based on percentage difference between bounds.
+    - :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`: Convergence is based on the absolute difference between bounds.
     """
 
     PERCENT_DIFFERENCE = "percent"
@@ -70,8 +72,8 @@ class TerminationMode(str, Enum):
 class BisectionMean(str, Enum):
     """Mean type used during bisection search phase of finding threshold.
 
-    - GEOMETRIC: Use geometric mean (sqrt(bottom * top)).
-    - ARITHMETIC: Use arithmetic mean ((bottom + top) / 2).
+    - :attr:`BisectionMean.GEOMETRIC`: Use geometric mean (sqrt(bottom * top)).
+    - :attr:`BisectionMean.ARITHMETIC`: Use arithmetic mean ((bottom + top) / 2).
     """
 
     GEOMETRIC = "geometric"
@@ -82,7 +84,7 @@ class Stimulation:
     """Manage stimulation of NEURON simulations.
 
     Provides methods to configure time stepping, run simulations, and perform threshold search.
-    This class is not meant to be used as is; subclasses should override the ``run_sim`` method.
+    This class is not meant to be used as is; subclasses should override the :meth:`Stimulation.run_sim` method.
     For example, the :class:`ScaledStim` subclass provides extracellular stimulation capabilities.
 
     For more details on using this class to write custom stimulation routines,
@@ -104,8 +106,15 @@ class Stimulation:
         :param t_init_ss: Start time (<=0) used to let the system reach steady-state before t=0.
         :param dt_init_ss: Larger time step used during the steady-state period (ms).
         :param custom_run_sim: Custom simulation function provided by the user; otherwise,
-            the subclass must override ``run_sim()``.
+            the subclass must override :meth:`Stimulation.run_sim`.
         :raises RuntimeError: If NEURON sections/fibers have not been created yet.
+        :ivar dt: Time step for the simulation (ms).
+        :ivar tstop: Total duration of the simulation (ms).
+        :ivar t_init_ss: Start time (<=0) used to let the system reach steady-state before t=0 (ms).
+        :ivar dt_init_ss: Larger time step used during the steady-state period (ms).
+        :ivar custom_run_sim: Custom simulation function provided by the user.
+        :ivar n_timesteps: Number of time steps in the simulation. TODO change to underscore
+        :ivar time: NEURON :class:`Vector <neuron:Vector>` recording the global simulation time.
         """
         self.dt = dt
         self.tstop = tstop
@@ -153,7 +162,7 @@ class Stimulation:
     def _initialize_extracellular(fiber: Fiber) -> None:
         """Set extracellular potentials to zero along the fiber.
 
-        :param fiber: The Fiber object to initialize.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to initialize.
         """
         for section in fiber.sections:
             section(0.5).e_extracellular = 0
@@ -162,14 +171,14 @@ class Stimulation:
     def _update_extracellular(fiber: Fiber, e_stims: np.ndarray) -> None:
         """Apply a set of extracellular potential values along the fiber.
 
-        :param fiber: The Fiber object to stimulate.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param e_stims: List or array of potential values, one per fiber section.
         """
         for x, section in enumerate(fiber.sections):
             section(0.5).e_extracellular = e_stims[x]
 
     def run_sim(self: Stimulation, *args, **kwargs) -> tuple[int, float | None]:
-        """Run a simulation using either a custom_run_sim method or a subclass override."""  # noqa DAR401, DAR201, DAR101
+        """Run a simulation using either a custom_run_sim method or a subclass override."""  # noqa: DAR
         if self.custom_run_sim:
             return self.custom_run_sim(self, *args, **kwargs)
         raise NotImplementedError(
@@ -184,7 +193,7 @@ class Stimulation:
         for certain fiber models (e.g., Tigerholm). It also applies any
         intracellular stimulation parameters if provided.
 
-        :param fiber: The Fiber object for which the simulation will be configured.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object for which the simulation will be configured.
         :param ap_detect_threshold: The voltage threshold for detecting action potentials (mV).
         """
         # recompute timesteps
@@ -211,7 +220,7 @@ class Stimulation:
     ) -> tuple[int, float | None]:
         """Check how many action potentials occurred at a specified node location.
 
-        :param fiber: The Fiber object to evaluate for APs.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate for APs.
         :param ap_detect_location: Normalized location along the fiber in [0,1] to check for APs.
         :param precision: Decimal places to round the detected AP time.
         :param check_all_apc: If True, raise a warning if APs occur elsewhere but not at the detect location.
@@ -262,12 +271,12 @@ class Stimulation:
     ) -> bool:
         """Determine whether a stimulation was above or below threshold, for activation or block.
 
-        :param fiber: The Fiber object to evaluate.
-        :param block: If True, check for block threshold; otherwise, check for activation threshold.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
+        :param block: If True, check for block threshold; otherwise, check for activation threshold.
         :param block_delay: Time after simulation start to check for block (ms).
         :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
-        :param check_all_apc: Passed to ap_checker for additional warnings.
+        :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: True if stimulation is suprathreshold; False if subthreshold.
         :raises NotImplementedError: If block is True and thresh_num_aps != 1.
         :raises RuntimeError: If no APs are detected at all in a block threshold search.
@@ -319,27 +328,36 @@ class Stimulation:
             Ideally, the initial bounds should be chosen such that
             stimamp_top is supra-threshold and stimamp_bottom is sub-threshold.
 
-        Note that enums (ThresholdCondition, BoundsSearchMode, TerminationMode, BisectionMean) can be
-            provided as an enum member (e.g. ThresholdCondition.ACTIVATION) or as
+        Note that enums (:class:`ThresholdCondition`, :class:`BoundsSearchMode`,
+            :class:`TerminationMode`, :class:`BisectionMean`) can be
+            provided as an enum member (e.g. :attr:`ThresholdCondition.ACTIVATION`) or as
             the member's string value (e.g. "activation").
 
-        :param fiber: instance of Fiber class to apply stimulation to
-        :param condition: condition to search for threshold ("activation" or "block")
-        :param bounds_search_mode: indicates how to change upper and lower bounds during bounds_search
-        :param bounds_search_step: the iterative increase/decrease of the upper/lower bound during bounds search
+        .. seealso::
+
+            For more details on the threshold search process, see :doc:`/algorithms`.
+
+        :param fiber: Instance of :class:`pyfibers.fiber.Fiber` to apply stimulation to.
+        :param condition: The threshold condition
+            (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
+        :param bounds_search_mode: The bounds search mode
+            (:attr:`BoundsSearchMode.PERCENT_INCREMENT` or :attr:`BoundsSearchMode.ABSOLUTE_INCREMENT`).
+        :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search
             - if bounds_search_mode is "percent" this is the percentage increase/decrease
             - if bounds_search_mode is "absolute" this is the absolute increase/decrease
-        :param termination_mode: indicates when upper and lower bounds converge on a solution of appropriate precision
-        :param termination_tolerance: difference between upper and lower bounds that indicates convergence
+        :param termination_mode: The termination mode
+            (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
+        :param termination_tolerance: Difference between upper and lower bounds that indicates convergence
             - absolute difference if termination_mode is "absolute"
             - percentage difference if termination_mode is "percent"
         :param stimamp_top: Initial upper-bound stimulus amplitude to test.
         :param stimamp_bottom: Initial lower-bound stimulus amplitude to test.
         :param max_iterations: Maximum attempts to find bounding amplitudes before bisection.
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
-        :param bisection_mean: Mean type for the bisection step ("arithmetic" or "geometric").
+        :param bisection_mean: The bisection mean type
+            (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
         :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
-        :param thresh_num_aps: number of action potentials for threshold search
+        :param thresh_num_aps: Number of action potentials for threshold search
             - if activation, suprathreshold requires detected aps >= thresh_num_aps
             - if block, suprathreshold requires detected aps < thresh_num_aps
         :param silent: If True, suppress print statements for the search process.
@@ -489,11 +507,12 @@ class Stimulation:
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
-        :param condition: Whether searching for activation or block threshold.
+        :param condition: Whether searching for activation or block threshold
+             (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
         :param stimamp_top: The initial upper-bound stimulus amplitude.
         :param stimamp_bottom: The initial lower-bound stimulus amplitude.
         :param exit_t_shift: Extra time added after detecting an AP in an activation threshold search.
-        :param fiber: The Fiber object being stimulated.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
         :raises AssertionError: If exit_t_shift is not positive.
         """
@@ -517,7 +536,7 @@ class Stimulation:
     def supra_exit(self: Stimulation, fiber: Fiber, ap_detect_location: float, thresh_num_aps: int = 1) -> bool:
         """Determine if simulation can be exited early, for activation threshold searches only.
 
-        :param fiber: The Fiber object to check for an action potential.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check for an action potential.
         :param ap_detect_location: Normalized location to check in [0,1].
         :param thresh_num_aps: Number of APs required to consider it suprathreshold.
         :return: True if the specified number of APs has occurred at or before this time.
@@ -538,7 +557,7 @@ class Stimulation:
         If an AP is detected near in or adjacent to the passive end nodes, raise an error
         or issue a warning based on fail_on_end_excitation.
 
-        :param fiber: The Fiber object to check.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check.
         :param multi_site_check: If True, warn if multiple activation sites are detected.
         :param fail_on_end_excitation: Controls handling of end-excitation:
             - True: Raise RuntimeError if end-excitation is detected.
@@ -593,8 +612,9 @@ class Stimulation:
         """Run a single stimulation trial at a given amplitude and check for threshold.
 
         :param stimamp: Stimulus amplitude to apply.
-        :param fiber: The Fiber object to stimulate.
-        :param condition: Threshold condition (ACTIVATION or BLOCK).
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
+        :param condition: Threshold condition
+            (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
         :param block_delay: If condition=BLOCK, time after which AP detection is considered blocked (ms).
         :param thresh_num_aps: Number of APs required to be considered suprathreshold.
         :param kwargs: Additional arguments for the run_sim method.
@@ -632,10 +652,10 @@ class Stimulation:
 class IntraStim(Stimulation):
     """Manage intracellular stimulation of model fibers.
 
-    This class extends the Stimulation class to provide intracellular stimulation capabilities.
-    The intracellular stimulation is managed via a custom trainIClamp mechanism in NEURON.
+    This class extends the :class:`Stimulation` class to provide intracellular stimulation capabilities.
+    The intracellular stimulation is managed via a custom :class:`h.trainIClamp` mechanism.
     This mechanism allows for repeated square pulses of current to be injected into a fiber.
-    Its arguments are provided as clamp_kws when creating an instance of this class.
+    Its arguments are provided as ``clamp_kws`` when creating an instance of this class.
 
     ** Example Usage **
 
@@ -677,9 +697,10 @@ class IntraStim(Stimulation):
         :param tstop: time step for simulation [seconds]
         :param t_init_ss: the time (<=0ms) for the system to reach steady state before starting the simulation [ms]
         :param dt_init_ss: the time step used to reach steady state [ms]
-        :param istim_ind: the section index (unmyelinated) or node of Ranvier number (myelinated) receiving stimulation
-        :param istim_loc: node location along the fiber (using NEURON style indexing)
-        :param clamp_kws: keyword arguments for the trainIClamp mechanism.
+        :param istim_ind: the :class:`~pyfibers.fiber.Fiber` section index (unmyelinated) or
+            node of Ranvier number (myelinated) receiving stimulation
+        :param istim_loc: node location along the  :class:`~pyfibers.fiber.Fiber` (using NEURON style indexing)
+        :param clamp_kws: keyword arguments for the :class:`h.trainIClamp`.
             All optional, default given in parentheses.
             - 'delay': (0) the delay from the start of the simulation to the onset of the intracellular stimulation [ms]
             - 'pw': (1) the pulse duration of the intracellular stimulation [ms]
@@ -687,6 +708,12 @@ class IntraStim(Stimulation):
             - 'freq': (100) the intracellular pulse repetition rate [Hz]
             - 'amp': (1) the intracellular stimulation amplitude [nA]
             Note that amp is scaled by the stimamp parameter in run_sim.
+        :ivar istim: the NEURON :class:`h.trainIClamp` object for intracellular stimulation
+        :ivar istim_record: the NEURON :class:`Vector <neuron:Vector>` recording the intracellular stimulation current
+        :ivar istim_ind: the :class:`~pyfibers.fiber.Fiber` section index or node of Ranvier
+            number receiving stimulation
+        :ivar istim_loc: the node location along the :class:`~pyfibers.fiber.Fiber` receiving stimulation
+        :ivar istim_params: the dictionary of intracellular stimulation parameters (see :meth:`_add_istim`)
         """
         super().__init__(dt=dt, tstop=tstop, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
         self.istim: h.trainIClamp = None
@@ -697,14 +724,16 @@ class IntraStim(Stimulation):
         self.istim_params.update(clamp_kws or {})  # add user specified clamp parameters
 
     def _add_istim(self: IntraStim, fiber: Fiber) -> IntraStim:
-        """Create instance of trainIClamp for intracellular stimulation.
+        """Create instance of :class:`h.trainIClamp` for intracellular stimulation.
 
-        This method is not called by the user, see :meth:`init`.
+        This method is not called by the user, see :class:IntraStim.
         Note that trainIClamp is a mod file included in this package. It is an
         extension of NEURON's built-in IClamp that allows repeated square pulses.
 
-        :param fiber: The Fiber object to attach intracellular stimulation to.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to attach intracellular stimulation to.
         :return: The Stimulation instance (self).
+
+        :meta public:
         """
         if self.istim_ind is not None:  # If ind was provided, use it directly
             ind = self.istim_ind
@@ -741,23 +770,23 @@ class IntraStim(Stimulation):
     ) -> tuple[int, float]:
         """Run a simulation for a single stimulation amplitude.
 
-        :param stimamp: amplitude to be applied to extracellular stimulation
+        :param stimamp: Amplitude to be applied to extracellular stimulation
             - Should be a single float for one source
             - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
             - If stimamp is a list of floats, each float is applied to the corresponding source
-        :param fiber: fiber to be stimulated
-        :param ap_detect_location: location to detect action potentials (percent along fiber)
-        :param exit_func: function to call to check if simulation should be exited
-        :param exit_func_interval: interval to call exit_func
-        :param exit_func_kws: keyword arguments to pass to exit_func
-        :param use_exit_t: if True, use the time returned by exit_func as the simulation end time
-        :raises RuntimeError: if NaNs are detected in fiber potentials
-        :param fail_on_end_excitation: behavior for end excitation detection
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` to be stimulated.
+        :param ap_detect_location: Location to detect action potentials (percent along fiber)
+        :param exit_func: Function to call to check if simulation should be exited
+        :param exit_func_interval: Interval to call exit_func
+        :param exit_func_kws: Keyword arguments to pass to exit_func
+        :param use_exit_t: If True, use the time returned by exit_func as the simulation end time
+        :param fail_on_end_excitation: Behavior for end excitation detection
             - if True, raise error if end excitation is detected
             - if False, continue simulation if end excitation is detected
             - if None, do not check for end excitation
-        :param ap_detect_threshold: threshold for detecting action potentials (default: -30 mV)
-        :return: number of detected aps and time of last detected ap
+        :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV)
+        :raises RuntimeError: If NaNs are detected in fiber potentials
+        :return: Number of detected APs and time of last detected AP.
         """
         self._add_istim(fiber)  # type: ignore
         self.istim.amp *= stimamp
@@ -794,17 +823,14 @@ class IntraStim(Stimulation):
     def _validate_inputs(self: IntraStim, stimamp: float, fiber: Fiber) -> None:
         """Validate inputs for intracellular stimulation.
 
-        :param stimamp: the stimulus amplitude
-        :param fiber: the fiber to stimulate
+        :param stimamp: The stimulus amplitude.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` to stimulate.
         """
         assert np.all(fiber.potentials == 0), 'Fiber potentials must be zero for IntracellularStim'
         assert self.istim is not None, 'Intracellular stimulation is not enabled.'
         if stimamp < 0:
             warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
         assert isinstance(stimamp, (int, float)), 'stimamp must be a single float or int'
-
-    def _do_timestep(self: IntraStim, timestep: int, fiber: Fiber, stimamps: np.ndarray) -> None:
-        pass
 
 
 class ScaledStim(Stimulation):
@@ -820,7 +846,11 @@ class ScaledStim(Stimulation):
           - A 1D array of shape (time_steps,) if there is only one source.
           - A 2D array of shape (num_sources, time_steps) if there are multiple sources.
 
-        For more information, see :doc:`/extracellular_potentials`.
+        For more information on defining potentials, see :doc:`/extracellular_potentials`.
+
+        .. seealso::
+
+            For more information on defining potentials, see :doc:`/extracellular_potentials`.
 
     ** Example Usage **
     .. code-block:: python
@@ -829,7 +859,7 @@ class ScaledStim(Stimulation):
         # Add potentials to the fiber
         my_fiber.potentials = electrical_potentials_array
 
-        # Create ScaledStim object
+        # Create a :class:`ScaledStim` object
         dt, tstop = 0.001, 50
         waveform = np.concatenate([np.zeros(100), np.ones(100), np.zeros(1000)])
         stim = ScaledStim(waveform, dt=dt, tstop=tstop)
@@ -860,6 +890,9 @@ class ScaledStim(Stimulation):
         :param dt_init_ss: Large time step used during the steady-state period (ms).
         :param pad_waveform: If True, extend the waveform with zeros to match simulation time.
         :param truncate_waveform: If True, truncate the waveform if it exceeds the simulation time.
+        :ivar waveform: The waveform(s) to be applied to the fiber potentials. TODO add more info here
+        :ivar pad: If True, extend the waveform with zeros to match simulation time.
+        :ivar truncate: If True, truncate the waveform if it exceeds the simulation time.
         """
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
         self.waveform = np.array(waveform)
@@ -873,9 +906,10 @@ class ScaledStim(Stimulation):
         Ensures they are in a suitable 2D numpy array form, one row per
         potential set. Each row must match the length of the fiber coordinates.
 
-        :param fiber: The Fiber object containing the potentials to be prepared.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
         :raises AssertionError: If no potentials are found or mismatch in lengths of fiber coordinates.
         """
+        # This should be moved to the Fiber class as a setter method
         assert fiber.potentials is not None, "No fiber potentials found."
         fiber.potentials = np.array(fiber.potentials)
 
@@ -897,6 +931,7 @@ class ScaledStim(Stimulation):
 
         Also checks if the waveform has a max absolute value of 1 (recommended).
         """
+        # this should be refactored to be a setter method
         self.waveform = np.array(self.waveform)
 
         # recompute timesteps
@@ -943,7 +978,7 @@ class ScaledStim(Stimulation):
         waveform value at time i and the corresponding stimamp, then summed.
 
         :param i: Current time index in the simulation.
-        :param fiber: The Fiber object whose potentials are being scaled.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object whose potentials are being scaled.
         :param stimamps: Array of amplitude scaling factors (one per waveform row).
         :return: 1D array of summed potentials along the fiber sections.
         """
@@ -958,9 +993,9 @@ class ScaledStim(Stimulation):
     ) -> np.typing.NDArray[np.float64]:
         """Validate scaling inputs before running simulation.
 
-        :param fiber: instance of Fiber class to validate scaling inputs for
-        :param stimamps: amplitude to be applied to extracellular stimulation
-        :return: array of stimulation amplitudes to apply to each waveform
+        :param fiber: Instance of :class:`~pyfibers.fiber.Fiber` to validate scaling inputs for.
+        :param stimamps: Amplitude to be applied to extracellular stimulation.
+        :return: Array of stimulation amplitudes to apply to each waveform.
         """
         self._prep_waveform()
         self._prep_potentials(fiber)
@@ -994,11 +1029,15 @@ class ScaledStim(Stimulation):
     ) -> tuple[int, float]:
         """Run a simulation with a given stimulus amplitude(s).
 
+        .. seealso::
+
+            For more information on the underlying math, see the `Algorithms <algorithms>`_ docs page.
+
         :param stimamp: Amplitude to scale the product of extracellular potentials and waveform.
             - Should be a single float for one source
             - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
             - If stimamp is a list of floats, each float is applied to the corresponding source
-        :param fiber: The Fiber object to stimulate.
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param ap_detect_location: Normalized location in [0,1] to check for APs.
         :param exit_func: Callback to check if the simulation can be ended early (e.g., upon detection of an AP).
         :param exit_func_interval: How often (in time steps) to call exit_func.
@@ -1010,7 +1049,7 @@ class ScaledStim(Stimulation):
             - If None, do not check for end excitation
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV)
         :raises RuntimeError: If NaNs are detected in membrane potentials or if required setup (e.g., istim) is missing.
-        :return: Tuple (number_of_aps, time_of_last_ap).
+        :return: Tuple (number_of_APs, time_of_last_AP).
         """
         stimamps = np.array(stimamp)
         print("Running:", stimamps.round(6), end="")

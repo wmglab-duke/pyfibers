@@ -32,7 +32,22 @@ release = 'alpha'
 
 
 # -- General configuration ---------------------------------------------------
-# nitpicky = True # raise warnings for missing references #noqa: E800
+nitpicky = True  # raise warnings for missing references #noqa: E800
+nitpick_ignore = [
+    (
+        'py:class',
+        'h.Vector',
+    ),  # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classes
+    ('py:class', 'h.Section'),
+    ('py:class', 'h.NetStim'),
+    ('py:class', 'h.NetCon'),
+    ('py:class', 'h.IClamp'),
+    ('py:class', 'h.trainIClamp'),  # added from a pyfibers mod file, so no object.inv
+    ('py:class', 'neuron.h.Vector'),
+    ('py:class', 'nd_line'),  # no sphinx docs for this package
+    ('py:class', 'FiberModel'),  # Type references broken due to type hinting block in fiber.py
+    ('py:data', 'collections.abc.Callable'),  # Broken by sphinx_autodoc_typehints, post issue on GH
+]
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -47,6 +62,7 @@ extensions = [
     'sphinxcontrib.bibtex',
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.intersphinx",
+    "sphinx_autodoc_typehints",
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
@@ -56,6 +72,9 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "neuron": ("https://nrn.readthedocs.io/en/latest", None),
+    'scipy': ('https://docs.scipy.org/doc/scipy', None),
+    # "nd_line": ("https://github.com/thedannymarsh/nd_line", None),
+    # "neuron" : ("https://neuronsimulator.github.io/nrn/", None),
 }
 
 # List of patterns, relative to source directory, that match files and

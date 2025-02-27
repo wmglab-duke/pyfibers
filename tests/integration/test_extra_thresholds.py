@@ -146,9 +146,9 @@ def test_block_threshold():
     t = np.arange(0, time_stop, time_step)  # ms
     waveform = sg.square(2 * np.pi * frequency * t)
 
-    n_sections = 265
+    n_nodes = 25
 
-    fiber = build_fiber(FiberModel.MRG_INTERPOLATION, diameter=10, n_sections=n_sections)
+    fiber = build_fiber(FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=n_nodes)
     fiber.record_vm()
     fiber.potentials = fiber.point_source_potentials(0, 250, fiber.length / 2, 1, 10)
 

@@ -18,7 +18,7 @@ We have implemented the following models:
 
 ## Installation
 Note: It is recommended you create a new virtual environment for PyFibers. For example, using Anaconda/Miniconda:
-  - `conda create -n pyfibers python=3.10`*
+  - `conda create -n pyfibers python=3.10`
   - `conda activate pyfibers`
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
    - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)

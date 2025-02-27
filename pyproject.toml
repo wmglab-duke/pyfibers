@@ -46,7 +46,8 @@ dev = [
   "IPython==8.*",
   "enum-tools[sphinx]==0.12.*",
   "sphinxcontrib-bibtex==2.6.*",
-  "moviepy==2.1.*"
+  "moviepy==2.1.*",
+  "sphinx_autodoc_typehints==2.3.*"
 ]
 
 [project.scripts]
@@ -114,5 +115,7 @@ ignore_directives = [
   "automodule",
   "bibliography",
   "include",
-  "autoclass"
+  "autoclass",
+  "attr",
+  "seealso"
 ]
