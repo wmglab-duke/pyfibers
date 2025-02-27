@@ -30,6 +30,12 @@ copyright_info = '2023, Duke University'
 # The full version, including alpha/beta/rc tags
 release = 'alpha'
 
+html_short_title = "PyFibers Documentation"
+# html_logo = './static/logo.png' noqa: E800
+# pygments_style = "stata-dark" noqa: E800
+# html_theme_options = {
+#     "source_url": 'https://github.com/pyfibers_url'
+# }
 
 # -- General configuration ---------------------------------------------------
 nitpicky = True  # raise warnings for missing references #noqa: E800
@@ -56,7 +62,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'nbsphinx',
     'sphinx_copybutton',
-    'sphinx_rtd_dark_mode',
+    # 'sphinx_rtd_dark_mode',
     'sphinx.ext.autosummary',
     'enum_tools.autoenum',
     'sphinxcontrib.bibtex',
@@ -90,7 +96,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'piccolo_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -106,7 +112,7 @@ html_show_sphinx = False
 
 myst_heading_anchors = 4
 
-default_dark_mode = False
+# default_dark_mode = False
 # Add the extension
 
 # Make sure the target is unique
