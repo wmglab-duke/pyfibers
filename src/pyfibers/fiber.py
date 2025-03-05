@@ -52,7 +52,7 @@ def build_fiber(
     :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified.
     :return: A :class:`Fiber` class instance.
 
-    **Example**:
+    ** Example Usage **
 
     .. code-block:: python
 
@@ -591,12 +591,14 @@ class Fiber:
             Note that the user MUST keep this Vector in memory for the duration of the simulation.
             This means you must assign it to a variable that is not overwritten or deleted.
             For example, to record at time points 0, 1, 2, and 3 ms:
+
             .. code-block:: python
 
                 recording_tvec = h.Vector([0, 1, 2, 3])  # store times in a Vector
                 fiber.record_values("_ref_v", recording_tvec=recording_tvec)  # pass Vector to record
                 stimulation.find_threshold(fiber)  # run the simulation
                 plt.plot(recording_tvec, fiber.vm[0])  # plot the recorded values
+
         :raises ValueError: If indices is an empty list.
         :return: A list of NEURON :class:`Vector <neuron:Vector>` objects or
             None (if allow_missing=True and the requested attribute is missing).
