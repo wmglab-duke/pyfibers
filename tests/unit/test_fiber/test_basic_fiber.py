@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest  # noqa: I900
+from scipy.interpolate import interp1d
 
 from pyfibers import FiberModel, ScaledStim, build_fiber
 
@@ -62,8 +63,59 @@ def test_waveform_pad_truncate():
     fiber = get_fiber()  # noqa: F841
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation.waveform.shape[1] == 5000
+    assert stimulation._prepped_waveform.shape[1] == 5000
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation.waveform.shape[1] == 5000
+    assert stimulation._prepped_waveform.shape[1] == 5000
+
+
+def test_waveform_callable():
+    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
+    dt = 0.005  # ms
+    start = 0  # ms
+    up = 1  # ms
+    down = 2  # ms
+    off = 3  # ms
+    stop = 4  # ms
+    concat_waveform = np.concatenate(
+        (
+            np.zeros(int((up - start) / dt)),
+            np.ones(int((down - up) / dt)),
+            -np.ones(int((off - down) / dt)),
+            np.zeros(int((stop - off) / dt)),
+        )
+    )
+    concat_stimulation = ScaledStim(waveform=concat_waveform, dt=dt, tstop=stop)
+
+    callable_waveform = interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous")
+    callable_stimulation = ScaledStim(waveform=callable_waveform, dt=dt, tstop=stop)
+    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)
+
+
+def test_multiple_waveforms():
+    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
+    dt = 0.005  # ms
+    start = 0  # ms
+    up_list = np.arange(1, 10)  # ms
+    down_list = np.arange(10, 20)  # ms
+    off_list = np.arange(20, 30)  # ms
+    stop = 35  # ms
+    concat_waveforms = []
+    callable_waveforms = []
+    for up, down, off in zip(up_list, down_list, off_list):
+        concat_waveforms.append(
+            np.concatenate(
+                (
+                    np.zeros(int((up - start) / dt)),
+                    np.ones(int((down - up) / dt)),
+                    -np.ones(int((off - down) / dt)),
+                    np.zeros(int((stop - off) / dt)),
+                )
+            )
+        )
+        callable_waveforms.append(interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous"))
+
+    concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
+    callable_stimulation = ScaledStim(waveform=callable_waveforms, dt=dt, tstop=stop)
+    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)

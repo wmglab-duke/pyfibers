@@ -87,13 +87,16 @@ potentials_array_2 = np.array([0, 0, 1, 2, 3, 2, 1])
 potentials_array = np.vstack((potentials_array_1, potentials_array_2))
 ```
 
-Similarly, multiple waveforms must then be provided to the {py:class}`~pyfibers.stimulation.ScaledStim` class instance, where each row corresponds to the waveform from a different source.
+Similarly, multiple waveforms must then be provided to the {py:class}`~pyfibers.stimulation.ScaledStim` class instance as a list, where each callable in the list corresponds to the waveform from a different source.
 
 ```python
-waveform1 = np.array([1, 2, 3, 2, 1, 0, 0])
-waveform2 = np.array([0, 0, 1, 2, 3, 2, 1])
-waveforms = np.vstack((waveform1, waveform2))
-stimulation = ScaledStim(fiber, waveforms)
+waveform = scipy.interpolate.interp1d(
+    [0, 0.1, 0.2, time_stop], [0, 1, 0, 0], kind="previous"
+)
+waveform = scipy.interpolate.interp1d(
+    [0, 0.1, 0.2, time_stop], [0, -1, 0, 0], kind="previous"
+)
+stimulation = ScaledStim(fiber, [waveform1, waveform2])
 ```
 
 The mathematical process which PyFibers uses to calculate the extracellular potentials at runtime is described in our [algorithms documentation](algorithms.md).

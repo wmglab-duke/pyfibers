@@ -113,7 +113,6 @@ class Stimulation:
         :ivar t_init_ss: Start time (<=0) used to let the system reach steady-state before t=0 (ms).
         :ivar dt_init_ss: Larger time step used during the steady-state period (ms).
         :ivar custom_run_sim: Custom simulation function provided by the user.
-        :ivar n_timesteps: Number of time steps in the simulation. TODO change to underscore
         :ivar time: NEURON :class:`Vector <neuron:Vector>` recording the global simulation time.
         """
         self.dt = dt
@@ -122,7 +121,7 @@ class Stimulation:
         self.dt_init_ss = dt_init_ss
         self._exit_t: float = None
         self.custom_run_sim = custom_run_sim  # Store the custom run_sim function
-        self.n_timesteps = int(self.tstop / self.dt)
+        self._n_timesteps = int(self.tstop / self.dt)
         # Attempt to record the global simulation time
         try:
             self.time = h.Vector().record(h._ref_t)
@@ -197,7 +196,7 @@ class Stimulation:
         :param ap_detect_threshold: The voltage threshold for detecting action potentials (mV).
         """
         # recompute timesteps
-        self.n_timesteps = int(self.tstop / self.dt)
+        self._n_timesteps = int(self.tstop / self.dt)
         # Set simulation temperature based on the fiber's temperature
         h.celsius = fiber.temperature
         # Initialize the simulation to the fiber's rest potential
@@ -798,7 +797,7 @@ class IntraStim(Stimulation):
         exit_func_kws = exit_func_kws or {}
 
         # Run simulation
-        for i in range(self.n_timesteps):
+        for i in range(self._n_timesteps):
             h.fadvance()
 
             # check for NaNs in fiber potentials
@@ -836,44 +835,58 @@ class IntraStim(Stimulation):
 class ScaledStim(Stimulation):
     """Manage extracellular stimulation of model fibers.
 
-    This class takes one or more waveforms (rows in the waveform array), each of which
-        is expected to match one corresponding set of fiber potentials (i.e., one source)
-        in the fiber being stimulated.
-        Therefore, if you have N potential sets on the fiber, you must provide N rows in
-        the waveform array. Each row describes the timecourse of stimulation for that source.
+    This class takes one or more waveforms, each of which is expected to match one corresponding
+    set of fiber potentials (i.e., one source) in the fiber being stimulated.
+    Therefore, if you have N potential sets on the fiber, you must provide N waveforms,
+    each describing the time course of stimulation for that source.
 
-        The waveform can be either:
-          - A 1D array of shape (time_steps,) if there is only one source.
-          - A 2D array of shape (num_sources, time_steps) if there are multiple sources.
+    The waveform can be either:
+        - A callable that accepts a single float argument for the stimulation time (in ms) and returns
+    the waveform value at that time.
+        - A list of such callables with length N if there are N sources
+
+    .. seealso::
 
         For more information on defining potentials, see :doc:`/extracellular_potentials`.
 
-        .. seealso::
-
-            For more information on defining potentials, see :doc:`/extracellular_potentials`.
-
     ** Example Usage **
+
     .. code-block:: python
 
         # Assuming you have already created a fiber "my_fiber"
         # Add potentials to the fiber
         my_fiber.potentials = electrical_potentials_array
 
+
+        # Create function which takes in a time and returns a waveform value
+        def my_square_pulse(t: float) -> float:
+            if t > 0.1 and t <= 0.2:  # if time is during the pulse
+                return 1  # on
+            else:  # if time is outside the pulse
+                return 0  # off
+
+
+        # Same waveform as above but using scipy.interpolate.interp1d
+        my_square_pulse = interp1d(
+            [0, 0.1, 0.2, 50],  # start, on, off, stop, in ms
+            [0, 1, 0, 0],  # waveform values at those times
+            kind="previous",
+        )
+
         # Create a :class:`ScaledStim` object
         dt, tstop = 0.001, 50
-        waveform = np.concatenate([np.zeros(100), np.ones(100), np.zeros(1000)])
-        stim = ScaledStim(waveform, dt=dt, tstop=tstop)
+        stim = ScaledStim(waveform=my_square_pulse, dt=dt, tstop=tstop)
 
         # Run the simulation
         stim.run_sim(-1, my_fiber)
 
-        # Check for threshold
+        # Calculate threshold
         stim.find_threshold(my_fiber, condition="activation")
     """
 
     def __init__(
         self: ScaledStim,
-        waveform: list[list[float]] | np.ndarray,
+        waveform: np.ndarray | list[Callable[[float], float]] | Callable[[float], float],
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
@@ -881,9 +894,13 @@ class ScaledStim(Stimulation):
         pad_waveform: bool = True,
         truncate_waveform: bool = True,
     ) -> None:
-        """Initialize ScaledStim class.
+        """Initialize the ScaledStim class.
 
-        :param waveform: A list or array of amplitude values over time for the simulation.
+        :param waveform: Callable or list of callables (e.g., function). Each callable should accept
+            a single float argument for the simulation time (in ms) and return the waveform value at
+            that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
+            Support for waveform as a numpy array is retained for backwards compatibility, and will be
+            removed in a future release.
         :param dt: Main simulation time step (ms).
         :param tstop: Total simulation duration (ms).
         :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
@@ -895,9 +912,10 @@ class ScaledStim(Stimulation):
         :ivar truncate: If True, truncate the waveform if it exceeds the simulation time.
         """
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
-        self.waveform = np.array(waveform)
         self.pad = pad_waveform
         self.truncate = truncate_waveform
+        self.n_timesteps: int = None
+        self.waveform = waveform
         self._prep_waveform()
 
     def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
@@ -929,49 +947,99 @@ class ScaledStim(Stimulation):
     def _prep_waveform(self: ScaledStim) -> None:
         """Process user-provided waveform(s) to match the simulation length.
 
+        Accepts single waveform (1D numpy array or single callable) or
+        multiple waveforms (2D numpy array or list of callables),
+        processes each waveform independently, and saves the processed waveform(s) as a 2D numpy array.
         Also checks if the waveform has a max absolute value of 1 (recommended).
-        """
-        # this should be refactored to be a setter method
-        self.waveform = np.array(self.waveform)
 
-        # recompute timesteps
+        :raises AssertionError: if any processed waveform row length is not equal to the number of time steps
+        :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
+        :raises RuntimeError: if an error is encountered while processing a callable into an array
+        """
+        # recompute timesteps TODO make sure this is done at the start of every sim in intrastim too
         self.n_timesteps = int(self.tstop / self.dt)
 
-        # Initialize list to store processed waveforms
-        processed_waveforms = []
+        prepped_waveform = self.waveform
+        # wrap waveform in a list in not already a list
+        if not isinstance(prepped_waveform, list | np.ndarray):
+            prepped_waveform = [prepped_waveform]
 
-        # If it's a single 1D array, wrap it in a list
-        if self.waveform.ndim == 1:
-            self.waveform = [self.waveform]
+        if any(callable(wf) for wf in prepped_waveform):
+            # if a mix of callables and arrays were specified, throw an error
+            if not all(callable(wf) for wf in prepped_waveform):
+                raise TypeError("Waveform must be specified as either a callable or a list of callables.")
 
-        # Pad or truncate each waveform
-        for row in self.waveform:
-            row = np.array(row)
-            if self.pad and (self.n_timesteps > len(row)):
-                if row[-1] != 0:
-                    warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
-                row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
-
-            if self.truncate and (self.n_timesteps < len(row)):
-                if any(row[self.n_timesteps :]):
-                    warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
-                row = row[: self.n_timesteps]
-
-            assert (
-                len(row) == self.n_timesteps
-            ), "Processed waveform length must match the number of time steps (tstop / dt)."
-
-            if np.max(np.abs(row)) != 1:
-                warnings.warn(
-                    "Waveform does not have a maximum absolute value of 1. " "This is recommended to simplify scaling.",
-                    stacklevel=2,
+            # process callable(s) into 2d array with shape (len(prepped_waveform), self.n_timesteps)
+            try:
+                prepped_waveform = np.fromfunction(
+                    np.vectorize(lambda i, j: prepped_waveform[int(i)](j * self.dt)),
+                    (len(prepped_waveform), self.n_timesteps),
                 )
-            processed_waveforms.append(row)
+            except Exception as e:  # noqa: B902
+                # provide some information on where the error happened to the user
+                raise RuntimeError(
+                    """Error encountered while processing callable into array. Does the callable produce
+                    valid output for all time steps?"""
+                ) from e
+        else:
+            # process waveform provided as array for backwards compatibility
+            warnings.warn(
+                """Specifying waveforms using lists/arrays is deprecated. """
+                """Please specify as callable or list of callables""",
+                FutureWarning,
+                stacklevel=2,
+            )
+            prepped_waveform = np.array(prepped_waveform)
 
-        # Combine into a 2D array
-        self.waveform = np.vstack(processed_waveforms)
+            # Check if waveform is a single 1D numpy array and wrap it in a list
+            if prepped_waveform.ndim == 1:
+                prepped_waveform = [prepped_waveform]
 
-    def _potentials_at_time(self: ScaledStim, i: int, fiber: Fiber, stimamps: np.ndarray) -> np.ndarray:
+            # Initialize list to store processed waveforms
+            processed_waveforms = []
+
+            # Process each waveform
+            for row in prepped_waveform:
+                row = np.array(row)  # Ensure row is a numpy array
+
+                if self.pad and (self.n_timesteps > len(row)):
+                    # Extend waveform row until it is of length tstop/dt
+                    if row[-1] != 0:
+                        warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
+                    row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
+
+                if self.truncate and (self.n_timesteps < len(row)):
+                    # Truncate waveform row until it is of length tstop/dt
+                    if any(row[self.n_timesteps :]):
+                        warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
+                    row = row[: self.n_timesteps]
+
+                assert (
+                    len(row) == self.n_timesteps
+                ), "Processed waveform length must match the number of time steps (tstop / dt)."
+
+                processed_waveforms.append(row)  # Append processed row to the list
+
+            # Convert list of processed rows into a 2D numpy array
+            prepped_waveform = np.vstack(processed_waveforms)
+
+        # if max abs value is not 1, warn user
+        if np.max(np.abs(prepped_waveform)) != 1:
+            warnings.warn(
+                'Waveform does not have a max absolute value of 1. '
+                'This is recommended to simplify scaling of the waveform.',
+                stacklevel=2,
+            )
+
+        # make sure that number of columns in the waveform matches the number of time steps
+        if prepped_waveform.shape[1] != self.n_timesteps:
+            raise RuntimeError("Processed waveform length must match the number of time steps (tstop / dt).")
+
+        self._prepped_waveform = prepped_waveform
+
+    def _potentials_at_time(
+        self: ScaledStim, i: int, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+    ) -> np.typing.NDArray[np.float64]:
         """Compute the total extracellular potential at time index i.
 
         Each row of the fiber's potentials is multiplied by the corresponding
@@ -984,7 +1052,7 @@ class ScaledStim(Stimulation):
         """
         potentials = np.zeros(fiber.potentials.shape[1])
         # Multiply each potential row by the waveform and amplitude at this time
-        for potential_set, waveform_row, amp in zip(fiber.potentials, self.waveform, stimamps, strict=True):
+        for potential_set, waveform_row, amp in zip(fiber.potentials, self._prepped_waveform, stimamps, strict=True):
             potentials += amp * waveform_row[i] * potential_set
         return potentials
 
@@ -1001,18 +1069,22 @@ class ScaledStim(Stimulation):
         self._prep_potentials(fiber)
 
         assert len(fiber.potentials) == len(
-            self.waveform
+            self._prepped_waveform
         ), 'Number of fiber potentials sets does not match number of waveforms'
 
         assert not np.all(
             fiber.potentials == 0
         ), 'Extracellular stimulation requires at least one non-zero fiber potential'
-        assert not np.all(self.waveform == 0), 'Extracellular stimulation requires at least one non-zero waveform'
+        assert not np.all(
+            self._prepped_waveform == 0
+        ), 'Extracellular stimulation requires at least one non-zero waveform'
 
         if len(stimamps.shape) == 0:  # if single float, apply to all sources
-            return np.array([stimamps] * len(self.waveform))
+            return np.array([stimamps] * len(self._prepped_waveform))
 
-        assert len(stimamps) == len(self.waveform), "Number of stimamps must match the number of waveform rows."
+        assert len(stimamps) == len(
+            self._prepped_waveform
+        ), "Number of stimamps must match the number of waveform rows."
         return np.array(stimamps)
 
     def run_sim(
