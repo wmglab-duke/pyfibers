@@ -14,7 +14,7 @@ div.output.stream, div.output.text_plain, div.output.text_html {
     background-color: hsl(var(--muted)) !important;
 }
 
-div.highlight {
+div.cell_input.docutils.container div.highlight {
     background: rgba(255,255,255,0) !important;
 }
 
