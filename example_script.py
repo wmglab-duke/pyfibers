@@ -20,6 +20,7 @@ model = FiberModel.MRG_INTERPOLATION  # type of fiber model
 
 # create fiber
 fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=n_nodes, passive_end_nodes=2)
+fiber.set_xyz(5, 10, -100)
 
 # create curve of potentials
 fiber.potentials = fiber.point_source_potentials(0, 2000, fiber.length / 2, 1, 1)

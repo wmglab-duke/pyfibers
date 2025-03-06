@@ -39,15 +39,14 @@ dev = [
   "pytest-sugar==1.*",
   "sphinx==7.*",
   "sphinx-rtd-theme==3.*",
-  "myst-parser==4.*",
-  "nbsphinx==0.9.*",
   "sphinx-copybutton==0.5.*",
   "IPython==8.*",
   "enum-tools[sphinx]==0.12.*",
   "sphinxcontrib-bibtex==2.6.*",
   "moviepy==2.1.*",
   "sphinx_autodoc_typehints==2.3.*",
-  "piccolo-theme==0.24.*"
+  "piccolo-theme==0.24.*",
+  "myst-nb==1.2.*"
 ]
 
 [project.scripts]

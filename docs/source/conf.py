@@ -58,27 +58,26 @@ nitpick_ignore = [
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser',
     'sphinx.ext.autodoc',
-    'nbsphinx',
+    'myst_nb',
     'sphinx_copybutton',
-    # 'sphinx_rtd_dark_mode',
     'sphinx.ext.autosummary',
     'enum_tools.autoenum',
     'sphinxcontrib.bibtex',
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.intersphinx",
     "sphinx_autodoc_typehints",
+    "piccolo_theme",
 ]
 
 autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "neuron": ("https://nrn.readthedocs.io/en/latest", None),
     'scipy': ('https://docs.scipy.org/doc/scipy', None),
+    # "multiprocess": ("https://multiprocess.readthedocs.io/en/latest/", None),
     # "nd_line": ("https://github.com/thedannymarsh/nd_line", None),
     # "neuron" : ("https://neuronsimulator.github.io/nrn/", None),
 }
@@ -97,6 +96,8 @@ exclude_patterns = []
 # a list of builtin themes.
 
 html_theme = 'piccolo_theme'
+html_static_path = ['_static']
+html_css_files = ["custom.css"]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -124,3 +125,12 @@ autosummary_generate = True
 bibtex_bibfiles = ['refs.bib']
 
 bibtex_reference_style = 'author_year'
+
+# mystnb
+nb_execution_raise_on_error = True
+nb_execution_show_tb = True
+nb_output_stderr = 'remove-warn'
+nb_execution_timeout = 600
+nb_execution_mode = "cache"
+nb_merge_streams = True
+suppress_warnings = ["mystnb.stderr"]
