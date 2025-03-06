@@ -962,7 +962,9 @@ class Fiber:
         :raises AssertionError: If this fiber is a 3D fiber (since this method is for 1D only).
         """
         assert not self.__is_3d, "set_xyz() is not compatible with 3D fibers"
-        if not np.allclose(self.coordinates[:, 0], x) or not np.allclose(self.coordinates[:, 1], y):
+        if not np.allclose(self.coordinates[:, 0], self.coordinates[0, 0]) or not np.allclose(
+            self.coordinates[:, 1], self.coordinates[0, 1]
+        ):
             warnings.warn("X or Y coordinates vary, you may be operating on a 3D fiber path.", stacklevel=2)
         self.coordinates[:, 0] = x
         self.coordinates[:, 1] = y

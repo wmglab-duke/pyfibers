@@ -1,8 +1,7 @@
 enum-tools[sphinx]==0.12.*
 IPython==8.*
 moviepy
-myst-parser==4.*
-nbsphinx==0.9.*
+myst-nb==1.2.*
 piccolo-theme==0.24.*
 sphinx-copybutton==0.5.*
 sphinx_autodoc_typehints==2.3.*
