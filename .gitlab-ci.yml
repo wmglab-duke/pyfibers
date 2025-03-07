@@ -15,6 +15,7 @@ workflow:
 # only cache local items.
 variables:
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
+  PRE_COMMIT_HOME: $CI_PROJECT_DIR/.cache/pre-commit
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/topics/caching/
@@ -31,53 +32,40 @@ cache:
   paths:
   - .cache/pip
   - venv/
+  - docs/.jupyter_cache
+
+### LINTING STAGE
 
 before_script:
 - python --version
 - pip install virtualenv
 - virtualenv venv
 - source venv/bin/activate
+- pip install .
 
-isort:
+pre-commit:
   stage: lint
   script:
-  - pip install isort
-  - isort --check-only src
+  - pip install pre-commit
+  - pre-commit run --all-files
+  - pre-commit run --all-files --hook-stage pre-merge-commit
+  cache:
+    paths:
+    - .cache/pre-commit
 
-black:
+fixme:
   stage: lint
   script:
-  - pip install black black[jupyter]
-  - black --check src
+  - pip install flake8 flake8-fixme
+  - flake8 --select T100,T101,T102 src/
 
-flake8:
-  stage: lint
-  script:
-  - pip install flake8==5.* flake8-eradicate flake8-simplify flake8-bugbear flake8-builtins flake8-comprehensions flake8-blind-except flake8-use-fstring flake8-blind_except flake8-requirements flake8-deprecated flake8-requirements pep8-naming
-  - flake8 --extend-ignore=T100,T101,T102 src
-
-docstring_check:
-  stage: lint
-  script:
-  - pip install flake8==5.* flake8-docstrings flake8-rst-docstrings darglint
-  - flake8 --select=D,DAR,RST src
-  rules:
-    #only check docstrings if main or merging with main
-  - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "$CI_DEFAULT_BRANCH"'
-  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-mypy:
-  stage: lint
-  script:
-  - pip install mypy
-  - mypy src
-
+### TESTING STAGE
 tox_py311_w_cov:
   stage: test
   script:
-  - pip install "tox<=4.8.0"
+  - pip install tox
   - tox -l
-  - tox -e py311-neuron{8},coverage
+  - tox r -e py311-neuron8,coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
@@ -86,24 +74,40 @@ tox_py311_w_cov:
         path: coverage.xml
     paths:
     - coverage_html_report/
+  rules:
+  - changes:
+    - src/**
+    - tests/**
 
 tox_py310:
   script:
-  - pip install "tox<=4.8.0"
-  - tox -e py310-neuron{8}
+  - pip install tox
+  - tox r -e py310-neuron8
   image: python:3.10
+  rules:
+  - changes:
+    - src/**
+    - tests/**
 
 tox_py312:
   script:
-  - pip install "tox<=4.8.0"
-  - tox -e py312-neuron{8}
+  - pip install tox
+  - tox r -e py312-neuron8
   image: python:3.12
+  rules:
+  - changes:
+    - src/**
+    - tests/**
 
 tox_neuron9:
   script:
-  - pip install "tox<=4.8.0"
-  - tox -e py311-neuron{9}
+  - pip install tox
+  - tox r -e py311-neuron9
   image: python:3.11
+  rules:
+  - changes:
+    - src/**
+    - tests/**
 
 # Define the build_docs script as an anchor
 .build_docs: &build_docs
@@ -122,7 +126,9 @@ test_docs:
   script:
   - *build_docs
   rules:
-  - if: $CI_COMMIT_BRANCH != "$CI_DEFAULT_BRANCH"
+  - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+
+### DEPLOY STAGE
 
 pages:
   stage: deploy
@@ -133,3 +139,7 @@ pages:
     - public
   rules:
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Here is where python-semantic-release would be added
+
+# Here is also where auto deployment to PyPI and GitHub would be added

@@ -1,70 +1,134 @@
-# Contribution Guidelines
+# Contribution Guidelines for PyFibers
 
-Thank you for considering contributing to our project! We appreciate your interest in improving our package for simulating extracellular stimulation of axons. By contributing, you can help advance the field of neural engineering and make a positive impact on the research community.
+Thank you for your interest in contributing to **PyFibers**, our open-source Python package for simulating peripheral nerve fiber responses to electrical stimulation using NEURON. Contributions are instrumental in maintaining and advancing this software, facilitating reproducible research, and fostering a vibrant community of users and developers.
 
-To ensure a smooth collaboration and maintain the quality of the project, we have established these contribution guidelines. Please take a moment to review them before getting started.
+Please follow these guidelines to ensure smooth collaboration and maintain high standards of scientific rigor and code quality.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [Code Guidelines](#code-guidelines)
+- [Contribution Workflow](#contribution-workflow)
+- [Code Style and Formatting](#code-guidelines)
+- [Documentation](#documentation-guidelines)
+- [Testing and Validation](#testing-and-validation)
+- [Plugin Development](#creating-and-sharing-fiber-models-as-plugins)
 - [Issue Reporting](#issue-reporting)
-- [Submitting Pull Requests](#submitting-pull-requests)
-- [License](#license)
+- [Discussions](#discussions)
+- [License and Attribution](#license-and-attribution)
 
 ## Getting Started
+### Installation for Development
 
-To begin contributing to the project, make sure you have the following prerequisites:
+First, fork the repository on GitHub and then clone your fork locally:
 
-- Familiarity with the field of neuroscience and extracellular stimulation of axons.
-- Proficiency in the programming language(s) used in the project (e.g., Python, NEURON).
-- An understanding of the project's architecture and design principles.
-- A GitHub account to fork the repository and create pull requests.
+```bash
+git clone https://github.com/your-username/pyfibers.git
+cd pyfibers
+```
 
-## Contributing
+Install PyFibers locally along with all development dependencies:
 
-1. Fork the project repository to your GitHub account.
-2. Create a new branch from the `main` branch. Use a descriptive and concise name for your branch that reflects the feature or issue you are addressing.
-3. Implement your changes or fix the issue in your branch.
-4. Ensure your code adheres to the code guidelines outlined below.
-5. Write comprehensive tests to validate your changes and ensure the existing functionality remains intact.
-6. Document your changes and update the project's documentation as necessary.
-7. Commit your changes and provide a clear and meaningful commit message.
-8. Push your branch to your forked repository.
-9. Submit a pull request to the `main` branch of the main repository.
-10. Collaborate with the project maintainers by addressing their feedback and making necessary changes to your pull request.
-11. Once your pull request is approved, it will be merged into the `main` branch, and your contributions will become part of the project.
+```bash
+pip install .[dev]
+```
+
+Compile NEURON mechanisms:
+```bash
+pyfibers_compile
+```
+
+IMPORTANT: Install `pre-commit` and set up the pre-commit hooks:
+```bash
+pip install pre-commit
+pre-commit install
+```
+Installing `pre-commit` hooks will save you from a headache later on, code that is not compliant with our pre-commit checks *will not be merged*.
+
+## Contribution Workflow
+
+We follow a Git-based workflow:
+
+1. **Fork** the repository.
+2. Create a new branch from the latest `main`:
+
+```bash
+git checkout -b feat/your-new-feature
+```
+
+3. Implement your changes following the [Code Guidelines](#code-guidelines).
+4. Write or update tests to cover your changes (see [Testing](#testing-and-validation)).
+5. Update documentation as necessary (see [Documentation Guidelines](#documentation-guidelines)).
+6. Commit changes using clear messages following the [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) specification:
+
+    ```
+    feat: add new fiber model based on Sweeney 2023
+    ```
+
+    - For work-in-progress commits, use `chore`.
+    - Branches containing *any* commits that don't follow the Conventional Commit specification will be automatically rejected; installing `pre-commit` hooks will enforce correct formatting. (If necessary, you can use an interactive rebase to fix commit messages.)
+    - Commitizen can be used as an interactive CLI tool to help you write conventional commits. Install it using `pip install commitizen` and then use `cz commit` to commit your changes.
+
+7. Push the branch to your fork and create a Pull Request (PR).
+8. Collaborate with maintainers by addressing code reviews.
 
 ## Code Guidelines
 
-To maintain a consistent and readable codebase, please adhere to the following guidelines:
+- Make sure your code is well commented and documented.
+- Use Sphinx-compatible docstrings (reStructuredText format).
+- Code must pass automated formatting and linting checks from `.pre-commit-config.yaml`.
 
-- Follow the existing coding style and conventions used in the project.
-- Write clear and concise code with appropriate comments when necessary.
-- Use meaningful variable and function names.
-- Ensure your code is well-documented, including inline comments and docstrings.
-- Write unit tests to validate your changes and prevent regressions.
-- Format your code using a linter or code formatter to ensure consistency.
-- Install pre-commit hooks to run formatting and linting checks before committing your changes. (i.e., `pre-commit install`)
+These checks will run automatically if you've installed `pre-commit`. PRs with failing checks will not be merged.
+
+## Testing and Validation
+
+- We use **pytest** and **tox** for testing.
+- New features must include comprehensive tests.
+- Run tests locally using:
+
+```bash
+pytest
+```
+
+- All tests must pass before PRs will be merged.
+- Continuous Integration will automatically verify your PR on multiple Python and NEURON versions.
+
+## Documentation Guidelines
+
+Documentation consists of:
+- **Tutorials and user guides**: Written using [MyST Markdown](https://myst-parser.readthedocs.io/en/latest/) syntax in Markdown files and Jupyter Notebooks.
+- **API documentation**: Auto-generated from Sphinx-style docstrings (reStructuredText syntax).
+
+Ensure your contributions update relevant documentation when changing or adding features. Documentation changes must accompany code changes in the same PR.
+
+## Creating and Sharing Fiber Models as Plugins
+
+New fiber models can be published as plugins to PyFibers:
+
+- Follow the [plugin documentation](<<link>>) to create a new fiber model.
+- Upload the fiber model plugin as a separate repository.
+- The plugin will automatically become available in PyFibers upon installation.
 
 ## Issue Reporting
 
-If you encounter a bug, have a feature request, or would like to suggest an improvement, please submit an issue through GitHub's issue tracker. When reporting issues, please provide the following information:
+Report bugs, suggest improvements, or request features via:
 
-- A clear and descriptive title summarizing the problem or feature request.
-- Detailed steps to reproduce the issue or a clear description of the proposed feature.
-- Any relevant error messages or logs.
-- The version of the package you are using.
+- **Internal collaborators**: GitLab issues.
+- **External users**: GitHub issues.
 
-## Submitting Pull Requests
+Provide detailed steps to reproduce the issue, including Python, NEURON, and OS versions, along with error messages and logs.
 
-To contribute code changes or bug fixes to the project, follow these steps:
+## Discussions
 
-1. Make sure your forked repository is up to date with the latest changes from the `main` branch of the main repository.
-2. Create a new branch for your changes based on the latest `main` branch.
-3. Implement your changes, following the code guidelines mentioned above.
-4. Commit your changes and provide a descriptive commit message.
-5. Push your branch to your forked repository.
-6. Submit a pull request from your branch to the `main` branch of the main repository.
-7. Clearly describe the purpose and scope of your changes in the pull request.
-8. Collaborate with the project maintainers by addressing their feedback
+We encourage active discussion and community engagement:
+
+- Internal discussions: GitLab issues
+- External community discussions: GitHub Discussions
+
+Feel free to propose new features, ask questions, and share insights!
+
+## License and Attribution
+
+PyFibers is open-source and distributed under the (PLACEHOLDER) License. Contributions implicitly agree to release their work under this license.
+
+---
+
+**Thank you** for contributing to PyFibers. Your contributions help advance computational modeling in neural engineering and ensure rigorous and reproducible scientific research.

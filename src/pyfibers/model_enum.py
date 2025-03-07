@@ -15,6 +15,8 @@ from __future__ import annotations
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING
 
+from . import models
+
 # Depending on whether we're type-checking, import the appropriate Enum class.
 # aenum.NoAliasEnum allows dynamic creation of enum members without duplication.
 # This means that a single fiber class can define multiple submodels (e.g., MRG) without conflicts.
@@ -22,8 +24,6 @@ if TYPE_CHECKING:
     from enum import Enum as NoAliasEnum
 else:
     from aenum import NoAliasEnum
-
-from . import models
 
 
 def discover_plugins() -> dict[str, type]:
