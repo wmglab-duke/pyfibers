@@ -9,10 +9,11 @@ import sys
 
 import matplotlib.pyplot as plt
 
-sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
-
 from pyfibers import FiberModel, build_fiber  # noqa: E402
 from pyfibers.stimulation import IntraStim  # noqa: E402
+
+sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
+
 
 n_nodes = 21
 

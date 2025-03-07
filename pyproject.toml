@@ -94,6 +94,7 @@ line-length = 120
 add_imports = ["from __future__ import annotations"]
 append_only = true
 ensure_newline_before_comments = true
+float_to_top = true
 force_grid_wrap = 0
 include_trailing_comma = true
 line_length = 120
@@ -118,3 +119,14 @@ ignore_directives = [
   "attr",
   "seealso"
 ]
+
+[tool.semantic_release]
+branch = "main"
+major_on_zero = false  # set to true once we reach 1.0.0
+upload_to_PyPI = false
+upload_to_release = false
+version_toml = [
+  "pyproject.toml:project.version"
+]
+
+# build_command = "pip install poetry && poetry build"

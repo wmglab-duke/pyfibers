@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from neuron import h
 
+from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
+
 # sys.path.append(r'C:\nrn\lib\python') #noqa: E800
 sys.path.append(r'/Applications/NEURON-7.8/lib/python')
 
-from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
 nodecount = 133
 

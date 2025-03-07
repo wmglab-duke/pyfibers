@@ -10,9 +10,10 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
+from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
+
 sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
 
-from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
 nodecount = 133
 

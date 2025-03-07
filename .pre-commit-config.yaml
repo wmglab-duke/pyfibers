@@ -1,70 +1,81 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+default_stages: [pre-commit]
+
+
 repos:
+  ### General checks and fixes for common issues in files
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0
   hooks:
-      # checking for syntax
-  - id: check-yaml
-  - id: check-toml
-  - id: check-json
-          # simple formatting
-  - id: requirements-txt-fixer
-  - id: end-of-file-fixer
-  - id: trailing-whitespace
-  - id: check-added-large-files
-          # checks for unresolved merge conflicts
-  - id: check-merge-conflict
-# sort python imports
+  - id: check-yaml                  # Checks YAML syntax
+  - id: check-toml                  # Checks TOML syntax
+  - id: check-json                  # Checks JSON syntax
+  - id: requirements-txt-fixer      # Fixes formatting in requirements.txt
+  - id: end-of-file-fixer           # Ensures files end with a newline
+  - id: trailing-whitespace         # Removes trailing whitespace
+  - id: check-merge-conflict        # Checks for unresolved merge conflicts
+  - id: check-json                  # Checks JSON syntax
+  - id: check-added-large-files     # Prevents large files from being added
+
+  ### Formatting Hooks
 - repo: https://github.com/pycqa/isort
-  rev: 6.0.0
+  rev: 6.0.1
   hooks:
-  - id: isort
-# format f strings
+  - id: isort                       # Sorts Python imports
+    stages: [pre-commit]
+
 - repo: https://github.com/ikamensh/flynt/
   rev: 1.0.1
   hooks:
-  - id: flynt
-# strip output from notebooks
+  - id: flynt                      # Formats Python f-strings
+
 - repo: https://github.com/kynan/nbstripout
   rev: 0.8.1
   hooks:
-  - id: nbstripout
-          # format python code
-# pyupgrade (migrate code to newer syntax)
+  - id: nbstripout                  # Strips outputs from Jupyter notebooks
+
 - repo: https://github.com/asottile/pyupgrade
   rev: v3.19.1
   hooks:
-  - id: pyupgrade
+  - id: pyupgrade                   # Upgrades Python syntax to specified version
     args: [--py310-plus]
-# format python code
+
 - repo: https://github.com/psf/black
   rev: 25.1.0
   hooks:
-  - id: black
+  - id: black                       # Formats Python code
     additional_dependencies:
     - black[jupyter]
     types_or: [python, pyi, jupyter]
-# format docstrings
+
 - repo: https://github.com/PyCQA/docformatter
-  rev: master #update to proper version once fix to work with precommit v5 is released
+  rev: master
   hooks:
-  - id: docformatter
+  - id: docformatter                # Formats docstrings
     additional_dependencies:
-    - docformatter[tomli]
+    - docformatter[tomli]           # Config via pyproject.toml
     args: [--in-place, --config, ./pyproject.toml]
-# format python code in jupyter notebooks (might be redundant with black[jupyter])
+
 - repo: https://github.com/adamchainz/blacken-docs
   rev: 1.19.1
   hooks:
-  - id: blacken-docs
+  - id: blacken-docs                # Formats Python code blocks in markdown files
     additional_dependencies:
     - black==24.4.2
-# lint python code
+
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.14.0
+  hooks:
+  - id: pretty-format-toml          # Formats TOML files
+    args: [--autofix]
+  - id: pretty-format-yaml          # Formats YAML files
+    args: [--autofix]
+
+  ### Linting Hooks
 - repo: https://github.com/pycqa/flake8
   rev: 7.1.2
   hooks:
-  - id: flake8
+  - id: flake8                      # Comprehensive Python linting
     additional_dependencies:
     - flake8-eradicate
     - flake8-bugbear
@@ -85,11 +96,11 @@ repos:
     - flake8-annotations-complexity
     - flake8-return
     - flake8-pytest-style
-# lint notebooks
+
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.9.1
   hooks:
-  - id: nbqa-flake8
+  - id: nbqa-flake8                 # Runs flake8 on Jupyter notebooks
     args: ['--ignore=E402,D100']
     additional_dependencies:
     - flake8-eradicate
@@ -107,39 +118,39 @@ repos:
     - flake8-warnings
     - flake8-pie
     - flake8-return
-  - id: nbqa-pyupgrade
-# format and lint markdown
+  - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
+
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.44.0
   hooks:
-  - id: markdownlint-fix
+  - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
-# linting for rst files
+
 - repo: https://github.com/rstcheck/rstcheck
   rev: v6.2.4
   hooks:
-  - id: rstcheck
+  - id: rstcheck                    # Checks reStructuredText files
     additional_dependencies:
     - rstcheck[sphinx]
     - rstcheck[toml]
-# check config files
+
 - repo: https://github.com/python-jsonschema/check-jsonschema
   rev: 0.31.2
   hooks:
-  - id: check-gitlab-ci
+  - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
-  - id: check-readthedocs
-#format toml and yaml
-- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.14.0
-  hooks:
-  - id: pretty-format-toml
-    args: [--autofix]
-  - id: pretty-format-yaml
-    args: [--autofix]
+  - id: check-readthedocs           # Checks ReadTheDocs configuration
+
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v1.15.0
   hooks:
-  - id: mypy
-        #exclude docs and tests directories
+  - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
+
+- repo: https://github.com/commitizen-tools/commitizen
+  rev: v4.4.1
+  hooks:
+  - id: commitizen                  # Checks commit messages
+    stages: [commit-msg]
+  - id: commitizen-branch           # Checks branch commit messages
+    stages: [pre-push]

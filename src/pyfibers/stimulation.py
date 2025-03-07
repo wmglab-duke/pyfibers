@@ -18,10 +18,11 @@ import numpy as np
 from neuron import h
 from scipy.signal import find_peaks
 
+from pyfibers import FiberModel
+
 if TYPE_CHECKING:
     from pyfibers import Fiber
 
-from pyfibers import FiberModel
 
 h.load_file('stdrun.hoc')
 
@@ -825,6 +826,8 @@ class IntraStim(Stimulation):
         :param stimamp: The stimulus amplitude.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` to stimulate.
         """
+        # recompute timesteps
+        self.n_timesteps = int(self.tstop / self.dt)
         assert np.all(fiber.potentials == 0), 'Fiber potentials must be zero for IntracellularStim'
         assert self.istim is not None, 'Intracellular stimulation is not enabled.'
         if stimamp < 0:
@@ -907,7 +910,8 @@ class ScaledStim(Stimulation):
         :param dt_init_ss: Large time step used during the steady-state period (ms).
         :param pad_waveform: If True, extend the waveform with zeros to match simulation time.
         :param truncate_waveform: If True, truncate the waveform if it exceeds the simulation time.
-        :ivar waveform: The waveform(s) to be applied to the fiber potentials. TODO add more info here
+        :ivar waveform: The waveform(s) to be applied to the fiber potentials.
+            See :class:`ScaledStim` for more info.
         :ivar pad: If True, extend the waveform with zeros to match simulation time.
         :ivar truncate: If True, truncate the waveform if it exceeds the simulation time.
         """
@@ -956,7 +960,7 @@ class ScaledStim(Stimulation):
         :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
         :raises RuntimeError: if an error is encountered while processing a callable into an array
         """
-        # recompute timesteps TODO make sure this is done at the start of every sim in intrastim too
+        # recompute timesteps
         self.n_timesteps = int(self.tstop / self.dt)
 
         prepped_waveform = self.waveform
