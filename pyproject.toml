@@ -145,4 +145,6 @@ exclude_commit_patterns = [
   '''build\((?!deps\): .+)'''
 ]
 mode = "update"
-remote.type = "gitlab"
+
+[tool.semantic_release.remote]
+type = "gitlab"
