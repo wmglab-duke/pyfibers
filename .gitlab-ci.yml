@@ -140,6 +140,20 @@ pages:
   rules:
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-# Here is where python-semantic-release would be added
+version_and_publish:
+  stage: deploy
+  variables:
+    GIT_DEPTH: 0
+    GIT_COMMIT_AUTHOR: semantic-release <$GITLAB_USER_EMAIL>
+  script:
+  - git checkout "$CI_COMMIT_REF_NAME"
+  - pip install python-semantic-release
+  - semantic-release version
+  rules:
+    # Don't run on automatic commits
+  - if: $CI_COMMIT_AUTHOR =~ /semantic-release.*/
+    when: never
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    when: always
 
-# Here is also where auto deployment to PyPI and GitHub would be added
+# Here is where auto deployment to PyPI and GitHub would be added
