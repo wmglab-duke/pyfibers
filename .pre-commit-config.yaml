@@ -109,6 +109,7 @@ repos:
     - flake8-annotations-complexity
     - flake8-return
     - flake8-pytest-style
+    - Flake8-pyproject
     # stages: [pre-push]
 
 - repo: https://github.com/nbQA-dev/nbQA
@@ -132,6 +133,7 @@ repos:
     - flake8-warnings
     - flake8-pie
     - flake8-return
+    - Flake8-pyproject
     # stages: [pre-push]
   - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
     # stages: [pre-push]
