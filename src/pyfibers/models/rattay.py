@@ -34,7 +34,7 @@ class RattayFiber(Fiber):
         self.v_rest = -70  # millivolts
         self.delta_z = delta_z
 
-    def generate(self: RattayFiber, **kwargs) -> Fiber:  # noqa D102
+    def generate(self: RattayFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_rattay], **kwargs)
 
     def create_rattay(self: RattayFiber, ind: int, node_type: str) -> h.Section:

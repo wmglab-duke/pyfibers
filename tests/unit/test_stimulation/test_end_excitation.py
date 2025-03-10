@@ -20,7 +20,7 @@ def fiber():
 
 def test_end_excitation_checker_no_excitation(fiber):
     result = Stimulation.end_excitation_checker(fiber, multi_site_check=False, fail_on_end_excitation=False)
-    assert result == False  # noqa E712
+    assert result == False  # noqa: E712
 
 
 def test_end_excitation_checker_end_excitation(fiber):
@@ -47,7 +47,7 @@ def test_end_excitation_checker_passive_nodes_excitation(fiber):
 def test_end_excitation_checker_continue_on_end_excitation(fiber):
     fiber.apc[0].time = 1
     result = Stimulation.end_excitation_checker(fiber, multi_site_check=False, fail_on_end_excitation=False)
-    assert result == True  # noqa E712
+    assert result == True  # noqa: E712
 
 
 def test_no_check_if_passed_none(fiber):

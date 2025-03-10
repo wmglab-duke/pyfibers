@@ -16,14 +16,22 @@ repos:
   - id: check-merge-conflict        # Checks for unresolved merge conflicts
   - id: check-json                  # Checks JSON syntax
   - id: check-added-large-files     # Prevents large files from being added
+  - id: check-case-conflict         # Checks for case conflicts in filenames
+  - id: check-illegal-windows-names     # Checks for illegal Windows filenames
+  - id: no-commit-to-branch         # Prevents direct commits to main
+  - id: check-executables-have-shebangs     # Checks for shebangs in executable files
 
-  ### Formatting Hooks
+  ### Check pre-commit hook versions
+- repo: https://github.com/pre-commit/sync-pre-commit-deps
+  rev: v0.0.3
+  hooks:
+  - id: sync-pre-commit-deps
+
+  ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
   rev: 6.0.1
   hooks:
   - id: isort                       # Sorts Python imports
-    stages: [pre-commit]
-
 - repo: https://github.com/ikamensh/flynt/
   rev: 1.0.1
   hooks:
@@ -61,7 +69,7 @@ repos:
   hooks:
   - id: blacken-docs                # Formats Python code blocks in markdown files
     additional_dependencies:
-    - black==24.4.2
+    - black==25.1.0
 
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.14.0
@@ -71,7 +79,12 @@ repos:
   - id: pretty-format-yaml          # Formats YAML files
     args: [--autofix]
 
-  ### Linting Hooks
+# - repo: https://github.com/asottile/yesqa
+#   rev: v1.5.0
+#   hooks:
+#   - id: yesqa
+
+  ### Linting Hooks (pre-push stage)
 - repo: https://github.com/pycqa/flake8
   rev: 7.1.2
   hooks:
@@ -96,6 +109,7 @@ repos:
     - flake8-annotations-complexity
     - flake8-return
     - flake8-pytest-style
+    # stages: [pre-push]
 
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.9.1
@@ -118,13 +132,25 @@ repos:
     - flake8-warnings
     - flake8-pie
     - flake8-return
+    # stages: [pre-push]
   - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
+    # stages: [pre-push]
+
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: v1.10.0    # Use the ref you want to point at
+  hooks:
+  - id: python-check-blanket-noqa     # Checks for blanket noqa comments
+  # - id: python-check-blanket-type-ignore     # Checks for blanket type ignore comments
+  - id: rst-backticks                # Checks for single backticks in reStructuredText
+  - id: rst-directive-colons         # Checks for correct colons in reStructuredText directives
+  - id: rst-inline-touching-normal     # Checks for inline code touching normal text in reStructuredText
 
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.44.0
   hooks:
   - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
+    # stages: [pre-push]
 
 - repo: https://github.com/rstcheck/rstcheck
   rev: v6.2.4
@@ -133,19 +159,23 @@ repos:
     additional_dependencies:
     - rstcheck[sphinx]
     - rstcheck[toml]
+    # stages: [pre-push]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.31.2
+  rev: 0.31.3
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
+    # stages: [pre-push]
   - id: check-readthedocs           # Checks ReadTheDocs configuration
+    # stages: [pre-push]
 
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v1.15.0
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
+    # stages: [pre-push]
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v4.4.1
