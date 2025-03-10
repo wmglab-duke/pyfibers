@@ -58,7 +58,7 @@ class SchildFiber(Fiber):
             self.gating_variables["h_nas"] = "h_nas97mean"
             self.gating_variables.pop("j_naf")
 
-    def generate(self: SchildFiber, **kwargs) -> Fiber:  # noqa D102
+    def generate(self: SchildFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_schild], **kwargs)
 
     def create_schild(self: SchildFiber, ind: int, node_type: str) -> h.Section:

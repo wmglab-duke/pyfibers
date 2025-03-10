@@ -35,7 +35,7 @@ class SundtFiber(Fiber):
         self.v_rest = -60  # millivolts
         self.delta_z = delta_z
 
-    def generate(self: SundtFiber, **kwargs) -> Fiber:  # noqa D102
+    def generate(self: SundtFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_sundt], **kwargs)
 
     def create_sundt(self: SundtFiber, ind: int, node_type: str) -> h.Section:

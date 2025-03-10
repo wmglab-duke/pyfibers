@@ -31,7 +31,7 @@ class HHFiber(Fiber):
         self.delta_z = delta_z  # microns
         self.v_rest = -65  # millivolts #TODO find rationale for this value
 
-    def generate(self: HHFiber, **kwargs) -> Fiber:  # noqa D102
+    def generate(self: HHFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_hh], **kwargs)
 
     def create_hh(self: HHFiber, ind: int, node_type: str) -> h.Section:
