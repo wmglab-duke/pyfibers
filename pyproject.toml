@@ -87,6 +87,29 @@ in-place = true
 wrap-descriptions = 0
 wrap-summaries = 0
 
+[tool.flake8]
+docstring-style = "SPHINX"
+ignore = [
+  "E203",  # Black compatibility
+  "W503",  # Black compatibility
+  "ANN002",  # Suppress annotations for *args/**kwargs (eventually consider removing)
+  "ANN003",  # Suppress annotations for *args/**kwargs (eventually consider removing)
+  "I900",  # Temporary suppression of dependency check (NEURON Windows 8.2.4+)
+  "DAR501"  # Disabling darglint complaint about ivar documentation
+]
+max-complexity = 18
+max-line-length = 120
+per-file-ignores = """
+        __init__.py: F4
+        docs/source/conf.py: E800
+        src/*.py: PT
+        tests/*.py: D,E800,ANN
+        """
+rst-directives = [
+  "seealso"
+]
+rst-roles = ["doc", "meth", "class", "func", "attr"]
+
 [tool.flynt]
 line-length = 120
 
