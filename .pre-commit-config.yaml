@@ -52,9 +52,16 @@ repos:
   rev: 25.1.0
   hooks:
   - id: black                       # Formats Python code
+    types_or: [python, pyi]
+
+- repo: https://github.com/psf/black
+  rev: 25.1.0
+  hooks:
+  - id: black                       # Formats Python code
     additional_dependencies:
     - black[jupyter]
-    types_or: [python, pyi, jupyter]
+    types_or: [jupyter]
+    args: [--line-length, '88']
 
 - repo: https://github.com/PyCQA/docformatter
   rev: master
@@ -70,6 +77,7 @@ repos:
   - id: blacken-docs                # Formats Python code blocks in markdown files
     additional_dependencies:
     - black==25.1.0
+    args: [--line-length, '88']
 
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.14.0
