@@ -741,8 +741,8 @@ class IntraStim(Stimulation):
             ind = fiber.loc_index(self.istim_loc)
 
         # Warn if we're about to stimulate a passive end node
-        if (ind == 0 or ind == len(fiber.sections) - 1) and fiber.passive_end_nodes is True:
-            warnings.warn('You are trying to intracellularly stimulate a passive end node.', stacklevel=2)
+        if ind < fiber.passive_end_nodes or ind >= len(fiber.nodes) - fiber.passive_end_nodes:
+            warnings.warn(f'Intracellularly stimulating passive node at index {ind}.', stacklevel=2)
 
         self.istim = h.trainIClamp(fiber[ind](0.5))
         # Record the stimulus current over time

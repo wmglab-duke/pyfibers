@@ -76,8 +76,8 @@ tox_py311_w_cov:
     - coverage_html_report/
   rules:
   - changes:
-    - src/**
-    - tests/**
+    - src/**/*
+    - tests/**/*
 
 tox_py310:
   script:
@@ -86,8 +86,8 @@ tox_py310:
   image: python:3.10
   rules:
   - changes:
-    - src/**
-    - tests/**
+    - src/**/*
+    - tests/**/*
 
 tox_py312:
   script:
@@ -96,8 +96,8 @@ tox_py312:
   image: python:3.12
   rules:
   - changes:
-    - src/**
-    - tests/**
+    - src/**/*
+    - tests/**/*
 
 tox_neuron9:
   script:
@@ -106,8 +106,8 @@ tox_neuron9:
   image: python:3.11
   rules:
   - changes:
-    - src/**
-    - tests/**
+    - src/**/*
+    - tests/**/*
 
 # Define the build_docs script as an anchor
 .build_docs: &build_docs

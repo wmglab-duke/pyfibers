@@ -19,7 +19,10 @@ class TestFiber3D:
 
     def test_build_fiber_3d(self):
         fiber = build_fiber_3d(
-            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=self.path_coordinates
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            diameter=self.diameter,
+            path_coordinates=self.path_coordinates,
+            enforce_odd_nodecount=False,
         )
         assert fiber is not None
         assert fiber.diameter == self.diameter
@@ -28,7 +31,10 @@ class TestFiber3D:
 
     def test_resample_potentials_3d(self):
         fiber = build_fiber_3d(
-            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=self.path_coordinates
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            diameter=self.diameter,
+            path_coordinates=self.path_coordinates,
+            enforce_odd_nodecount=False,
         )
         # Assuming some dummy potentials and coordinates for testing
         potentials = np.array([1, 2, 3, 4])
