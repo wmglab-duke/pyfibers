@@ -28,7 +28,6 @@ def build_fiber(
     length: float = None,
     n_sections: int = None,
     n_nodes: int = None,
-    enforce_odd_nodecount: bool = True,
     **kwargs,
 ) -> Fiber:
     """Generate a 1D (straight) fiber model in NEURON.
@@ -49,7 +48,6 @@ def build_fiber(
     :param length: The total length of the fiber in micrometers (µm), if defining by length.
     :param n_sections: The total number of sections for discretizing the fiber, if defining by sections.
     :param n_nodes: The total number of nodes along the fiber, if defining by nodes.
-    :param enforce_odd_nodecount: If ``True``, ensure that the number of nodes is odd.
     :param kwargs: Additional arguments forwarded to the underlying fiber model class.
     :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified.
     :return: A :class:`Fiber` class instance.
@@ -72,9 +70,7 @@ def build_fiber(
 
     fiber_instance = fiber_class(diameter=diameter, fiber_model=fiber_model, **kwargs)
 
-    fiber_instance.generate(
-        n_nodes=n_nodes, n_sections=n_sections, length=length, enforce_odd_nodecount=enforce_odd_nodecount
-    )
+    fiber_instance.generate(n_nodes=n_nodes, n_sections=n_sections, length=length)
 
     # Set up coordinates and potentials
     fiber_instance.coordinates = np.concatenate(
@@ -1029,7 +1025,6 @@ class Fiber:
         n_nodes: int = None,
         n_sections: int = None,
         length: float = None,
-        enforce_odd_nodecount: bool = True,
     ) -> Fiber:
         """Build the fiber model sections in NEURON according to a specified generation strategy.
 
@@ -1041,7 +1036,6 @@ class Fiber:
         :param n_nodes: Number of nodes of Ranvier.
         :param n_sections: Total number of sections in the fiber.
         :param length: Total length of the fiber (µm). Overrides n_sections if given.
-        :param enforce_odd_nodecount: If ``True``, ensures that the fiber has an odd number of nodes.
         :return: The updated :class:`Fiber` instance after generation.
         :raises AssertionError: If the computed number of sections does not align with the
             function_list-based pattern.
@@ -1058,13 +1052,6 @@ class Fiber:
         )
 
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
-
-        if self.nodecount % 2 == 0 and enforce_odd_nodecount:
-            print(f"Altering node count from {self.nodecount} to {self.nodecount-1} to enforce odd number.")
-            self.nodecount -= 1
-
-        if self.nodecount < 3:
-            warnings.warn("Fiber has fewer than 3 nodes. Consider increasing the fiber length.", stacklevel=2)
 
         self._create_sections(function_list)
         self._calculate_coordinates()
