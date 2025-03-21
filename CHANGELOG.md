@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.3.3 (2025-03-21)
+
+### Bug Fixes
+
+- Change SCHILD model resting potential to correct value
+  ([`a760b91`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a760b911c0e8c98e453695c3bf5d4ca2bab71d2d))
+
+
 ## v0.3.2 (2025-03-21)
 
 ### Bug Fixes
