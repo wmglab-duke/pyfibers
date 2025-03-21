@@ -48,7 +48,7 @@ class SchildFiber(Fiber):
             "y": "y1_kds",
             "c": "c_kca",
         }
-        self.v_rest = -48
+        self.v_rest = -46.5  # [mV] Resting membrane potential
         self.delta_z = delta_z
         # update gating variables for Schild 1997 model
         if self.fiber_model.name == 'SCHILD97':

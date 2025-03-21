@@ -69,7 +69,7 @@ def test_sundt():
 def test_schild94():
     assert np.isclose(
         get_activation_threshold(FiberModel.SCHILD94, diameter=1),
-        0.2138671875,
+        0.212890625,
     )
 
 
