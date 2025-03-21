@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v0.3.2 (2025-03-21)
+
+### Bug Fixes
+
+- Add option to enforce odd node count in fiber creation
+  ([`048de88`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/048de889fe3049aa53c0b6cd4278a3baf18d0ea2))
+
+Also fixed a bug in stimulation where intracellular stimulation of passive nodes was only detected
+  if passive_end_nodes = 1
+
+Closes #377 Closes #349
+
+### Documentation
+
+- Update line length for all docs to 88
+  ([`2078dce`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/2078dce85548a9e19c31371932ca7b6541795c3c))
+
+
 ## v0.3.1 (2025-03-07)
 
 ### Bug Fixes
