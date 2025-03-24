@@ -104,7 +104,7 @@ class TigerholmFiber(Fiber):
         return node
 
     def balance(self: TigerholmFiber) -> None:
-        """Balance membrane currents for Tigerholm model."""
+        """Balance membrane currents."""
         v_rest = self.v_rest
         for s in self.sections:
             if (-(s.ina_nattxs + s.ina_nav1p9 + s.ina_nav1p8 + s.ina_h + s.ina_nakpump) / (v_rest - s.ena)) < 0:

@@ -42,6 +42,8 @@ PARAMETER {
 
 	kvotqt
 
+	celsiusT = 32
+
 }
 
 ASSIGNED {
@@ -51,8 +53,6 @@ ASSIGNED {
 
 	nai (mM)
 	ko (mM)
-
-	celsiusT
 }
 
 STATE {
@@ -72,7 +72,7 @@ INITIAL {
 BREAKPOINT {
 
 :	kvotqt = 2.1^((celsiusT-22)/10)
-	kvotqt = 1^((celsiusT-22)/10)
+	kvotqt = 1^((celsius-22)/10)
 
 	ikpump = smalla/((1+b1/ko)^2) * (1.62/(1+(6.7(mM)/(nai+8(mM)))^3) + 1.0/(1+(67.6(mM)/(nai+8(mM)))^3))
 	ikpump = ikpump*kvotqt

@@ -48,7 +48,9 @@
 
 : This block iterates the variable calculations and uses those calculations to calculate currents
 	BREAKPOINT {
-
+		if(cai <= 0){
+			cai = 1e-9
+		}
 		: Equation for eca given in Schild 1994
 		ecaleak=(1000)*(R*(celsius+273.15)/z/F*log(cao/cai))-ecaoffset
 

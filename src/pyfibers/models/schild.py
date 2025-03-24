@@ -124,4 +124,7 @@ class SchildFiber(Fiber):
         node.L_caintscale = node.L_caextscale = self.delta_z  # length of node for calculating conductances
         node.nseg_caintscale = node.nseg_caextscale = 1  # number of node segments for calculating conductances
 
+        # Adjustments to maintain identical function with Thio .mod modifications
+        node.fhspace_caextscale = 1  # [um] Thickness of shell
+
         return node

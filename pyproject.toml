@@ -104,6 +104,7 @@ per-file-ignores = """
         docs/source/conf.py: E800
         src/*.py: PT
         tests/*.py: D,E800,ANN
+        example*.py: E800
         """
 rst-directives = [
   "seealso"

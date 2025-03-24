@@ -6,7 +6,7 @@
 	NEURON {
 		   SUFFIX cat							:Sets suffix of mechanism for insertion into models
 		   USEION ca READ cai, cao WRITE ica	:Lays out which NEURON variables will be used/modified by file
-		   RANGE gbar, ecat, ica, shiftcat		:Allows variables to be modified in hoc and collected in vectors
+		   RANGE gbar, ecat, ica, shiftcat, g		:Allows variables to be modified in hoc and collected in vectors
 
 	}
 
@@ -119,6 +119,9 @@
 			 tau_f = A_tauf*exp(-(B_tauf)^2*(Vm-Vpf)^2)+C_tauf
 				 finf = 1.0/(1.0+exp((Vm+V0p5f+shiftcat)/S0p5f))
 
+			if(cai <= 0){
+				cai = 1e-9
+			}
 			: Equation for eca given in Schild 1994
 			ecat=(1000)*(R*(celsius+273.15)/z/F*log(cao/cai))-ecaoffset
 

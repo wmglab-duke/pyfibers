@@ -80,5 +80,19 @@ def test_schild97():
     )
 
 
+def test_thio_autonomic():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.THIO_AUTONOMIC, diameter=1, nodecount=265),
+        0.3115234375,
+    )
+
+
+def test_thio_cutaneous():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.THIO_CUTANEOUS, diameter=1, nodecount=265),
+        0.46484375,
+    )
+
+
 if __name__ == "__main__":
     pytest.main()

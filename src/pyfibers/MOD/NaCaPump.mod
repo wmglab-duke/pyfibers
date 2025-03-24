@@ -10,7 +10,7 @@
 		SUFFIX NaCaPump									:Sets suffix of mechanism for insertion into models
 		USEION ca READ cao, cai WRITE ica				:Lays out which NEURON variables will be used/modified by file
 		USEION na READ nao, nai WRITE ina				:Since the mechanism uses two ions, two USEION statements are necessary
-		RANGE  inca, DFout, DFin, S, KNaCa, DNaCa		:Allows variables to be modified in hoc and collected in vectors
+		RANGE  inca, DFout, DFin, S, KNaCa, DNaCa, ina, ica		:Allows variables to be modified in hoc and collected in vectors
 	}
 
 : Defines Units different from NEURON base units

@@ -24,7 +24,7 @@
 : Defines variables which will have a constant value throughout any given simulation run
 	PARAMETER {
 	  cabath   =  2 (mM)        	: Given in Schild 1994
-	  fhspace = 1 (um)  			: Thickness of shell
+	  fhspace = .03 (um)  			: Thickness of shell
 	  txfer   =  4511.0 (ms)  		: tau for perineural space <-> bath exchange - Given in Schild 1994
 	  :SA = 2.82743E-05 (cm2)		: Surface area of cell
 	  VolSchild = 1.41372E-08 (cm3)

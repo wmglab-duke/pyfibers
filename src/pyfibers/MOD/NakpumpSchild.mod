@@ -10,7 +10,7 @@
 		SUFFIX NaKpumpSchild								:Sets suffix of mechanism for insertion into models
 		USEION k READ ko WRITE ik					:Lays out which NEURON variables will be used/modified by file
 		USEION na READ nai WRITE ina				:Since the mechanism uses two ions, two USEION statements are necessary
-		RANGE INaKmax, ina, ink, Kmko, Kmnai, ik	:Allows variables to be modified in hoc and collected in vectors
+		RANGE INaKmax, ina, ink, Kmko, Kmnai, ik, INaKmax22	:Allows variables to be modified in hoc and collected in vectors
 	}
 
 : Defines Units different from NEURON base units
@@ -51,7 +51,7 @@
 : This block iterates the variable calculations and uses those calculations to calculate currents
 	BREAKPOINT { LOCAL fnk
 
-		fnk = (v + 150)/(v + 200)
+		fnk = ((v) + 150)/((v) + 200)
 
 		ink = INaKmax*fnk*((nai/(nai+Kmnai))^3)*((ko/(ko+Kmko))^2) : Changed this line to reflect the exponents given in Schild 1994, instead of the orginal exponents in Leo's model.
 
