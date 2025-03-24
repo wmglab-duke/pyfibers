@@ -97,6 +97,14 @@ def build_fiber(
             stacklevel=2,
         )
 
+    # Set all sections to the rest potentials (important for balancing currents)
+    h.finitialize(fiber_instance.v_rest)
+
+    # if fiber has balance method and not already balanced, balance fiber
+    if hasattr(fiber_instance, 'balance'):
+        fiber_instance.balance()
+        fiber_instance.balanced = True
+
     return fiber_instance
 
 
@@ -342,6 +350,7 @@ class Fiber:
         # fiber attributes
         self.myelinated: bool = None
         self.v_rest = None
+        self.balanced = False
         self.nodecount: int = None
         self.delta_z: float = None
         self.sections: list = []
@@ -1060,7 +1069,7 @@ class Fiber:
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 
         if self.nodecount % 2 == 0 and enforce_odd_nodecount:
-            print(f"Altering node count from {self.nodecount} to {self.nodecount-1} to enforce odd number.")
+            print(f"Altering node count from {self.nodecount} to {self.nodecount - 1} to enforce odd number.")
             self.nodecount -= 1
 
         if self.nodecount < 3:

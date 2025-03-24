@@ -6,7 +6,7 @@
 	NEURON {
 		   SUFFIX naf97mean						:Sets suffix of mechanism for insertion into models
 		   USEION na READ ena WRITE ina		:Lays out which NEURON variables will be used/modified by file
-		   RANGE gbar, ena, ina, shiftnaf	:Allows variables to be modified in hoc and collected in vectors
+		   RANGE gbar, ena, ina, shiftnaf,m,h	:Allows variables to be modified in hoc and collected in vectors
 
 	}
 
@@ -31,8 +31,8 @@
 			: Steady State Variables
 			V0p5m=-31.62 (mV)	:As defined by Schild 1994, zinf=1.0/(1.0+exp((V0p5z-V)/S0p5z)
 			S0p5m=6.98 (mV)
-
 			: Tau Variables
+
 			A_taum=1.15	(ms)	:As defined by Schild 1994, tauz=A_tauz*exp(-B^2(V-Vpz)^2)+C
 			B_taum=0.06	(/mV)
 			C_taum=0.21	(ms)

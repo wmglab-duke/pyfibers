@@ -7,7 +7,7 @@
 		   SUFFIX kca					:Sets suffix of mechanism for insertion into models
 		   USEION k READ ek WRITE ik	:Lays out which NEURON variables will be used/modified by file
 		   USEION ca READ cai			:As kca is reliant on two ions, two separate USEION statements are required
-		   RANGE gbar, ek, ik			:Allows variables to be modified in hoc and collected in vectors
+		   RANGE gbar, ek, ik, g			:Allows variables to be modified in hoc and collected in vectors
 
 	}
 

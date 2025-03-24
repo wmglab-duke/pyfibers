@@ -18,11 +18,8 @@ import numpy as np
 from neuron import h
 from scipy.signal import find_peaks
 
-from pyfibers import FiberModel
-
 if TYPE_CHECKING:
     from pyfibers import Fiber
-
 
 h.load_file('stdrun.hoc')
 
@@ -97,7 +94,7 @@ class Stimulation:
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
-        dt_init_ss: float = 10,
+        dt_init_ss: float = 5,
         custom_run_sim: Callable[..., tuple[int, float | None]] | None = None,
     ) -> None:
         """Initialize the Stimulation class.
@@ -143,14 +140,34 @@ class Stimulation:
         """Return a string representation of the Stimulation instance."""  # noqa: DAR201
         return self.__str__()
 
-    def _steady_state(self: Stimulation) -> None:
-        """Advance the simulation from t_init_ss to 0 ms using a large dt to reach steady-state."""
+    def _steady_state(self: Stimulation, fiber: Fiber) -> None:
+        """Run from t_init_ss to 0 ms using a large dt to reach steady-state."""  # noqa: DAR101, DAR401
         # Begin simulation at t=t_init_ss
-        h.t = self.t_init_ss
+        h.t = -np.abs(self.t_init_ss)
         # Use large dt during steady-state period
         h.dt = self.dt_init_ss
-        while h.t <= -self.dt_init_ss:
+        vs = [fiber(0.5).v]  # Record the membrane potential at the center of the fiber
+        while h.t <= 0:
             h.fadvance()
+            vs.append(fiber(0.5).v)
+        if np.abs(np.diff(vs))[-1] > 1:  # if vm was still changing at the end of steady state
+            diff = vs[-1] - vs[-2]
+            raise RuntimeError(
+                "The steady-state period did not reach a stable Vm."
+                f"The difference between the last and second-to-last Vm was {diff} mV. "
+                "Check for oscillations in your Vm."
+            )
+        if vs[-1] - vs[0] > 1:  # starts out at v_rest, fiber might not be properly specified
+            diff = vs[-1] - vs[0]
+            if not np.isclose(fiber.v_rest, vs[-1], atol=0.01):
+                raise RuntimeError(
+                    f"Fiber model rest potential ({fiber.v_rest} mV) and "
+                    f"steady-state potential ({vs[-1]} mV) are different."
+                )
+            raise RuntimeError(
+                f"Fiber model rest potential is specified as {fiber.v_rest} mV,"
+                f"but the transmembrane potential at the end of the steady-state period was {vs[-1]} mV."
+            )
         # Restore the smaller dt
         h.dt = self.dt
         # Reset simulation time to 0
@@ -204,12 +221,8 @@ class Stimulation:
         h.finitialize(fiber.v_rest)
         # Set up AP detectors at each node
         fiber.apcounts(thresh=ap_detect_threshold)
-
-        # If the fiber uses the Tigerholm model, balance membrane currents first
-        if fiber.fiber_model == FiberModel.TIGERHOLM:
-            fiber.balance()
         self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
-        self._steady_state()  # Allow system to reach steady-state before simulation
+        self._steady_state(fiber)  # Allow system to reach steady-state before simulation
 
     @staticmethod
     def ap_checker(
@@ -686,7 +699,7 @@ class IntraStim(Stimulation):
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
-        dt_init_ss: float = 10,
+        dt_init_ss: float = 5,
         istim_ind: int = None,
         istim_loc: float = None,
         clamp_kws: dict = None,
@@ -803,7 +816,7 @@ class IntraStim(Stimulation):
 
             # check for NaNs in fiber potentials
             if np.any(np.isnan([s.v for s in fiber.sections])):
-                raise RuntimeError('NaN detected in fiber potentials')
+                raise RuntimeError('NaN detected in fiber potentials at t =', h.t)
             if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location, **exit_func_kws):
                 break
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
@@ -827,7 +840,7 @@ class IntraStim(Stimulation):
         :param fiber: The :class:`~pyfibers.fiber.Fiber` to stimulate.
         """
         # recompute timesteps
-        self.n_timesteps = int(self.tstop / self.dt)
+        self._n_timesteps = int(self.tstop / self.dt)
         assert np.all(fiber.potentials == 0), 'Fiber potentials must be zero for IntracellularStim'
         assert self.istim is not None, 'Intracellular stimulation is not enabled.'
         if stimamp < 0:
@@ -893,7 +906,7 @@ class ScaledStim(Stimulation):
         dt: float = 0.001,
         tstop: float = 50,
         t_init_ss: float = -200,
-        dt_init_ss: float = 10,
+        dt_init_ss: float = 5,
         pad_waveform: bool = True,
         truncate_waveform: bool = True,
     ) -> None:
@@ -918,7 +931,7 @@ class ScaledStim(Stimulation):
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
         self.pad = pad_waveform
         self.truncate = truncate_waveform
-        self.n_timesteps: int = None
+        self._n_timesteps: int = None
         self.waveform = waveform
         self._prep_waveform()
 
@@ -961,7 +974,7 @@ class ScaledStim(Stimulation):
         :raises RuntimeError: if an error is encountered while processing a callable into an array
         """
         # recompute timesteps
-        self.n_timesteps = int(self.tstop / self.dt)
+        self._n_timesteps = int(self.tstop / self.dt)
 
         prepped_waveform = self.waveform
         # wrap waveform in a list in not already a list
@@ -973,11 +986,11 @@ class ScaledStim(Stimulation):
             if not all(callable(wf) for wf in prepped_waveform):
                 raise TypeError("Waveform must be specified as either a callable or a list of callables.")
 
-            # process callable(s) into 2d array with shape (len(prepped_waveform), self.n_timesteps)
+            # process callable(s) into 2d array with shape (len(prepped_waveform), self._n_timesteps)
             try:
                 prepped_waveform = np.fromfunction(
                     np.vectorize(lambda i, j: prepped_waveform[int(i)](j * self.dt)),
-                    (len(prepped_waveform), self.n_timesteps),
+                    (len(prepped_waveform), self._n_timesteps),
                 )
             except Exception as e:  # noqa: B902
                 # provide some information on where the error happened to the user
@@ -1006,20 +1019,20 @@ class ScaledStim(Stimulation):
             for row in prepped_waveform:
                 row = np.array(row)  # Ensure row is a numpy array
 
-                if self.pad and (self.n_timesteps > len(row)):
+                if self.pad and (self._n_timesteps > len(row)):
                     # Extend waveform row until it is of length tstop/dt
                     if row[-1] != 0:
                         warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
-                    row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
+                    row = np.hstack([row, [0] * (self._n_timesteps - len(row))])
 
-                if self.truncate and (self.n_timesteps < len(row)):
+                if self.truncate and (self._n_timesteps < len(row)):
                     # Truncate waveform row until it is of length tstop/dt
-                    if any(row[self.n_timesteps :]):
+                    if any(row[self._n_timesteps :]):
                         warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
-                    row = row[: self.n_timesteps]
+                    row = row[: self._n_timesteps]
 
                 assert (
-                    len(row) == self.n_timesteps
+                    len(row) == self._n_timesteps
                 ), "Processed waveform length must match the number of time steps (tstop / dt)."
 
                 processed_waveforms.append(row)  # Append processed row to the list
@@ -1036,7 +1049,7 @@ class ScaledStim(Stimulation):
             )
 
         # make sure that number of columns in the waveform matches the number of time steps
-        if prepped_waveform.shape[1] != self.n_timesteps:
+        if prepped_waveform.shape[1] != self._n_timesteps:
             raise RuntimeError("Processed waveform length must match the number of time steps (tstop / dt).")
 
         self._prepped_waveform = prepped_waveform
@@ -1138,7 +1151,7 @@ class ScaledStim(Stimulation):
         exit_func_kws = exit_func_kws or {}
 
         # Advance the simulation in small steps, updating extracellular potentials each time
-        for i in range(self.n_timesteps):
+        for i in range(self._n_timesteps):
             timestep_potentials = self._potentials_at_time(i, fiber, stimamps)
             self._update_extracellular(fiber, timestep_potentials)
 

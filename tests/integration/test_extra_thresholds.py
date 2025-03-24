@@ -91,6 +91,18 @@ def test_mrg_interpolation():
     assert np.isclose(get_activation_threshold(FiberModel.MRG_INTERPOLATION), -0.27006835937499996)
 
 
+def test_thio_autonomic():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.THIO_AUTONOMIC, nodecount=265, diameter=1), -1.5784828125000008
+    )
+
+
+def test_thio_cutaneous():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.THIO_CUTANEOUS, nodecount=265, diameter=1), -1.5556062500000007
+    )
+
+
 def test_tigerholm():
     assert np.isclose(
         get_activation_threshold(FiberModel.TIGERHOLM, diameter=1, nodecount=265, stimamp_top=-5),
@@ -206,3 +218,7 @@ def test_block_threshold():
 #         ),
 #         -0.02350494384765625,
 #     )
+
+
+if __name__ == "__main__":
+    pytest.main()

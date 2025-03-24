@@ -6,7 +6,7 @@
 	NEURON {
 		   SUFFIX kd								:Sets suffix of mechanism for insertion into models
 		   USEION k READ ek WRITE ik				:Lays out which NEURON variables will be used/modified by file
-		   RANGE gbar, ek, ik, A_betan, shiftkd		:Allows variables to be modified in hoc and collected in vectors
+		   RANGE gbar, ek, ik, A_betan, shiftkd, g		:Allows variables to be modified in hoc and collected in vectors
 
 	}
 

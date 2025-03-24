@@ -18,7 +18,7 @@ UNITS {
 
 PARAMETER {
 	gbar 	(S/cm2):= 0.2e-6 : =2e-9/(100e-12*1e8) (S/cm2) : 2(nS)/100(um)^2
-        celsiusT
+        celsiusT = 32
         kvot_qt
         lj=0
         a
@@ -68,7 +68,7 @@ FUNCTION rates(Vm (mV)) (/ms) {
         b=0.00395*exp(-(Vm+30)/20(mV))
         tau_nf=1(ms)/(a+b)
 
-        kvot_qt=1/((3.3^((celsiusT-21)/10)))
+        kvot_qt=1/((3.3^((celsius-21)/10)))
         tau_ns=tau_ns*kvot_qt
         tau_nf=tau_nf*kvot_qt
 
