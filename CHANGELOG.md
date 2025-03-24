@@ -2,6 +2,26 @@
 
 <!-- version list -->
 
+## v0.4.0 (2025-03-24)
+
+### Bug Fixes
+
+- Added checks for incorrectly parameterized rest potential and for oscillations in vm during steady
+  state simulation
+  ([`a6dcf88`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a6dcf883aaf7e497c0b2d2e120cee45350c108d4))
+
+- Lowered default steady state time step to avoid oscillations in vm
+  ([`a6dcf88`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a6dcf883aaf7e497c0b2d2e120cee45350c108d4))
+
+- Use negative absolute value of provided value for steady state time
+  ([`a6dcf88`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a6dcf883aaf7e497c0b2d2e120cee45350c108d4))
+
+### Features
+
+- Added fiber models from Thio 2024 publication
+  ([`a6dcf88`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a6dcf883aaf7e497c0b2d2e120cee45350c108d4))
+
+
 ## v0.3.3 (2025-03-21)
 
 ### Bug Fixes
