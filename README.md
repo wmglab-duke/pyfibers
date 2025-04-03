@@ -18,7 +18,7 @@ We have implemented the following models:
 
 ## Installation
 Note: It is recommended you create a new virtual environment for PyFibers. For example, using Anaconda/Miniconda:
-  - `conda create -n pyfibers python=3.10`
+  - `conda create -n pyfibers`
   - `conda activate pyfibers`
 1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
    - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)
@@ -43,7 +43,7 @@ See the Documentation for detailed information on usage:
 - [API Documentation](https://wmglab.pages.oit.duke.edu/wmglab-neuron/autodoc/index.html) on function/class arguments and outputs.
 
 The basic steps for running a PyFibers simulation are as follows:
-### Creating a fiber model
+### Creating a model fiber
 Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. Users can add custom fiber models as well as using our provided models (See [Custom Fiber Models](https://wmglab.pages.oit.duke.edu/wmglab-neuron/custom.html#how-to-create-a-new-fiber-model))
 
 ```python
