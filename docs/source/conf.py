@@ -15,6 +15,7 @@ from __future__ import annotations
 #
 import os
 import sys
+from importlib.metadata import version
 
 os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
 
@@ -28,7 +29,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = 'alpha'
+release = version('pyfibers')
 
 html_short_title = "PyFibers Documentation"
 # html_logo = './static/logo.png' noqa: E800
@@ -134,3 +135,6 @@ nb_execution_timeout = 600
 nb_execution_mode = "cache"
 nb_merge_streams = True
 suppress_warnings = ["mystnb.stderr"]
+
+# latex
+latex_engine = 'xelatex'
