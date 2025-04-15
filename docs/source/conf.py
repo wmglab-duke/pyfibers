@@ -15,7 +15,6 @@ from __future__ import annotations
 #
 import os
 import sys
-from importlib.metadata import version
 
 os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
 
@@ -29,7 +28,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = version('pyfibers')
+release = "0.4.0"
 
 html_short_title = "PyFibers Documentation"
 # html_logo = './static/logo.png' noqa: E800
