@@ -1,6 +1,6 @@
 # Custom Simulation Code
 
-This section provides examples of how to run custom simulations using fibers. These examples demonstrate different methods, including directly using NEURON's `IClamp` and `h.continuerun()`, leveraging the {py:class}`~pyfibers.stimulation.Stimulation` class with a custom `run_sim()` function, and using the {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` method with manual assignment of extracellular potentials.
+This section provides examples of how to run custom simulations using fibers. These examples demonstrate different methods, including directly using NEURON's :class:`IClamp <neuron:IClamp>` and `h.continuerun()`, leveraging the {py:class}`~pyfibers.stimulation.Stimulation` class with a custom `run_sim()` function, and using the {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` method with manual assignment of extracellular potentials.
 
 Before running any simulations, we must create a model fiber. See the [Fiber Tutorial](tutorials/1_create_fiber.ipynb) for information on how to do so. The tutorials assume that you have already created a model fiber called `fiber`.
 
@@ -83,7 +83,7 @@ stimulation.run_sim(fiber)
 
 ## Custom Simulation Using NEURON `IClamp` and `h.continuerun()`
 
-In this example, we demonstrate how to set up a custom simulation using NEURON's `IClamp` and `h.continuerun()` without using the simulation classes included in PyFibers.
+In this example, we demonstrate how to set up a custom simulation using NEURON's :class:`IClamp <neuron:IClamp>` and `h.continuerun()` without using the simulation classes included in PyFibers.
 
 2. **Set up and configure intracellular stimulation**:
 ```python

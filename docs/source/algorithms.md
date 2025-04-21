@@ -111,9 +111,9 @@ run_sim(mid_amplitude, fiber)
 
 Therefore, custom {py:func}`~pyfibers.stimulation.Stimulation.run_sim()` implementations should follow these constraints. For more information, see [building custom simulations](custom_stim.md).
 
-## {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim()`
+## {py:meth}`ScaledStim.run_sim() <pyfibers.stimulation.ScaledStim.run_sim()>`
 
-:py:class:`~pyfibers.stimulation.ScaledStim` is designed for **extracellular** stimulation. It expects that the fiber has an array of **extracellular potentials** (e.g., from a point source), each scaled by the provided stimulus amplitude and waveform(s) at each time step. The process is detailed below, and summarized in the diagram below.
+{py:class}`~pyfibers.stimulation.ScaledStim` is designed for **extracellular** stimulation. It expects that the fiber has an array of **extracellular potentials** (e.g., from a point source), each scaled by the provided stimulus amplitude and waveform(s) at each time step. The process is detailed below, and summarized in the diagram below.
 
 For each source, given the spatial distribution of extracellular potentials at the center of each fiber section:
 
@@ -152,15 +152,15 @@ The final matrix of potentials is applied to each section at each time step.
 :align: center
 :alt: ScaledStim.run_sim() diagram
 
-Process of calculating the spatiotemporal profile of extracellular potentials applied to the model fiber by {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`, which incorporates the spatial distribution of potentials in response to 1 mA stimulation (:math:`V_e(z)`), the unit waveform (:math:`W(t)`), and the stimulation amplitude (a). If potentials from multiple sources and the corresponding waveforms are provided, steps A–D are performed for each combination of source/waveform/stimulation amplitude, and the results are summed across sources before proceeding.
+Process of calculating the spatiotemporal profile of extracellular potentials applied to the model fiber by {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`, which incorporates the spatial distribution of potentials in response to 1 mA stimulation ({math}`V_e(z)`), the unit waveform ({math}`W(t)`), and the stimulation amplitude ({math}`a`). If potentials from multiple sources and the corresponding waveforms are provided, steps A–D are performed for each combination of source/waveform/stimulation amplitude, and the results are summed across sources before proceeding.
 ```
 
-## {py:meth}`~pyfibers.stimulation.IntraStim.run_sim()`
+## {py:meth}`IntraStim.run_sim() <pyfibers.stimulation.IntraStim.run_sim()>`
 
-:py:class:`~pyfibers.stimulation.IntraStim` is a simpler class for **intracellular** stimulation. It injects current directly into a chosen fiber section. Key points:
+{py:class}`~pyfibers.stimulation.IntraStim` is a simpler class for **intracellular** stimulation. It injects current directly into a chosen fiber section. Key points:
 
 - The user specifies:
   - **Pulse** parameters: width, frequency, duration.
   - **Location** along the fiber: e.g., the middle node or the first node.
-- `pyfibers.stimulation.IntraStim.run_sim(amplitude, fiber)` sets up and applies a square current pulse inside the specified section. The amplitude is scaled by the given stimulation amplitude.
+- `IntraStim.run_sim(amplitude, fiber)` sets up and applies a square current pulse inside the specified section. The amplitude is scaled by the given stimulation amplitude.
 - For multi‑pulse waveforms, {py:class}`~pyfibers.stimulation.IntraStim` repeats square pulses at intervals (pulse repetition frequency) until `tstop`.
