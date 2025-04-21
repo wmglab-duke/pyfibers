@@ -670,7 +670,7 @@ class IntraStim(Stimulation):
     This mechanism allows for repeated square pulses of current to be injected into a fiber.
     Its arguments are provided as ``clamp_kws`` when creating an instance of this class.
 
-    ** Example Usage **
+    **Example Usage**
 
     .. code-block:: python
 

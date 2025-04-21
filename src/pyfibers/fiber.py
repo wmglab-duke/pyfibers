@@ -54,7 +54,7 @@ def build_fiber(
     :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified.
     :return: A :class:`Fiber` class instance.
 
-    ** Example Usage **
+    **Example Usage**
 
     .. code-block:: python
 
@@ -668,12 +668,12 @@ class Fiber:
     def record_gating(self: Fiber, **kwargs) -> dict[str, list[h.Vector | None]]:
         """Record gating parameters (ion channel states) from axon nodes.
 
-        The gating variables must be declared in `Fiber.gating_variables` within the fiber model class.
+        The gating variables must be declared in ``Fiber.gating_variables`` within the fiber model class.
 
         :param kwargs: Additional arguments passed to :meth:`Fiber.record_values`.
         :return: A dictionary mapping gating variable names to
             lists of recorded NEURON :class:`Vector <neuron:Vector>` objects.
-        :raises AssertionError: If `Fiber.gating_variables` is empty.
+        :raises AssertionError: If ``Fiber.gating_variables`` is empty.
         """
         assert self.gating_variables, "Gating variables not defined for this fiber type"
 
