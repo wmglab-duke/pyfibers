@@ -154,10 +154,10 @@ version_and_publish:
   - pip install python-semantic-release==9.*
   - pip install twine build
   - semantic-release version
-  - python -m build
-  - twine upload dist/*
   - git remote add github https://x-access-token:$GH_TOKEN@github.com/thedannymarsh/semantic_release_test.git
   - git push github --follow-tags
+  - python -m build
+  - twine upload dist/*
 
   rules:
     # Don't run on automatic commits
