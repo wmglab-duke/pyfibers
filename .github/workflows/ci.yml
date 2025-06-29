@@ -132,12 +132,12 @@ jobs:
         pip install -Ur docs/rtd_requirements.txt
         pip install --upgrade pip ipython ipykernel
         python -m ipykernel install --name python3 --user
-  
+
         # ── NEW: generate API docs ──────────────────────────
         rm -rf docs/source/api
         sphinx-apidoc -M -o docs/source/api src/pyfibers
         # ───────────────────────────────────────────────────
-  
+
         sphinx-build -b html docs/source _site
     - uses: actions/upload-pages-artifact@v3
       with:

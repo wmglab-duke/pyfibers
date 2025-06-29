@@ -1,25 +1,25 @@
-name: "tagged-release"
+name: tagged-release
 
 on:
   push:
     tags:
-      - "v*"
+    - v*
 
 jobs:
   tagged-release:
-    name: "Tagged Release"
-    runs-on: "ubuntu-latest"
+    name: Tagged Release
+    runs-on: ubuntu-latest
 
     steps:
       # ...
-      - name: "Build & test"
-        run: |
-          echo "done!"
+    - name: Build & test
+      run: |
+        echo "done!"
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: |
-            LICENSE.txt
-            *.jar
+    - uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        prerelease: false
+        files: |
+          LICENSE.txt
+          *.jar
