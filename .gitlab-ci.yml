@@ -155,7 +155,7 @@ version_and_publish:
   - pip install twine build
   - semantic-release version
   - git remote add github https://x-access-token:$GH_TOKEN@github.com/thedannymarsh/semantic_release_test.git
-  - git push github --follow-tags
+  - git push github -f --follow-tags
   - python -m build
   - twine upload dist/*
 
