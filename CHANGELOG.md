@@ -2,6 +2,25 @@
 
 <!-- version list -->
 
+## v0.4.1 (2025-06-29)
+
+### Bug Fixes
+
+- Releases should now function properly
+  ([`4d3ab8a`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/4d3ab8a1feda2352a5429275f45cc76175507a3c))
+
+### Documentation
+
+- Elie review pass on documentation
+  ([`361b863`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/361b86382ac3e19f7057fc22c321716213e54751))
+
+- Update latex engine and add proper version acquisition for docs
+  ([`2fdab8f`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/2fdab8f24d887a868bd638a6f7ee04aa2f6db9c5))
+
+- Update version for semantic release in docs version
+  ([`d2f70dd`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/d2f70dde3d9a3ef88fe35e261aa2b2c00d1e4560))
+
+
 ## v0.4.0 (2025-03-24)
 
 ### Bug Fixes
