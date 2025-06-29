@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.4.2 (2025-06-29)
+
+### Bug Fixes
+
+- Move twine upload after github push
+  ([`e7db12a`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/e7db12ae3f46c4f6c4c9c51b729c9a81908a20e1))
+
+
 ## v0.4.1 (2025-06-29)
 
 ### Bug Fixes
