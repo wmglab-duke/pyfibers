@@ -30,7 +30,8 @@ stages:
 
 cache:
   paths:
-  - .cache/pip
+  - ${PIP_CACHE_DIR}
+  - ${PRE_COMMIT_HOME}
   - venv/
   - docs/.jupyter_cache
 
@@ -145,15 +146,22 @@ version_and_publish:
   variables:
     GIT_DEPTH: 0
     GIT_COMMIT_AUTHOR: semantic-release <$GITLAB_USER_EMAIL>
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD: $PYPI_TOKEN
+
   script:
   - git checkout "$CI_COMMIT_REF_NAME"
-  - pip install python-semantic-release
+  - pip install python-semantic-release==9.*
+  - pip install twine build
   - semantic-release version
+  - python -m build
+  - twine upload dist/*
+  - git remote add github https://x-access-token:$GH_TOKEN@github.com/thedannymarsh/semantic_release_test.git
+  - git push github --follow-tags
+
   rules:
     # Don't run on automatic commits
   - if: $CI_COMMIT_AUTHOR =~ /semantic-release.*/
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     when: always
-
-# Here is where auto deployment to PyPI and GitHub would be added

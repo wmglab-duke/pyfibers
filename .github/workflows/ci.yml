@@ -1,0 +1,162 @@
+# .github/workflows/ci.yml
+name: CI
+
+###############################################################################
+# Triggers
+###############################################################################
+on:
+  pull_request:            # PRs run everything except deploy
+  push:
+    branches: [main]       # main branch also deploys docs
+
+###############################################################################
+# Global settings
+###############################################################################
+env:
+  PIP_CACHE_DIR: ~/.cache/pip
+  PRE_COMMIT_HOME: ~/.cache/pre-commit
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+###############################################################################
+# Job: Lint with pre-commit hooks
+###############################################################################
+jobs:
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: |
+        pip install pre-commit .
+        pre-commit run --all-files
+        pre-commit run --all-files --hook-stage pre-merge-commit
+
+###############################################################################
+# Job: flake8-fixme check
+###############################################################################
+  fixme:
+    name: flake8-fixme
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: |
+        pip install flake8 flake8-fixme
+        flake8 --select T100,T101,T102 src/
+
+###############################################################################
+# Job-set: test matrix (mirrors tox jobs in GitLab)
+###############################################################################
+  test:
+    name: tox ${{ matrix.tox-env }}
+    needs: [pre-commit, fixme]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - python: '3.10'
+          tox-env: py310-neuron8
+        - python: '3.11'
+          tox-env: py311-neuron8
+        - python: '3.11'
+          tox-env: py311-neuron9
+        - python: '3.12'
+          tox-env: py312-neuron8
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+        cache: pip
+    - run: |
+        pip install tox
+        tox -l
+        tox r -e ${{ matrix.tox-env }}
+
+###############################################################################
+# Job: coverage (py311-neuron8,coverage)
+###############################################################################
+  coverage:
+    name: coverage
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - run: |
+        pip install tox
+        tox r -e py311-neuron8,coverage
+    - uses: actions/upload-artifact@v4
+      with:
+        name: coverage-html
+        path: coverage_html_report
+
+###############################################################################
+# Job: build docs  (mirrors *build_docs anchor)
+###############################################################################
+  docs:
+    name: build docs
+    needs: pre-commit
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: pip
+    - name: System packages
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libgl1 pandoc
+    - name: Build HTML
+      run: |
+        pip install neuron
+        pip install ".[dev]"
+        pyfibers_compile            # keep this if you rely on it
+        pip install -Ur docs/rtd_requirements.txt
+        pip install --upgrade pip ipython ipykernel
+        python -m ipykernel install --name python3 --user
+  
+        # ── NEW: generate API docs ──────────────────────────
+        rm -rf docs/source/api
+        sphinx-apidoc -M -o docs/source/api src/pyfibers
+        # ───────────────────────────────────────────────────
+  
+        sphinx-build -b html docs/source _site
+    - uses: actions/upload-pages-artifact@v3
+      with:
+        path: _site
+
+
+###############################################################################
+# Job: Deploy to GitHub Pages  (runs only on main)
+###############################################################################
+  deploy-pages:
+    name: deploy pages
+    environment:
+      name: github-pages
+    needs: docs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write           # allow publish
+      id-token: write        # OIDC for deploy step
+    steps:
+    - id: deployment
+      uses: actions/deploy-pages@v4

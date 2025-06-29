@@ -152,11 +152,12 @@ commit_parser_options = {parse_squash_commits = true, ignore_merge_commits = tru
 major_on_zero = false  # set to true once we reach 1.0.0
 no_git_verify = true
 tag_format = "v{version}"
-upload_to_PyPI = false  # set to true once package is set up on PyPI
-upload_to_release = false  # set to true if we want to enable releases
-# Once this is done we will probably want releases to auto transfer to GitHub
+upload_to_PyPI = true  # set to true once package is set up on PyPI
+upload_to_release = true  # set to true if we want to enable releases
 version_toml = [
-  "pyproject.toml:project.version",
+  "pyproject.toml:project.version"
+]
+version_variable = [
   "docs/source/conf.py:release:nf"
 ]
 
