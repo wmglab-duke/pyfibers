@@ -1,0 +1,43 @@
+{
+    "creators": [
+      {
+        "name": "Marshall, Daniel",
+        "orcid": "0000-0003-1234-5678",
+        "affiliation": "Duke University",
+        "type": "ProjectLeader"
+      },
+      {
+        "name": "Farah, Elie",
+        "orcid": "0000-0002-2345-6789",
+        "affiliation": "Duke University",
+        "type": "ProjectMember"
+      },
+      {
+        "name": "Musselman, Eric",
+        "affiliation": "Duke University",
+        "type": "ProjectMember"
+      }
+    ],
+    "contributors": [
+      {
+        "name": "Pelot, Nicole",
+        "affiliation": "Duke University",
+        "type": "Supervisor"
+      },
+      {
+        "name": "Grill, Warren",
+        "affiliation": "Duke University",
+        "type": "Supervisor"
+      }
+    ],
+    "title": "PyFibers",
+    "keywords": [
+      "neuroscience",
+      "peripheral nerve",
+      "stimulation",
+      "NEURON",
+      "simulation"
+    ],
+    "upload_type": "software",
+    "language": "eng"
+  }

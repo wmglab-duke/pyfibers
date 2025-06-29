@@ -45,6 +45,7 @@ nitpick_ignore = [
         'h.Vector',
     ),  # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classes
     ('py:class', 'h.Section'),
+    ('py:class', 'neuron.h.Section'),
     ('py:class', 'h.NetStim'),
     ('py:class', 'h.NetCon'),
     ('py:class', 'h.IClamp'),
@@ -88,7 +89,6 @@ intersphinx_mapping = {
 exclude_patterns = []
 # uncomment the line below to exclude all tutorials from the documentation build
 # exclude_patterns = ['tutorials/**.ipynb']  # noqa: E800
-
 
 # -- Options for HTML output -------------------------------------------------
 
