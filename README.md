@@ -1,4 +1,6 @@
 # PyFibers
+*PyFibers paper citation will be available soon.*
+
 This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols. You can use analytical tools for extracellular potentials, or import from FEM (e.g., COMSOL).
 
 We have implemented the following models:
