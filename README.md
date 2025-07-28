@@ -1,6 +1,19 @@
 # PyFibers
 *PyFibers paper citation will be available soon.*
 
+[![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/pyfibers.svg)](https://pypi.org/project/pyfibers/)
+<!-- [![PyPI - License](https://img.shields.io/pypi/l/pyfibers.svg)](https://pypi.org/project/pyfibers/) -->
+[![Development Status](https://img.shields.io/badge/development%20status-beta-yellow.svg)](https://pypi.org/classifiers/)
+[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
+[![Documentation](https://img.shields.io/badge/docs-github%20pages-blue.svg)](https://wmglab-duke.github.io/pyfibers/)
+[![Contributors](https://img.shields.io/github/contributors/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/graphs/contributors)
+[![Issues](https://img.shields.io/github/issues/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/pulls)
+
 This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols. You can use analytical tools for extracellular potentials, or import from FEM (e.g., COMSOL).
 
 We have implemented the following models:
@@ -40,13 +53,14 @@ Note: It is recommended you create a new virtual environment for PyFibers. For e
 
 
 ## Usage
-See the Documentation for detailed information on usage:
-- [Tutorials](https://wmglab.pages.oit.duke.edu/wmglab-neuron/tutorials/index.html) on various operations.
-- [API Documentation](https://wmglab.pages.oit.duke.edu/wmglab-neuron/autodoc/index.html) on function/class arguments and outputs.
+📖 **Documentation**: For detailed information on usage, see our [documentation](https://wmglab-duke.github.io/pyfibers/).
+
+- [Tutorials](https://wmglab-duke.github.io/pyfibers/tutorials/index.html) on various operations.
+- [API Documentation](https://wmglab-duke.github.io/pyfibers/autodoc/index.html) on function/class arguments and outputs.
 
 The basic steps for running a PyFibers simulation are as follows:
 ### Creating a model fiber
-Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. Users can add custom fiber models as well as using our provided models (See [Custom Fiber Models](https://wmglab.pages.oit.duke.edu/wmglab-neuron/custom.html#how-to-create-a-new-fiber-model))
+Use the build_fiber function to create fiber object. The fiber object consists of NEURON sections with ion channel mechanisms inserted for the fiber model chosen when the object is initialized. Users can add custom fiber models as well as using our provided models (See [Custom Fiber Models](https://wmglab-duke.github.io/pyfibers/custom_fiber.html))
 
 ```python
 from pyfibers import build_fiber
@@ -58,8 +72,8 @@ fiber = build_fiber(
     temperature=37,  # C
 )
 ```
-### Running a Simulatiion
-The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup (See [Custom Simulations](https://wmglab.pages.oit.duke.edu/wmglab-neuron/custom.html#custom-simulations)). Once you have a fiber object, you can create a `ScaledStim` instance, which is a set of instructions for stimulating model fibers.
+### Running a Simulation
+The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup (See [Custom Simulations](https://wmglab-duke.github.io/pyfibers/custom_stim.html)). Once you have a fiber object, you can create a `ScaledStim` instance, which is a set of instructions for stimulating model fibers.
 
 ```python
 # Add extracellular potentials
@@ -72,7 +86,7 @@ stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 amp, _ = stimulation.find_threshold(fiber)
 print(f"Threshold for 5.7 micron fiber: {amp} (mA)")
 ```
-For more examples, see the documentation.
+For more examples, see the [documentation](https://wmglab-duke.github.io/pyfibers/).
 
 ## Contributing
 If you develop additional functionality that would be generally useful to our users, please open a Pull Request for us to review.
