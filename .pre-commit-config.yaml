@@ -5,7 +5,7 @@ default_stages: [pre-commit]
 repos:
   ### General checks and fixes for common issues in files
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: check-yaml                  # Checks YAML syntax
   - id: check-toml                  # Checks TOML syntax
@@ -33,7 +33,7 @@ repos:
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
-  rev: 1.0.1
+  rev: 1.0.6
   hooks:
   - id: flynt                      # Formats Python f-strings
 
@@ -92,7 +92,7 @@ repos:
 #   hooks:
 #   - id: yesqa
 
-  ### Linting Hooks (pre-push stage)
+  ### Linting Hooks
 - repo: https://github.com/pycqa/flake8
   rev: 7.3.0
   hooks:
@@ -118,7 +118,6 @@ repos:
     - flake8-return
     - flake8-pytest-style
     - Flake8-pyproject
-    # stages: [pre-push]
 
 - repo: https://github.com/nbQA-dev/nbQA
   rev: 1.9.1
@@ -142,9 +141,7 @@ repos:
     - flake8-pie
     - flake8-return
     - Flake8-pyproject
-    # stages: [pre-push]
   - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
-    # stages: [pre-push]
 
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.10.0    # Use the ref you want to point at
@@ -160,7 +157,6 @@ repos:
   hooks:
   - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
-    # stages: [pre-push]
 
 - repo: https://github.com/rstcheck/rstcheck
   rev: v6.2.5
@@ -169,23 +165,19 @@ repos:
     additional_dependencies:
     - rstcheck[sphinx]
     - rstcheck[toml]
-    # stages: [pre-push]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.33.1
+  rev: 0.33.3
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
-    # stages: [pre-push]
   - id: check-readthedocs           # Checks ReadTheDocs configuration
-    # stages: [pre-push]
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.16.1
+  rev: v1.17.1
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
-    # stages: [pre-push]
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v4.8.3
