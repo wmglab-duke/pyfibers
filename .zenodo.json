@@ -1,33 +1,28 @@
 {
     "creators": [
       {
-        "name": "Marshall, Daniel",
-        "orcid": "0000-0003-1234-5678",
+        "orcid": "0000-0003-4439-4542",
         "affiliation": "Duke University",
-        "type": "ProjectLeader"
+        "name": "Marshall, Daniel P."
       },
       {
-        "name": "Farah, Elie",
-        "orcid": "0000-0002-2345-6789",
         "affiliation": "Duke University",
-        "type": "ProjectMember"
+        "name": "Farah, Elie S."
       },
       {
-        "name": "Musselman, Eric",
+        "orcid": "0000-0001-5295-7267",
         "affiliation": "Duke University",
-        "type": "ProjectMember"
-      }
-    ],
-    "contributors": [
-      {
-        "name": "Pelot, Nicole",
-        "affiliation": "Duke University",
-        "type": "Supervisor"
+        "name": "Musselman, Eric D."
       },
       {
-        "name": "Grill, Warren",
+        "orcid": "0000-0003-2844-0190",
         "affiliation": "Duke University",
-        "type": "Supervisor"
+        "name": "Pelot, Nicole A."
+      },
+      {
+        "orcid": "0000-0001-5240-6588",
+        "affiliation": "Duke University",
+        "name": "Grill, Warren M."
       }
     ],
     "title": "PyFibers",
