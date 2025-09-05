@@ -17,7 +17,7 @@ with suppress(RuntimeError):
 
 # load all python files
 from .fiber import Fiber, build_fiber, build_fiber_3d  # noqa: E402
-from .model_enum import FiberModel  # noqa: E402
+from .model_enum import FiberModel, register_custom_fiber  # noqa: E402
 from .stimulation import (  # noqa: E402
     ScaledStim,
     IntraStim,
@@ -36,6 +36,7 @@ __all__ = [
     'IntraStim',
     'Stimulation',
     'FiberModel',
+    'register_custom_fiber',
     'BoundsSearchMode',
     'TerminationMode',
     'ThresholdCondition',
