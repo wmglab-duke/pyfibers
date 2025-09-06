@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v0.5.0 (2025-09-06)
+
+### Build System
+
+- Add force push to github push
+  ([`e11cf79`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/e11cf79f721361db93e8a0d2b68abae07b7bb190))
+
+- Added file to skip github jekyll
+  ([`ed3b67f`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ed3b67f2a36bfcf8b024bb3635ea4a372822d5ec))
+
+- Change push target to correct link
+  ([`3970931`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/3970931b17f51d547635aafb167a7fce176ee53d))
+
+- Drop twine upload from gitlab-ci
+  ([`a7d7a25`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a7d7a25b69de03079ea80aa941adbb5c61a57aca))
+
+### Documentation
+
+- Update fiber model custom docs for new API
+  ([`a64aff6`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a64aff609b7740d22c945b923ccd1d8bdaf64e96))
+
+### Features
+
+- Update API for adding a custom fiber model
+  ([`a64aff6`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a64aff609b7740d22c945b923ccd1d8bdaf64e96))
+
+
 ## v0.4.2 (2025-06-29)
 
 ### Bug Fixes
