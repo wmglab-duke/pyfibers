@@ -100,6 +100,16 @@ tox_py312:
     - src/**/*
     - tests/**/*
 
+tox_py313:
+  script:
+  - pip install tox
+  - tox r -e py313-neuron8
+  image: python:3.13
+  rules:
+  - changes:
+    - src/**/*
+    - tests/**/*
+
 tox_neuron9:
   script:
   - pip install tox
