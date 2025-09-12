@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.6.1 (2025-09-12)
+
+### Bug Fixes
+
+- Fix bug where repeated creation of fiber using the same varname could cause fiber.time to stop
+  recording
+  ([`119ac12`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/119ac1253305fd07d87ea9097db9ba51c853fe57))
+
+### Build System
+
+- Add twine to ci/cd
+  ([`807d784`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/807d78463a40ef6a0196b7ffa6a352106ac84e2e))
+
+
 ## v0.6.0 (2025-09-12)
 
 ### Bug Fixes
