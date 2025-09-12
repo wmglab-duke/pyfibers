@@ -51,7 +51,9 @@ def build_fiber(
     :param n_nodes: The total number of nodes along the fiber, if defining by nodes.
     :param enforce_odd_nodecount: If ``True``, ensure that the number of nodes is odd.
     :param kwargs: Additional arguments forwarded to the underlying fiber model class.
-    :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified.
+    :raises ValueError: If more than one among ``length``, ``n_sections``, or ``n_nodes`` is specified
+    :raises ValueError: If ``is_3d`` is specified in kwargs.
+    :raises RuntimeError: If node count does not match number of nodes.
     :return: A :class:`Fiber` class instance.
 
     **Example Usage**
@@ -66,7 +68,8 @@ def build_fiber(
     if sum(x is not None for x in [length, n_sections, n_nodes]) != 1:
         raise ValueError("Must provide exactly one of length, n_sections, or n_nodes")
 
-    assert "is_3d" not in kwargs, "is_3d is set automatically, try using build_fiber_3d() instead"
+    if "is_3d" in kwargs:
+        raise ValueError("is_3d is set automatically, try using build_fiber_3d() instead")
 
     fiber_class = fiber_model.value
 
@@ -88,7 +91,8 @@ def build_fiber(
     fiber_instance.potentials = np.zeros(len(fiber_instance.longitudinal_coordinates))
     fiber_instance.time = h.Vector().record(h._ref_t)
 
-    assert len(fiber_instance) == fiber_instance.nodecount, "Node count does not match number of nodes"
+    if len(fiber_instance) != fiber_instance.nodecount:
+        raise RuntimeError("Node count does not match number of nodes")
 
     if fiber_instance.diameter > 3 and not fiber_instance.myelinated:
         warnings.warn(
@@ -399,13 +403,15 @@ class Fiber:
 
         :param loc: Location in the range [0, 1].
         :param target: Specifies whether to retrieve from ``'nodes'`` or ``'sections'``.
-        :raises AssertionError: If ``loc`` is not in [0, 1] or if ``target`` is not ``'nodes'`` or ``'sections'``.
+        :raises ValueError: If ``loc`` is not in [0, 1] or if ``target`` is not ``'nodes'`` or ``'sections'``.
         :return: The chosen node or section as a :class:`h.Section`.
         """
-        assert 0 <= loc <= 1, "Location must be between 0 and 1"
+        if not (0 <= loc <= 1):
+            raise ValueError("Location must be between 0 and 1")
         if target == 'sections':
             return self.sections[self.loc_index(loc, target=target)]
-        assert target == 'nodes', 'target can either be "nodes" or "sections"'
+        if target != 'nodes':
+            raise ValueError('target can either be "nodes" or "sections"')
         return self.nodes[self.loc_index(loc, target=target)]
 
     loc = __call__  # alias for backwards compatibility
@@ -454,12 +460,15 @@ class Fiber:
 
         :param target: Can be either ``'nodes'`` or ``'sections'``.
         :return: The count of nodes or sections.
-        :raises AssertionError: If nodecount does not match the actual number of nodes.
+        :raises RuntimeError: If nodecount does not match the actual number of nodes.
+        :raises ValueError: If target is not 'nodes' or 'sections'.
         """
-        assert self.nodecount == len(self.nodes), "Node count does not match number of nodes"
+        if self.nodecount != len(self.nodes):
+            raise RuntimeError("Node count does not match number of nodes")
         if target == 'sections':
             return len(self.sections)
-        assert target == 'nodes', 'target can either be "nodes" or "sections"'
+        if target != 'nodes':
+            raise ValueError('target can either be "nodes" or "sections"')
         return len(self.nodes)
 
     def __getitem__(self: Fiber, item: int) -> h.Section:
@@ -498,30 +507,33 @@ class Fiber:
         Uses the length (L) of each section to calculate cumulative
         longitudinal coordinates, then sets `Fiber.longitudinal_coordinates` and `Fiber.length`.
 
-        :raises AssertionError: If the computed center-to-center distance
+        :raises RuntimeError: If the computed center-to-center distance
             does not match the expected length (based on `Fiber.delta_z`).
         """
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
         self.longitudinal_coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # type: ignore
         self.length = np.sum([section.L for section in self.sections])
-        assert np.isclose(
+        if not np.isclose(
             self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0],
             self.delta_z * (self.nodecount - 1),
-        ), "Fiber length is not correct."
+        ):
+            raise RuntimeError("Fiber length is not correct.")
 
     def loc_index(self: Fiber, loc: float, target: str = 'nodes') -> int:
         """Convert a normalized location [0, 1] into an integer index for nodes or sections.
 
         :param loc: Location in the fiber (from 0 to 1).
         :param target: Indicates whether to index into ``'nodes'`` or ``'sections'``.
-        :raises AssertionError: If ``loc`` is not in [0, 1] or if ``target`` is invalid.
+        :raises ValueError: If ``loc`` is not in [0, 1] or if ``target`` is invalid.
         :return: The integer index corresponding to the node or section.
         """
-        assert 0 <= loc <= 1, "Location must be between 0 and 1"
+        if not (0 <= loc <= 1):
+            raise ValueError("Location must be between 0 and 1")
         if target == 'sections':
             return int(loc * (len(self.sections) - 1))
-        assert target == 'nodes', 'target can either be "nodes" or "sections"'
+        if target != 'nodes':
+            raise ValueError('target can either be "nodes" or "sections"')
         return int(loc * (len(self) - 1))
 
     def is_3d(self: Fiber) -> bool:
@@ -598,11 +610,16 @@ class Fiber:
         """
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
-        assert len(potential_coords.shape) == 1, "Potential coordinates must be a 1D array"
-        assert len(potentials.shape) == 1, "Potentials must be a 1D array"
-        assert len(potential_coords) == len(potentials), "Potentials and coordinates must be the same length"
-        assert len(potential_coords) >= 2, "Must provide at least two points for resampling"
-        assert np.all(np.diff(potential_coords) > 0), "Potential coordinates must be monotonically increasing"
+        if len(potential_coords.shape) != 1:
+            raise ValueError("Potential coordinates must be a 1D array")
+        if len(potentials.shape) != 1:
+            raise ValueError("Potentials must be a 1D array")
+        if len(potential_coords) != len(potentials):
+            raise ValueError("Potentials and coordinates must be the same length")
+        if len(potential_coords) < 2:
+            raise ValueError("Must provide at least two points for resampling")
+        if not np.all(np.diff(potential_coords) > 0):
+            raise ValueError("Potential coordinates must be monotonically increasing")
 
         # Start with original coordinates
         target_coords = self.longitudinal_coordinates.copy()
@@ -703,7 +720,8 @@ class Fiber:
         :return: A list of NEURON :class:`Vector <neuron:Vector>` objects or
             None (if allow_missing=True and the requested attribute is missing).
         """
-        assert not (recording_dt and recording_tvec), "Cannot specify both recording_dt and recording_tvec"
+        if recording_dt and recording_tvec:
+            raise ValueError("Cannot specify both recording_dt and recording_tvec")
 
         def safe_record(section: h.Section, ref_attr: str) -> h.Vector | None:
             try:
@@ -760,9 +778,10 @@ class Fiber:
         :param kwargs: Additional arguments passed to :meth:`Fiber.record_values`.
         :return: A dictionary mapping gating variable names to
             lists of recorded NEURON :class:`Vector <neuron:Vector>` objects.
-        :raises AssertionError: If ``Fiber.gating_variables`` is empty.
+        :raises RuntimeError: If ``Fiber.gating_variables`` is empty.
         """
-        assert self.gating_variables, "Gating variables not defined for this fiber type"
+        if not self.gating_variables:
+            raise RuntimeError("Gating variables not defined for this fiber type")
 
         self.gating = {}
         for name, var in self.gating_variables.items():
@@ -832,12 +851,13 @@ class Fiber:
         :param end: Ending position for conduction velocity measurement (from 0 to 1).
         :param tolerance: Tolerance (ms) for checking linearity of AP times.
         :raises ValueError: If conduction is not approximately linear between ``start`` and ``end``.
-        :raises AssertionError: If no APs are detected at one or both of the measurement nodes.
+        :raises RuntimeError: If no APs are detected at one or both of the measurement nodes.
         :return: Conduction velocity in meters per second (m/s).
         """
         start_ind, end_ind = self.loc_index(start), self.loc_index(end)
         for ind in [start_ind, end_ind]:
-            assert self.apc[ind].n > 0, f"No detected APs at node {ind}."
+            if self.apc[ind].n <= 0:
+                raise RuntimeError(f"No detected APs at node {ind}.")
 
         # Check linearity
         aptimes = [self.apc[ind].time for ind in range(start_ind, end_ind + 1)]
@@ -881,9 +901,10 @@ class Fiber:
         :param synapse_tau: Time constant (ms) for synaptic current decay.
         :param synapse_reversal_potential: Reversal potential (mV) of the synapse.
         :param netcon_weight: Weight of the :class:`NetCon <neuron:NetCon>` between the spike generator and synapse.
-        :raises AssertionError: If neither ``loc`` nor ``loc_index`` is specified, or if both are specified.
+        :raises ValueError: If neither ``loc`` nor ``loc_index`` is specified, or if both are specified.
         """
-        assert (loc is None) != (loc_index is None), "Must specify either loc or loc_index"
+        if (loc is None) == (loc_index is None):
+            raise ValueError("Must specify either loc or loc_index")
         node = self[loc_index] if loc_index is not None else self(loc)
 
         # Create spike generator
@@ -1029,12 +1050,11 @@ class Fiber:
 
         :param current_matrix: 2D array of shape [timepoints, sections], containing currents in mA.
         :param potentials: 1D array of potentials (mV) at each section, length = number of sections.
-        :raises AssertionError: If the number of columns in the current matrix does not match the length of potentials.
+        :raises ValueError: If the number of columns in the current matrix does not match the length of potentials.
         :return: The computed SFAP in microvolts (µV).
         """
-        assert (
-            len(potentials) == current_matrix.shape[1]
-        ), "Potentials and current matrix columns must have the same length"
+        if len(potentials) != current_matrix.shape[1]:
+            raise ValueError("Potentials and current matrix columns must have the same length")
         return 1e3 * np.dot(current_matrix, potentials)  # Convert to µV
 
     def record_sfap(self: Fiber, rec_potentials: list | np.ndarray, downsample: int = 1) -> np.ndarray:
@@ -1059,9 +1079,10 @@ class Fiber:
         :param x: Shift in the x-direction (µm).
         :param y: Shift in the y-direction (µm).
         :param z: Shift in the z-direction (µm).
-        :raises AssertionError: If this fiber is a 3D fiber (since this method is for 1D only).
+        :raises ValueError: If this fiber is a 3D fiber (since this method is for 1D only).
         """
-        assert not self.__is_3d, "set_xyz() is not compatible with 3D fibers"
+        if self.__is_3d:
+            raise ValueError("set_xyz() is not compatible with 3D fibers")
         if not np.allclose(self.coordinates[:, 0], self.coordinates[0, 0]) or not np.allclose(
             self.coordinates[:, 1], self.coordinates[0, 1]
         ):
@@ -1100,16 +1121,19 @@ class Fiber:
         :param center: If ``True``, center the potentials around the midpoint of each domain.
         :param inplace: If ``True``, update `Fiber.potentials` with the resampled values.
         :return: Interpolated potential values aligned with the fiber's 3D arc-length coordinates.
-        :raises AssertionError: If called on a non-3D fiber or if input coordinate shapes are invalid.
+        :raises ValueError: If called on a non-3D fiber or if input coordinate shapes are invalid.
         """
-        assert self.__is_3d, "resample_potentials_3d() is only compatible with 3D fibers"
+        if not self.__is_3d:
+            raise ValueError("resample_potentials_3d() is only compatible with 3D fibers")
 
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
-        assert len(potential_coords.shape) == 2, (
-            "Potential coordinates must be a 2D array. " "If using arc lengths, use resample_potentials() instead."
-        )
-        assert potential_coords.shape[1] == 3, "Must provide exactly 3 coordinates for x, y, z"
+        if len(potential_coords.shape) != 2:
+            raise ValueError(
+                "Potential coordinates must be a 2D array. " "If using arc lengths, use resample_potentials() instead."
+            )
+        if potential_coords.shape[1] != 3:
+            raise ValueError("Must provide exactly 3 coordinates for x, y, z")
 
         # Convert (x, y, z) into cumulative arc length
         line = nd_line(potential_coords)
@@ -1144,7 +1168,7 @@ class Fiber:
         :param length: Total length of the fiber (µm). Overrides n_sections if given.
         :param enforce_odd_nodecount: If ``True``, ensures that the fiber has an odd number of nodes.
         :return: The updated :class:`Fiber` instance after generation.
-        :raises AssertionError: If the computed number of sections does not align with the
+        :raises ValueError: If the computed number of sections does not align with the
             function_list-based pattern.
         """
         if n_nodes is not None:
@@ -1152,11 +1176,11 @@ class Fiber:
         elif length is not None:
             n_sections = math.floor(length / self.delta_z) * len(function_list) + 1
         else:
-            assert n_sections is not None
+            if n_sections is None:
+                raise ValueError("n_sections must be specified")
 
-        assert (n_sections - 1) % len(function_list) == 0, (
-            f"n_sections must be 1 + {len(function_list)}*n, " "where n is (number_of_nodes - 1)."
-        )
+        if (n_sections - 1) % len(function_list) != 0:
+            raise ValueError(f"n_sections must be 1 + {len(function_list)}*n, " "where n is (number_of_nodes - 1).")
 
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 
@@ -1216,11 +1240,12 @@ class Fiber:
 
         :param node: The node :class:`h.Section` to be made passive.
         :return: The modified section with a passive mechanism inserted.
-        :raises AssertionError: If the node's name does not contain 'passive'.
+        :raises ValueError: If the node's name does not contain 'passive'.
 
         :meta public:
         """
-        assert 'passive' in node.name(), "Passive node name must contain 'passive'"
+        if 'passive' not in node.name():
+            raise ValueError("Passive node name must contain 'passive'")
         mt = h.MechanismType(0)
         for mechanism in node.psection()['density_mechs']:
             if mechanism == 'extracellular':
