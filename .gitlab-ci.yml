@@ -166,6 +166,8 @@ version_and_publish:
   - semantic-release version
   - git remote add github https://x-access-token:$GH_TOKEN@github.com/wmglab-duke/pyfibers.git
   - git push github -f --follow-tags
+  - python -m build
+  - twine upload dist/*
 
   rules:
     # Don't run on automatic commits
