@@ -156,22 +156,22 @@ class TestResamplePotentials:
     def test_input_validation(self, test_fiber):
         """Test input validation for resample_potentials."""
         # Test 2D arrays (should fail)
-        with pytest.raises(AssertionError, match="1D array"):
+        with pytest.raises(ValueError, match="1D array"):
             test_fiber.resample_potentials(np.array([[1, 2], [3, 4]]), np.array([0, 1, 2, 3]))  # 2D potentials
 
-        with pytest.raises(AssertionError, match="1D array"):
+        with pytest.raises(ValueError, match="1D array"):
             test_fiber.resample_potentials(np.array([1, 2, 3, 4]), np.array([[0, 1], [2, 3]]))  # 2D coordinates
 
         # Test mismatched lengths
-        with pytest.raises(AssertionError, match="same length"):
+        with pytest.raises(ValueError, match="same length"):
             test_fiber.resample_potentials(np.array([1, 2, 3]), np.array([0, 1]))  # Different length
 
         # Test too few points
-        with pytest.raises(AssertionError, match="at least two points"):
+        with pytest.raises(ValueError, match="at least two points"):
             test_fiber.resample_potentials(np.array([1]), np.array([0]))
 
         # Test non-monotonic coordinates
-        with pytest.raises(AssertionError, match="monotonically increasing"):
+        with pytest.raises(ValueError, match="monotonically increasing"):
             test_fiber.resample_potentials(np.array([1, 2, 3, 4]), np.array([0, 2, 1, 3]))  # Non-monotonic
 
     def test_coordinate_span_validation(self, test_fiber):

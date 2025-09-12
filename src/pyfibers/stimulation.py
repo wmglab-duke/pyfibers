@@ -213,6 +213,9 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object for which the simulation will be configured.
         :param ap_detect_threshold: The voltage threshold for detecting action potentials (mV).
         """
+        # reassign time recorder
+        # without this, time recording can get messed up for unclear reasons
+        fiber.time = self.time = h.Vector().record(h._ref_t)
         # recompute timesteps
         self._n_timesteps = int(self.tstop / self.dt)
         # Set simulation temperature based on the fiber's temperature
@@ -238,7 +241,7 @@ class Stimulation:
         :param precision: Decimal places to round the detected AP time.
         :param check_all_apc: If True, raise a warning if APs occur elsewhere but not at the detect location.
         :return: A tuple (num_aps, last_ap_time). If no APs are detected, last_ap_time is None.
-        :raises AssertionError: If the detected AP time is non-positive.
+        :raises RuntimeError: If the detected AP time is non-positive.
         """
         # Convert user-specified location to an integer node index
         ind = fiber.loc_index(ap_detect_location)
@@ -255,8 +258,8 @@ class Stimulation:
         detect_time = None if detect_apc.n == 0 else round(detect_apc.time, precision)
 
         # If an AP was detected, ensure its time is positive
-        if detect_time:
-            assert detect_time > 0, "Action potentials at t<=0 are unexpected."
+        if detect_time and detect_time <= 0:
+            raise RuntimeError("Action potentials at t<=0 are unexpected.")
 
         # If requested, check for APs at other nodes
         if check_all_apc and not bool(detect_apc.n) and np.any([apc.n > 0 for apc in fiber.apc]):
@@ -291,10 +294,12 @@ class Stimulation:
         :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: True if stimulation is suprathreshold; False if subthreshold.
+        :raises ValueError: If thresh_num_aps is not positive.
         :raises NotImplementedError: If block is True and thresh_num_aps != 1.
         :raises RuntimeError: If no APs are detected at all in a block threshold search.
         """
-        assert thresh_num_aps > 0, "thresh_num_aps must be positive."
+        if thresh_num_aps <= 0:
+            raise ValueError("thresh_num_aps must be positive.")
         detect_n, detect_time = Stimulation.ap_checker(
             fiber, ap_detect_location=ap_detect_location, check_all_apc=check_all_apc
         )
@@ -376,14 +381,20 @@ class Stimulation:
         :param silent: If True, suppress print statements for the search process.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time)).
+        :raises ValueError: If invalid enum values are provided for
+            condition, bounds_search_mode, termination_mode, or bisection_mean.
         :raises RuntimeError: If contradictory bounding conditions occur or if the search fails to converge.
         """
         self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
         # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
-        assert condition in [mem.value for mem in ThresholdCondition], "Invalid threshold condition."
-        assert bounds_search_mode in [mem.value for mem in BoundsSearchMode], "Invalid bounds search mode."
-        assert termination_mode in [mem.value for mem in TerminationMode], "Invalid termination mode."
-        assert bisection_mean in [mem.value for mem in BisectionMean], "Invalid bisection mean."
+        if condition not in [mem.value for mem in ThresholdCondition]:
+            raise ValueError("Invalid threshold condition.")
+        if bounds_search_mode not in [mem.value for mem in BoundsSearchMode]:
+            raise ValueError("Invalid bounds search mode.")
+        if termination_mode not in [mem.value for mem in TerminationMode]:
+            raise ValueError("Invalid termination mode.")
+        if bisection_mean not in [mem.value for mem in BisectionMean]:
+            raise ValueError("Invalid bisection mean.")
 
         # First test the initial top and bottom amplitudes
         supra_top, (_, t) = self.threshsim(
@@ -495,13 +506,16 @@ class Stimulation:
                 # Confirm the final run at the chosen amplitude
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)  # type: ignore
                 # Check that it indeed triggers or blocks (i.e., is suprathreshold)
-                assert self.threshold_checker(
+                if not self.threshold_checker(
                     fiber,
                     condition == ThresholdCondition.BLOCK,
                     kwargs.get("ap_detect_location", 0.9),
                     block_delay=block_delay,
                     thresh_num_aps=thresh_num_aps,
-                ), "Threshold stimulation did not generate the expected action potential condition."
+                ):
+                    raise RuntimeError(
+                        "Threshold stimulation did not generate the expected action potential condition."
+                    )
                 break
             elif suprathreshold:
                 stimamp_top = stimamp
@@ -527,7 +541,7 @@ class Stimulation:
         :param exit_t_shift: Extra time added after detecting an AP in an activation threshold search.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
-        :raises AssertionError: If exit_t_shift is not positive.
+        :raises ValueError: If exit_t_shift is not positive.
         """
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater in magnitude than stimamp_bottom.")
@@ -543,7 +557,8 @@ class Stimulation:
                 "This fiber lacks intrinsic activity; a block threshold search may be meaningless.",
                 stacklevel=2,
             )
-        assert exit_t_shift is None or exit_t_shift > 0, "exit_t_shift must be nonzero and positive."
+        if exit_t_shift is not None and exit_t_shift <= 0:
+            raise ValueError("exit_t_shift must be nonzero and positive.")
         self._exit_t = float("Inf")
 
     def supra_exit(self: Stimulation, fiber: Fiber, ap_detect_location: float, thresh_num_aps: int = 1) -> bool:
@@ -727,12 +742,14 @@ class IntraStim(Stimulation):
             number receiving stimulation
         :ivar istim_loc: the node location along the :class:`~pyfibers.fiber.Fiber` receiving stimulation
         :ivar istim_params: the dictionary of intracellular stimulation parameters (see :meth:`_add_istim`)
+        :raises ValueError: If both istim_ind and istim_loc are specified, or if neither is specified.
         """
         super().__init__(dt=dt, tstop=tstop, t_init_ss=t_init_ss, dt_init_ss=dt_init_ss)
         self.istim: h.trainIClamp = None
         self.istim_record = None
         self.istim_ind, self.istim_loc = istim_ind, istim_loc
-        assert (istim_ind is None) != (istim_loc is None), 'Must specify either ind or loc, but not both'
+        if (istim_ind is None) == (istim_loc is None):
+            raise ValueError('Must specify either ind or loc, but not both')
         self.istim_params = {'delay': 0, 'pw': 1, 'dur': 50, 'freq': 100, 'amp': 1}
         self.istim_params.update(clamp_kws or {})  # add user specified clamp parameters
 
@@ -850,14 +867,20 @@ class IntraStim(Stimulation):
 
         :param stimamp: The stimulus amplitude.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` to stimulate.
+        :raises ValueError: If fiber potentials are not zero.
+        :raises RuntimeError: If intracellular stimulation is not enabled.
+        :raises TypeError: If stimamp is not a float or int.
         """
         # recompute timesteps
         self._n_timesteps = int(self.tstop / self.dt)
-        assert np.all(fiber.potentials == 0), 'Fiber potentials must be zero for IntracellularStim'
-        assert self.istim is not None, 'Intracellular stimulation is not enabled.'
+        if not np.all(fiber.potentials == 0):
+            raise ValueError('Fiber potentials must be zero for IntracellularStim')
+        if self.istim is None:
+            raise RuntimeError('Intracellular stimulation is not enabled.')
         if stimamp < 0:
             warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
-        assert isinstance(stimamp, (int, float)), 'stimamp must be a single float or int'
+        if not isinstance(stimamp, (int, float)):
+            raise TypeError('stimamp must be a single float or int')
 
 
 class ScaledStim(Stimulation):
@@ -954,10 +977,11 @@ class ScaledStim(Stimulation):
         potential set. Each row must match the length of the fiber coordinates.
 
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
-        :raises AssertionError: If no potentials are found or mismatch in lengths of fiber coordinates.
+        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
         """
         # This should be moved to the Fiber class as a setter method
-        assert fiber.potentials is not None, "No fiber potentials found."
+        if fiber.potentials is None:
+            raise ValueError("No fiber potentials found.")
         fiber.potentials = np.array(fiber.potentials)
 
         # If it's just one 1D array, wrap it in a list for stacking
@@ -966,9 +990,8 @@ class ScaledStim(Stimulation):
 
         # Convert each potential to a np.array and check lengths
         processed_potentials = [np.array(potential) for potential in fiber.potentials]
-        assert all(
-            len(potential) == len(fiber.coordinates) for potential in processed_potentials
-        ), "Potential arrays must match the length of fiber.coordinates."
+        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
+            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
 
         # Stack them into a 2D array
         fiber.potentials = np.vstack(processed_potentials)
@@ -981,7 +1004,7 @@ class ScaledStim(Stimulation):
         processes each waveform independently, and saves the processed waveform(s) as a 2D numpy array.
         Also checks if the waveform has a max absolute value of 1 (recommended).
 
-        :raises AssertionError: if any processed waveform row length is not equal to the number of time steps
+        :raises ValueError: if any processed waveform row length is not equal to the number of time steps
         :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
         :raises RuntimeError: if an error is encountered while processing a callable into an array
         """
@@ -1043,9 +1066,8 @@ class ScaledStim(Stimulation):
                         warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
                     row = row[: self._n_timesteps]
 
-                assert (
-                    len(row) == self._n_timesteps
-                ), "Processed waveform length must match the number of time steps (tstop / dt)."
+                if len(row) != self._n_timesteps:
+                    raise ValueError("Processed waveform length must match the number of time steps (tstop / dt).")
 
                 processed_waveforms.append(row)  # Append processed row to the list
 
@@ -1093,27 +1115,22 @@ class ScaledStim(Stimulation):
         :param fiber: Instance of :class:`~pyfibers.fiber.Fiber` to validate scaling inputs for.
         :param stimamps: Amplitude to be applied to extracellular stimulation.
         :return: Array of stimulation amplitudes to apply to each waveform.
+        :raises ValueError: If validation checks fail for potentials, waveforms, or stimamps.
         """
         self._prep_waveform()
         self._prep_potentials(fiber)
 
-        assert len(fiber.potentials) == len(
-            self._prepped_waveform
-        ), 'Number of fiber potentials sets does not match number of waveforms'
-
-        assert not np.all(
-            fiber.potentials == 0
-        ), 'Extracellular stimulation requires at least one non-zero fiber potential'
-        assert not np.all(
-            self._prepped_waveform == 0
-        ), 'Extracellular stimulation requires at least one non-zero waveform'
-
+        if len(fiber.potentials) != len(self._prepped_waveform):
+            raise ValueError('Number of fiber potentials sets does not match number of waveforms')
+        if np.all(fiber.potentials == 0):
+            raise ValueError('Extracellular stimulation requires at least one non-zero fiber potential')
+        if np.all(self._prepped_waveform == 0):
+            raise ValueError('Extracellular stimulation requires at least one non-zero waveform')
         if len(stimamps.shape) == 0:  # if single float, apply to all sources
             return np.array([stimamps] * len(self._prepped_waveform))
+        if len(stimamps) != len(self._prepped_waveform):
+            raise ValueError("Number of stimamps must match the number of waveform rows.")
 
-        assert len(stimamps) == len(
-            self._prepped_waveform
-        ), "Number of stimamps must match the number of waveform rows."
         return np.array(stimamps)
 
     def run_sim(

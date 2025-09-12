@@ -62,7 +62,7 @@ def test_measure_cv_no_ap(mock_fiber):
     mock_fiber.apc[1].n = 1
     mock_fiber.apc[2].time = 0  # No AP detected
 
-    with pytest.raises(AssertionError, match="No detected APs at node"):
+    with pytest.raises(RuntimeError, match="No detected APs at node"):
         mock_fiber.measure_cv(start=0.25, end=0.75)
 
 
