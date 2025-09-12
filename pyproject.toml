@@ -54,6 +54,11 @@ dev = [
 pyfibers_compile = "pyfibers.compile:main"
 
 [project.urls]
+Changelog = "https://github.com/wmglab-duke/pyfibers/blob/main/CHANGELOG.md"
+Documentation = "https://wmglab-duke.github.io/pyfibers/"
+Homepage = "https://github.com/wmglab-duke/pyfibers"
+Issues = "https://github.com/wmglab-duke/pyfibers/issues"
+Repository = "https://github.com/wmglab-duke/pyfibers"
 
 [tool.black]
 line-length = 120
