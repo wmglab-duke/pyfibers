@@ -16,8 +16,10 @@
 [![Pull Requests](https://img.shields.io/github/issues-pr/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/pulls)
 [![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
 
-This package implements biophysical models of axons in the NEURON simulation environment using Python. With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential). You can add your own fiber models and simulations protocols. You can use analytical tools for extracellular potentials, or import from FEM (e.g., COMSOL).
-## Key Features
+This package implements biophysical models of axons in the NEURON simulation environment using Python.
+With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential).
+You can add your own fiber models and simulations protocols.
+You can use analytical tools for extracellular potentials, or import from finite element models (FEM) such as COMSOL, ANSYS, or FEniCS.
 
 | Feature | Description |
 |---------|-------------|
@@ -75,7 +77,7 @@ fiber = build_fiber(
 The fiber object can be run in simulations using our provided `ScaledStim` class; alternatively, users can create their own custom simulation setup (See [Custom Simulations](https://wmglab-duke.github.io/pyfibers/custom_stim.html)). Once you have a fiber object, you can create a `ScaledStim` instance, which is a set of instructions for stimulating model fibers.
 
 ```python
-# Add extracellular potentials
+# Add extracellular potentials to the fiber.
 fiber.potentials = potential_values
 
 # Create instance of ScaledStim class

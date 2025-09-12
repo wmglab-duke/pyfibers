@@ -3,7 +3,13 @@ build-backend = "flit_core.buildapi"
 requires = ["flit_core>=3.4"]
 
 [project]
-authors = [{name = "Daniel Marshall"}, {name = "Elie Farah"}, {name = "Eric Musselman"}]
+authors = [
+  {name = "Daniel Marshall"},
+  {name = "Elie Farah"},
+  {name = "Eric Musselman"},
+  {name = "Nicole Pelot"},
+  {name = "Warren Grill"}
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3.10",
@@ -24,7 +30,13 @@ dependencies = [
   "aenum==3.1.*"
 ]
 description = "Modeling stimulation of peripheral nerve fibers"
-keywords = ["stimulation", "modeling", "computational", "fibers", "peripheral nerve"]
+keywords = [
+  "stimulation",
+  "modeling",
+  "computational",
+  "fibers",
+  "peripheral nerve"
+]
 license = {file = "LICENSE"}
 name = "pyfibers"
 readme = "README.md"
@@ -107,9 +119,7 @@ per-file-ignores = """
         tests/*.py: D,E800,ANN
         example*.py: E800
         """
-rst-directives = [
-  "seealso"
-]
+rst-directives = ["seealso"]
 rst-roles = ["doc", "meth", "class", "func", "attr"]
 
 [tool.flynt]

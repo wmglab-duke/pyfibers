@@ -114,7 +114,7 @@ def build_fiber_3d(
     path_coordinates: np.ndarray,
     shift: float = 0,
     shift_ratio: float = None,
-    center_shift: bool = False,
+    center: bool = False,
     **kwargs,
 ) -> Fiber:
     """Generate a 3D fiber model in NEURON based on a specified path.
@@ -128,12 +128,21 @@ def build_fiber_3d(
     By default, the center of the first section is placed at the origin (0, 0, 0), and the fiber extends
     along the path.
 
+    **Shifting Behavior**: For 3D fibers, shifting is handled during fiber creation (not during potential resampling).
+    This is because 3D fiber geometry represents the physical position of the fiber in space, so shifting
+    affects the actual fiber coordinates. You can apply shifts using either:
+    - ``shift``: a shift in microns, OR
+    - ``shift_ratio``: a fraction of ``delta_z`` (the internodal length).
+
+    If ``center=True``, the shift is applied after the fiber is first centered about the midpoint of the 3D path.
+    To test different 3D fiber positions, create a new fiber with the desired shift parameters.
+
     :param fiber_model: A :class:`FiberModel` enumerator specifying the type of fiber to instantiate.
     :param diameter: The fiber diameter in micrometers (µm).
     :param path_coordinates: A numpy array of shape (N, 3) specifying the 3D coordinates (x, y, z) of the fiber path.
     :param shift: A shift in microns to apply to the fiber coordinates.
     :param shift_ratio: Ratio of the internodal length to shift the fiber coordinates.
-    :param center_shift: If True, center the fiber before applying the shift.
+    :param center: If True, center the fiber before applying the shift.
     :param kwargs: Additional arguments forwarded to the underlying fiber model class.
     :raises ValueError: If ``path_coordinates`` is not provided, or if ``n_sections``, ``n_nodes``, or ``length``
         is specified (these are invalid in 3D mode).
@@ -169,8 +178,8 @@ def build_fiber_3d(
     fiber_path = nd_line(path_coordinates)
 
     # Apply shift if relevant
-    shifted_start = _shift_fiber_3d(
-        fiber_path,
+    shifted_start = _shift_fiber(
+        fiber_path.length,
         build_fiber(  # call build_fiber to get delta_z
             fiber_model=fiber_model,
             diameter=diameter,
@@ -179,7 +188,7 @@ def build_fiber_3d(
         ).delta_z,
         shift,
         shift_ratio,
-        center_shift,
+        center,
     )
 
     # Create the fiber instance using the base class method
@@ -200,14 +209,17 @@ def build_fiber_3d(
     return fiber_instance
 
 
-def _shift_fiber_3d(
-    fiber_path: nd_line,
+def _shift_fiber(
+    fiber_length: float,
     delta_z: float,
     shift: float | None = None,
     shift_ratio: float | None = None,
     center: bool = False,
 ) -> float:
-    """Shift a 3D fiber's coordinates along its path by a specified amount.
+    """Shift a fiber's coordinates along its length by a specified amount.
+
+    This is a unified helper function used by both 1D and 3D fiber shifting operations.
+    The function calculates where to start placing fiber sections along a path or coordinate system.
 
     You can specify either:
     - ``shift``: a shift in microns, OR
@@ -216,17 +228,21 @@ def _shift_fiber_3d(
     If the shift or shift_ratio exceed the internodal length (delta_z),
     the extra lengths will be removed (only the modulus is applied).
 
-    Finally, if ``center=True``, the shift is applied after the fiber
-    is first centered about the midpoint of the 3D path.
+    If ``center=True``, the shift is applied after the fiber
+    is first centered about the midpoint of the fiber length.
 
-    :param fiber_path: The 3D path of the fiber as an :class:`nd_line` object.
+    **Usage Context**:
+    - For 1D fibers: Used in :meth:`Fiber.resample_potentials` for temporary testing of different alignments
+    - For 3D fibers: Used in :func:`build_fiber_3d` for permanent fiber positioning
+
+    :param fiber_length: The total length of the fiber (µm).
     :param delta_z: Internodal length of the fiber (µm).
     :param shift: Shift distance in microns (µm).
     :param shift_ratio: Shift as a ratio of ``delta_z``.
     :param center: If True, shift is applied after re-centering the
-        fiber's arc length around the midpoint of the 3D path.
+        fiber's length around the midpoint of the fiber path.
     :raises ValueError: If both ``shift`` and ``shift_ratio`` are provided.
-    :return: The shifted start position of the fiber along the 3D path.
+    :return: The shifted start position of the fiber along its length.
     """
     if shift_ratio is not None and shift != 0:
         raise ValueError("Cannot specify both shift and shift_ratio")
@@ -234,11 +250,20 @@ def _shift_fiber_3d(
     # Shift in microns
     shift_in_um = shift_ratio * delta_z if shift_ratio is not None else shift
 
-    # Point to base shifting on
-    point_to_shift = fiber_path.length / 2 if center else 0
+    # Print informative message if modulo operation will change the shift
+    if abs(shift_in_um) >= delta_z:
+        print(
+            f"Note: Requested shift of {shift_in_um:.3f} µm exceeds one internodal length "
+            f"(delta_z = {delta_z:.3f} µm). Using equivalent shift of {shift_in_um % delta_z:.3f} µm "
+            f"instead."
+        )
 
-    # Return final shifted start position
-    return (point_to_shift + shift_in_um) % delta_z
+    # Point to base shifting on
+    point_to_shift = fiber_length / 2 if center else 0
+
+    # Calculate final shift and run modulo operation
+    final_shift = point_to_shift + shift_in_um
+    return final_shift % delta_z
 
 
 class Fiber:
@@ -506,6 +531,26 @@ class Fiber:
         """
         return self.__is_3d
 
+    @property
+    def last_shift_amount(self: Fiber) -> float:
+        """Amount of coordinate shift from last resampling operation.
+
+        :return: Shift amount in micrometers (µm). Positive values indicate
+            shift in the positive coordinate direction.
+        """
+        return getattr(self, '_last_resample_shift', 0.0)
+
+    @property
+    def shifted_coordinates(self: Fiber) -> np.ndarray:
+        """Coordinates after applying last resampling shift.
+
+        These represent the effective position of the fiber sections
+        after the last call to resample_potentials().
+
+        :return: 1D array of shifted longitudinal coordinates in micrometers (µm).
+        """
+        return self.longitudinal_coordinates + self.last_shift_amount
+
     def _set_3d(self: Fiber) -> None:
         """Mark the fiber as 3D.
 
@@ -519,6 +564,8 @@ class Fiber:
         potential_coords: np.ndarray,
         center: bool = False,
         inplace: bool = False,
+        shift: float = 0,
+        shift_ratio: float = None,
     ) -> np.ndarray:
         """Use linear interpolation to resample external potentials onto the fiber's coordinate system (1D).
 
@@ -526,15 +573,28 @@ class Fiber:
         such as a finite element model. The potentials provided by the user should be sampled at high
         resolution along the fiber's path and provided alongside the corresponding arc-length coordinates.
 
+        **Shifting Behavior**: For 1D fibers, shifting is handled during potential resampling.
+        This allows you to test various fiber positions relative to a given potential distribution without
+        recreating the fiber. You can apply shifts using either:
+        - ``shift``: a shift in microns, OR
+        - ``shift_ratio``: a fraction of ``delta_z`` (the internodal length).
+
         If ``center=True``, both the input coordinates and the fiber's coordinates will be
-        shifted such that their midpoints align.
+        shifted such that their midpoints align. If a shift is also specified, the shift is applied after centering.
+
+        **Note**: Unlike 3D fibers, 1D fiber shifting is temporary and only affects the potential resampling.
+        The underlying fiber remains unchanged.
 
         :param potentials: 1D array of external potential values.
         :param potential_coords: 1D array of coordinates corresponding to ``potentials``.
         :param center: If ``True``, center the potentials around the midpoint of each domain.
+            If a shift is also specified, the shift is applied after centering.
         :param inplace: If ``True``, update `Fiber.potentials` with the resampled values.
+        :param shift: Shift distance in microns (µm).
+        :param shift_ratio: Shift as a ratio of ``delta_z``.
         :return: Interpolated potential values aligned with `Fiber.longitudinal_coordinates`.
-        :raises AssertionError: If input array sizes or monotonicity checks fail.
+        :raises ValueError: If input array sizes or monotonicity checks fail, or if potential
+            coordinates don't span the fiber coordinates.
         """
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
@@ -544,27 +604,54 @@ class Fiber:
         assert len(potential_coords) >= 2, "Must provide at least two points for resampling"
         assert np.all(np.diff(potential_coords) > 0), "Potential coordinates must be monotonically increasing"
 
-        if not center:
-            potential_coords = potential_coords - potential_coords[0]
-            target_coords = self.longitudinal_coordinates
+        # Start with original coordinates
+        target_coords = self.longitudinal_coordinates.copy()
+        total_shift = 0.0
+
+        # Apply centering first if requested
+        if center:
+            # Align center of fiber with center of potential coordinates
+            fiber_center = (target_coords[0] + target_coords[-1]) / 2
+            potential_center = (potential_coords[0] + potential_coords[-1]) / 2
+            center_shift = potential_center - fiber_center
+            target_coords = target_coords + center_shift
+            total_shift += center_shift
         else:
-            target_coords = (
-                self.longitudinal_coordinates
-                - (self.longitudinal_coordinates[0] + self.longitudinal_coordinates[-1]) / 2
-            )
-            potential_coords = potential_coords - (potential_coords[0] + potential_coords[-1]) / 2
+            # When not centering, align potential coordinates to start at 0
+            potential_coords = potential_coords - potential_coords[0]
+
+        # Then apply shift if specified (note: center=False for _shift_fiber since we handled centering above)
+        if shift != 0 or shift_ratio is not None:
+            shifted_start = _shift_fiber(self.length, self.delta_z, shift, shift_ratio, center=False)
+            target_coords = target_coords + shifted_start
+            total_shift += shifted_start
+
+        # Store the total shift amount
+        self._last_resample_shift = total_shift
 
         newpotentials = np.interp(target_coords, potential_coords, potentials)
 
-        assert (np.amax(potential_coords) >= np.amax(target_coords)) and (
-            np.amin(potential_coords) <= np.amin(target_coords)
-        ), "Potential coordinates must span the fiber"
+        # Check that potential coordinates span the target coordinates
+        pot_min, pot_max = np.amin(potential_coords), np.amax(potential_coords)
+        target_min, target_max = np.amin(target_coords), np.amax(target_coords)
+
+        if not ((pot_max >= target_max) and (pot_min <= target_min)):
+            raise ValueError(
+                f"Potential coordinates must span the fiber coordinates. "
+                f"Potential range: [{pot_min:.3f}, {pot_max:.3f}] µm, "
+                f"Target range: [{target_min:.3f}, {target_max:.3f}] µm. "
+                f"Missing coverage: {max(0, target_min - pot_min):.3f} µm at start, "
+                f"{max(0, target_max - pot_max):.3f} µm at end. "
+                f"Consider creating a shorter fiber to fit within the potential distribution."
+            )
 
         if inplace:
             self.potentials = newpotentials
-            assert len(self.potentials) == len(
-                self.longitudinal_coordinates
-            ), "Potentials and coordinates must be the same length"
+            if len(self.potentials) != len(self.longitudinal_coordinates):
+                raise ValueError(
+                    f"Potentials and coordinates must be the same length. "
+                    f"Got {len(self.potentials)} potentials and {len(self.longitudinal_coordinates)} coordinates."
+                )
 
         return newpotentials
 
@@ -996,6 +1083,11 @@ class Fiber:
         A wrapper around :meth:`Fiber.resample_potentials` that handles 3D coordinates by first computing
         the arc length of the provided coordinate array. As with the 1D version, this method
         is used to resample external potentials (e.g., from a finite element model) onto the fiber.
+
+        **Note on shifting**: Unlike the 1D version, this method does not support shifting parameters
+        (``shift``, ``shift_ratio``). For 3D fibers, shifting is handled during fiber creation via
+        :func:`build_fiber_3d` parameters. If you need to test different fiber positions, create a new
+        3D fiber with the desired shift parameters.
 
         At present, this does not check that the input coordinates lie exactly along the 3D fiber path.
         Therefore, it is recommended to use the same coordinates to construct the fiber as to use here.
