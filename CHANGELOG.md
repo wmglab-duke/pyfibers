@@ -2,6 +2,43 @@
 
 <!-- version list -->
 
+## v0.6.0 (2025-09-12)
+
+### Bug Fixes
+
+- **IntraStim**: Add cleanup routine so that IntraStim does not leave vestigial trainIClamp on
+  fibers
+  ([`f43d7ec`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/f43d7eceab1dae985f01ca9f55b5007b97c6d369))
+
+Closes #423
+
+- **IntraStim**: Add cleanup routine so that IntraStim does not leave vestigial...
+  ([`f43d7ec`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/f43d7eceab1dae985f01ca9f55b5007b97c6d369))
+
+### Documentation
+
+- Add feature details to README
+  ([`6cec1ae`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/6cec1ae0283e91662e54d23713481773af4f3a0e))
+
+Closes #410
+
+- Update documentation for fiber shifting
+  ([`ec6c49b`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ec6c49b8480315e2ba322bcae972ef9d2ba39d4c))
+
+- Update README installation instructions
+  ([`6cec1ae`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/6cec1ae0283e91662e54d23713481773af4f3a0e))
+
+- Update README installation instructions
+  ([`6cec1ae`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/6cec1ae0283e91662e54d23713481773af4f3a0e))
+
+Closes #420
+
+### Features
+
+- Add the ability to shift coordinates for resample potentials
+  ([`ec6c49b`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ec6c49b8480315e2ba322bcae972ef9d2ba39d4c))
+
+
 ## v0.5.0 (2025-09-06)
 
 ### Build System
