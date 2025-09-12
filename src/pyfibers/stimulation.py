@@ -736,6 +736,15 @@ class IntraStim(Stimulation):
         self.istim_params = {'delay': 0, 'pw': 1, 'dur': 50, 'freq': 100, 'amp': 1}
         self.istim_params.update(clamp_kws or {})  # add user specified clamp parameters
 
+    def _cleanup_istim(self: IntraStim) -> None:
+        """Clean up existing trainIClamp objects.
+
+        This method removes any existing trainIClamp objects to prevent accumulation
+        when a fiber is used with other Stimulation class instances.
+        """
+        self.istim = None
+        self.istim_record = None
+
     def _add_istim(self: IntraStim, fiber: Fiber) -> IntraStim:
         """Create instance of :class:`h.trainIClamp` for intracellular stimulation.
 
@@ -830,6 +839,9 @@ class IntraStim(Stimulation):
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
         n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
         print(f'\tN aps: {int(n_ap)}, time {time}')
+
+        # Clean up trainIClamp at the end of simulation
+        self._cleanup_istim()
 
         return n_ap, time
 
