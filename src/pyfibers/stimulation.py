@@ -147,7 +147,7 @@ class Stimulation:
         # Use large dt during steady-state period
         h.dt = self.dt_init_ss
         vs = [fiber(0.5).v]  # Record the membrane potential at the center of the fiber
-        while h.t <= 0:
+        while h.t < 0:
             h.fadvance()
             vs.append(fiber(0.5).v)
         if np.abs(np.diff(vs))[-1] > 1:  # if vm was still changing at the end of steady state

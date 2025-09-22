@@ -99,7 +99,7 @@ def test_thio_autonomic():
 
 def test_thio_cutaneous():
     assert np.isclose(
-        get_activation_threshold(FiberModel.THIO_CUTANEOUS, nodecount=265, diameter=1), -1.5556062500000007
+        get_activation_threshold(FiberModel.THIO_CUTANEOUS, nodecount=265, diameter=1), -1.5693321875000006
     )
 
 
