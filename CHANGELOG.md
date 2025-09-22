@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.6.2 (2025-09-22)
+
+### Bug Fixes
+
+- Fix bug where intrastim could error from steady state simulation encroaching on t>0
+  ([`adc8a3c`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/adc8a3c1079cec0d9f71148b26d6f3d5a7ea2a62))
+
+
 ## v0.6.1 (2025-09-12)
 
 ### Bug Fixes
