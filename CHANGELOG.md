@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.7.0 (2025-09-26)
+
+### Documentation
+
+- Add docs for sweeney model
+  ([`556a486`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/556a4868ac050a2e9ad47a35148cc7dee5fe91ba))
+
+### Features
+
+- Add sweeney model to library
+  ([`556a486`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/556a4868ac050a2e9ad47a35148cc7dee5fe91ba))
+
+
 ## v0.6.2 (2025-09-22)
 
 ### Bug Fixes
