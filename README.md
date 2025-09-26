@@ -29,7 +29,7 @@ You can use analytical tools for extracellular potentials, or import from finite
 | **Advanced analysis** | Built-in threshold search, conduction velocity measurement, and comprehensive data recording |
 | **Extensible** | Add your own fiber models and simulation protocols |
 | **Simulate recording** | Simple tools to calculate single fiber action potentials |
-| **Library of built-in fiber models** | **MRG** (Myelinated): MRG-discrete, MRG-interpolation, Peña (Small MRG-interpolation)<br>**Thio** (Unmyelinated): Autonomic, Cutaneous<br>**Sundt** (Unmyelinated)<br>**Tigerholm** (Unmyelinated)<br>**Rattay** (Unmyelinated)<br>**Schild** (Unmyelinated): Schild 1994, Schild 1997 |
+| **Library of built-in fiber models** | **MRG** (Myelinated): MRG-discrete, MRG-interpolation, Peña (Small MRG-interpolation)<br>**Sweeney** (Myelinated)<br>**Thio** (Unmyelinated): Autonomic, Cutaneous<br>**Sundt** (Unmyelinated)<br>**Tigerholm** (Unmyelinated)<br>**Rattay** (Unmyelinated)<br>**Schild** (Unmyelinated): Schild 1994, Schild 1997 |
 
 ## Installation
 
