@@ -138,6 +138,13 @@ def test_schild97():
     )
 
 
+def test_sweeney():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.SWEENEY, diameter=5.7, nodecount=133, stimamp_top=-1),
+        -1.1515625000000003,
+    )
+
+
 def test_amp_response_and_var_save():
     resp, fiber = get_amp_responses(FiberModel.MRG_INTERPOLATION, [0.01, -0.1, -1], save=True)
     assert np.array_equal(resp, [0, 1, 1])

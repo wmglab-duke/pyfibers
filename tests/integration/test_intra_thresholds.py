@@ -94,5 +94,12 @@ def test_thio_cutaneous():
     )
 
 
+def test_sweeney():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.SWEENEY, diameter=5.7, nodecount=133),
+        0.716796875,
+    )
+
+
 if __name__ == "__main__":
     pytest.main()
