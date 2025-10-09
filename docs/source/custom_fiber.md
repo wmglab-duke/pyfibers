@@ -36,7 +36,7 @@ class HHFiber(Fiber):
 
 ### Step 2: Specify the Submodels
 
-Define the ``submodels`` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:class}`FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as in ``{py:class}`` pyfibers.models.MRGFiber``), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the ``self.fiber_model`` attribute. Check the name by accessing ``self.fiber_model.name``.
+Define the ``submodels`` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:class}`FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as in {py:class}~pyfibers.models.mrg.MRGFiber), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the ``self.fiber_model`` attribute. Check the name by accessing ``self.fiber_model.name``.
 
 ```python
 class HHFiber(Fiber):
