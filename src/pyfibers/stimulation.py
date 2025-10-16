@@ -9,6 +9,7 @@ extracellular stimulation and :class:`IntraStim` class for intracellular stimula
 
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Callable
 from enum import Enum, unique
@@ -22,6 +23,9 @@ if TYPE_CHECKING:
     from pyfibers import Fiber
 
 h.load_file('stdrun.hoc')
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 ### Enumerators to define configuration options ### noqa: E266
 # In Python 3.11+, can instead directly use StrEnum instead of inheriting str
@@ -335,7 +339,6 @@ class Stimulation:
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
         block_delay: float = 0,
         thresh_num_aps: int = 1,
-        silent: bool = False,
         **kwargs,
     ) -> tuple[float, tuple[int, float | None]]:
         """Perform a bisection search to find the threshold stimulus amplitude.
@@ -378,13 +381,23 @@ class Stimulation:
         :param thresh_num_aps: Number of action potentials for threshold search
             - if activation, suprathreshold requires detected aps >= thresh_num_aps
             - if block, suprathreshold requires detected aps < thresh_num_aps
-        :param silent: If True, suppress print statements for the search process.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time)).
         :raises ValueError: If invalid enum values are provided for
             condition, bounds_search_mode, termination_mode, or bisection_mean.
         :raises RuntimeError: If contradictory bounding conditions occur or if the search fails to converge.
         """
+        # Handle deprecated silent parameter
+        if 'silent' in kwargs:
+            warnings.warn(
+                "The 'silent' parameter is deprecated and will be removed in a future version. "
+                "Use pyfibers.enable_logging() to control logging output instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            # Remove it from kwargs to avoid passing it to run_sim
+            kwargs.pop('silent')
+
         self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
         # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
         if condition not in [mem.value for mem in ThresholdCondition]:
@@ -407,18 +420,17 @@ class Stimulation:
         # Begin the bounds search phase
         iterations = 0
         while iterations < max_iterations:
-            if not silent:
-                print(f"Search bounds: top={round(stimamp_top, 6)}, bottom={round(stimamp_bottom, 6)}")
+            logger.info("Search bounds: top=%s, bottom=%s", round(stimamp_top, 6), round(stimamp_bottom, 6))
             iterations += 1
 
             # If top is supra-threshold, set an early exit time for activation searches
             if supra_top and exit_t_shift and condition == ThresholdCondition.ACTIVATION:
                 self._exit_t = t + exit_t_shift
-                if not silent:
-                    print(
-                        f"Found AP at {t} ms, subsequent runs will exit at {self._exit_t} ms. "
-                        "Change 'exit_t_shift' to modify this."
-                    )
+                logger.info(
+                    "Found AP at %s ms, subsequent runs will exit at %s ms. " "Change 'exit_t_shift' to modify this.",
+                    t,
+                    self._exit_t,
+                )
 
             if not supra_bot and supra_top:  # noqa: R508
                 break  # Bounds are found
@@ -470,12 +482,10 @@ class Stimulation:
             )
 
         # Begin the bisection search phase
-        if not silent:
-            print("Beginning bisection search")
+        logger.info("Beginning bisection search")
 
         while True:
-            if not silent:
-                print(f"Search bounds: top={round(stimamp_top, 6)}, bottom={round(stimamp_bottom, 6)}")
+            logger.info("Search bounds: top=%s, bottom=%s", round(stimamp_top, 6), round(stimamp_bottom, 6))
             stimamp_prev = stimamp_top
 
             # Compute the midpoint based on the chosen mean
@@ -499,9 +509,8 @@ class Stimulation:
             if tolerance < thresh_resoln:
                 if not suprathreshold:
                     stimamp = stimamp_prev
-                if not silent:
-                    print(f"Threshold found at stimamp = {round(stimamp, 6)}")
-                    print("Validating threshold...")
+                logger.info("Threshold found at stimamp = %s", round(stimamp, 6))
+                logger.info("Validating threshold...")
 
                 # Confirm the final run at the chosen amplitude
                 n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)  # type: ignore
@@ -830,7 +839,7 @@ class IntraStim(Stimulation):
         self._add_istim(fiber)  # type: ignore
         self.istim.amp *= stimamp
         self._validate_inputs(stimamp, fiber)
-        print('Running:', np.array(stimamp).round(6), end='')
+        logger.info('Running: %s', np.array(stimamp).round(6))
 
         self.pre_run_setup(fiber, ap_detect_threshold=ap_detect_threshold)
 
@@ -855,7 +864,7 @@ class IntraStim(Stimulation):
         if fail_on_end_excitation is not None:
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
         n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
-        print(f'\tN aps: {int(n_ap)}, time {time}')
+        logger.info('N aps: %s, time %s', int(n_ap), time)
 
         # Clean up trainIClamp at the end of simulation
         self._cleanup_istim()
@@ -1170,7 +1179,7 @@ class ScaledStim(Stimulation):
         :return: Tuple (number_of_APs, time_of_last_AP).
         """
         stimamps = np.array(stimamp)
-        print("Running:", stimamps.round(6), end="")
+        logger.info("Running: %s", stimamps.round(6))
 
         stimamps = self._validate_scaling_inputs(fiber, stimamps)
 
@@ -1203,5 +1212,5 @@ class ScaledStim(Stimulation):
 
         # Finally, count action potentials at the chosen location
         n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location)
-        print(f"\tN aps: {int(n_ap)}, time {time}")
+        logger.info("N aps: %s, time %s", int(n_ap), time)
         return n_ap, time

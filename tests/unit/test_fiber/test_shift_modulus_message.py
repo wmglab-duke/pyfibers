@@ -9,6 +9,7 @@ https://github.com/wmglab-duke/ascent
 from __future__ import annotations
 
 import io
+import logging
 from contextlib import redirect_stdout
 
 import numpy as np
@@ -53,25 +54,21 @@ class TestShiftModulusMessage:
         output = captured_output.getvalue()
         assert "Note: Requested shift" not in output
 
-    def test_message_for_large_shifts(self, test_fiber, test_potentials):
-        """Test that message is printed for shifts larger than delta_z."""
+    def test_message_for_large_shifts(self, test_fiber, test_potentials, caplog):
+        """Test that message is logged for shifts larger than delta_z."""
         potentials, coords = test_potentials
-
-        # Capture stdout
-        captured_output = io.StringIO()
 
         large_shift = test_fiber.delta_z + 50  # Definitely larger than delta_z
 
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             test_fiber.resample_potentials(potentials, coords, shift=large_shift)
 
-        output = captured_output.getvalue()
-        assert "Note: Requested shift" in output
-        assert f"{large_shift:.3f} µm" in output
-        assert f"delta_z = {test_fiber.delta_z:.3f} µm" in output
-        assert "Using equivalent shift" in output
+        assert "Note: Requested shift" in caplog.text
+        assert f"{large_shift:.3f} µm" in caplog.text
+        assert f"delta_z = {test_fiber.delta_z:.3f} µm" in caplog.text
+        assert "Using equivalent shift" in caplog.text
 
-    def test_message_content_accuracy(self, test_fiber, test_potentials):
+    def test_message_content_accuracy(self, test_fiber, test_potentials, caplog):
         """Test that the message content is accurate."""
         potentials, coords = test_potentials
 
@@ -79,55 +76,40 @@ class TestShiftModulusMessage:
         original_shift = test_fiber.delta_z * 1.5
         expected_equivalent = test_fiber.delta_z * 0.5  # Should be reduced by modulus
 
-        # Capture stdout
-        captured_output = io.StringIO()
-
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             test_fiber.resample_potentials(potentials, coords, shift=original_shift)
 
-        output = captured_output.getvalue()
-
         # Check that the message contains the correct values
-        assert f"{original_shift:.3f} µm" in output
-        assert f"{expected_equivalent:.3f} µm" in output
-        assert f"delta_z = {test_fiber.delta_z:.3f} µm" in output
+        assert f"{original_shift:.3f} µm" in caplog.text
+        assert f"{expected_equivalent:.3f} µm" in caplog.text
+        assert f"delta_z = {test_fiber.delta_z:.3f} µm" in caplog.text
 
-    def test_message_for_exact_delta_z(self, test_fiber, test_potentials):
+    def test_message_for_exact_delta_z(self, test_fiber, test_potentials, caplog):
         """Test behavior when shift equals exactly delta_z."""
         potentials, coords = test_potentials
 
-        # Capture stdout
-        captured_output = io.StringIO()
-
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             # Shift exactly equal to delta_z
             test_fiber.resample_potentials(potentials, coords, shift=test_fiber.delta_z)
 
-        output = captured_output.getvalue()
+        # When shift equals delta_z exactly, modulo reduces it to 0, so should log message
+        assert "Note: Requested shift" in caplog.text
+        assert "Using equivalent shift of 0.000 µm" in caplog.text
 
-        # When shift equals delta_z exactly, modulo reduces it to 0, so should print message
-        assert "Note: Requested shift" in output
-        assert "Using equivalent shift of 0.000 µm" in output
-
-    def test_message_for_shift_ratio(self, test_fiber, test_potentials):
+    def test_message_for_shift_ratio(self, test_fiber, test_potentials, caplog):
         """Test that message works correctly with shift_ratio parameter."""
         potentials, coords = test_potentials
-
-        # Capture stdout
-        captured_output = io.StringIO()
 
         # Use shift_ratio > 1.0 to trigger modulus
         large_shift_ratio = 1.25
 
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             test_fiber.resample_potentials(potentials, coords, shift_ratio=large_shift_ratio)
 
-        output = captured_output.getvalue()
-
-        # Should print message since effective shift > delta_z
+        # Should log message since effective shift > delta_z
         expected_shift = large_shift_ratio * test_fiber.delta_z
-        assert "Note: Requested shift" in output
-        assert f"{expected_shift:.3f} µm" in output
+        assert "Note: Requested shift" in caplog.text
+        assert f"{expected_shift:.3f} µm" in caplog.text
 
     def test_floating_point_precision_handling(self, test_fiber, test_potentials):
         """Test that floating point precision is handled correctly."""
@@ -150,74 +132,59 @@ class TestShiftModulusMessage:
         # Should not print message due to small shift
         assert "Note: Requested shift" not in output
 
-    def test_message_with_centering(self, test_fiber, test_potentials):
+    def test_message_with_centering(self, test_fiber, test_potentials, caplog):
         """Test that modulus message works correctly with centering."""
         potentials, coords = test_potentials
 
-        # Capture stdout
-        captured_output = io.StringIO()
-
         large_shift = test_fiber.delta_z + 100
 
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             test_fiber.resample_potentials(potentials, coords, center=True, shift=large_shift)
 
-        output = captured_output.getvalue()
+        # Should still log modulus message even with centering
+        assert "Note: Requested shift" in caplog.text
+        assert f"{large_shift:.3f} µm" in caplog.text
 
-        # Should still print modulus message even with centering
-        assert "Note: Requested shift" in output
-        assert f"{large_shift:.3f} µm" in output
-
-    def test_multiple_resampling_messages(self, test_fiber, test_potentials):
-        """Test that messages are printed for each resampling operation."""
+    def test_multiple_resampling_messages(self, test_fiber, test_potentials, caplog):
+        """Test that messages are logged for each resampling operation."""
         potentials, coords = test_potentials
 
-        # Capture stdout for multiple operations
-        captured_output = io.StringIO()
-
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             # First operation with large shift
             test_fiber.resample_potentials(potentials, coords, shift=test_fiber.delta_z + 50)
 
             # Second operation with different large shift
             test_fiber.resample_potentials(potentials, coords, shift=test_fiber.delta_z + 75)
 
-        output = captured_output.getvalue()
-
         # Should have two messages
-        message_count = output.count("Note: Requested shift")
+        message_count = caplog.text.count("Note: Requested shift")
         assert message_count == 2
 
         # Should contain both shift values
-        assert f"{test_fiber.delta_z + 50:.3f} µm" in output
-        assert f"{test_fiber.delta_z + 75:.3f} µm" in output
+        assert f"{test_fiber.delta_z + 50:.3f} µm" in caplog.text
+        assert f"{test_fiber.delta_z + 75:.3f} µm" in caplog.text
 
-    def test_message_format_readability(self, test_fiber, test_potentials):
+    def test_message_format_readability(self, test_fiber, test_potentials, caplog):
         """Test that the message format is user-friendly and informative."""
         potentials, coords = test_potentials
 
-        # Capture stdout
-        captured_output = io.StringIO()
-
         large_shift = test_fiber.delta_z * 2.3  # 2.3 times delta_z
 
-        with redirect_stdout(captured_output):
+        with caplog.at_level(logging.INFO, logger='pyfibers.fiber'):
             test_fiber.resample_potentials(potentials, coords, shift=large_shift)
 
-        output = captured_output.getvalue()
-
         # Check message format and content
-        assert "Note:" in output  # Should start with "Note:"
-        assert "Requested shift" in output
-        assert "exceeds one internodal length" in output
-        assert "Using equivalent shift" in output
-        assert "instead." in output
+        assert "Note:" in caplog.text  # Should start with "Note:"
+        assert "Requested shift" in caplog.text
+        assert "exceeds one internodal length" in caplog.text
+        assert "Using equivalent shift" in caplog.text
+        assert "instead." in caplog.text
 
         # Should use µm symbol
-        assert "µm" in output
+        assert "µm" in caplog.text
 
         # Should format numbers to 3 decimal places
-        lines = output.strip().split('\n')
+        lines = caplog.text.strip().split('\n')
         message_line = [line for line in lines if "Note:" in line][0]
 
         # Should contain properly formatted numbers

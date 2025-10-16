@@ -18,6 +18,10 @@ import sys
 
 os.environ['PYDEVD_DISABLE_FILE_VALIDATION'] = '1'
 
+# Set environment variable to indicate documentation build
+# This makes PyFibers log to stdout instead of stderr for notebook output
+os.environ["PYFIBERS_DOCS_BUILD"] = "1"
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, os.path.abspath('../../src/pyfibers'))
 sys.path.insert(0, os.path.abspath('../../src'))
@@ -28,7 +32,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = "0.4.0"
+release = "0.7.0"
 
 html_short_title = "PyFibers Documentation"
 # html_logo = './static/logo.png' noqa: E800
@@ -121,6 +125,9 @@ autosectionlabel_prefix_document = True
 
 # Comment out line below to not generate autosummary files
 autosummary_generate = True
+
+# Do not evaluate default values of type hints
+autodoc_preserve_defaults = True
 
 bibtex_bibfiles = ['refs.bib']
 
