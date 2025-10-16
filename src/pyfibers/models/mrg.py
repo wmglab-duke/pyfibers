@@ -10,6 +10,7 @@ Implementation of small interpolation model: https://doi.org/10.1371/journal.pcb
 
 from __future__ import annotations
 
+import logging
 import math
 import warnings
 from collections.abc import Callable
@@ -20,6 +21,9 @@ from neuron import h
 from pyfibers.fiber import Fiber
 
 h.load_file("stdrun.hoc")
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 
 # Classes to enable type hinting for dictionaries
@@ -192,7 +196,7 @@ class MRGFiber(Fiber):
             if self.diameter < 1.011 or self.diameter > 16:
                 raise ValueError("Diameter for PENA must be between 1.011 and 16 um (inclusive)")
             if self.diameter > 5.7:
-                print(f"WARNING - {self.fiber_model} fiber model is not recommended for fiber diameters above 5.7 um")
+                logger.warning("%s fiber model is not recommended for fiber diameters above 5.7 um", self.fiber_model)
         self.delta_z = self.mrg_params["delta_z"]
 
     def create_mysa(self: MRGFiber, i: int) -> h.Section:

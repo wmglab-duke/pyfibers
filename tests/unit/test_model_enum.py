@@ -8,6 +8,7 @@ https://github.com/wmglab-duke/ascent
 
 from __future__ import annotations
 
+import logging
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -133,14 +134,15 @@ class TestAddFiberToMembers:
         assert members["MOCK_A"] is MockFiberMultipleSubmodels
         assert members["MOCK_B"] is MockFiberMultipleSubmodels
 
-    def test_add_fiber_overwrites_existing(self, capsys):
+    def test_add_fiber_overwrites_existing(self, caplog):
         """Test that adding a fiber with existing submodel name overwrites and warns."""
         members = {"MOCK": "existing_class"}
-        _add_fiber_to_members(members, MockFiber)
+
+        with caplog.at_level(logging.WARNING, logger='pyfibers.model_enum'):
+            _add_fiber_to_members(members, MockFiber)
 
         assert members["MOCK"] is MockFiber
-        captured = capsys.readouterr()
-        assert "Warning: Overwriting existing fiber model 'MOCK'" in captured.out
+        assert "Overwriting existing fiber model 'MOCK'" in caplog.text
 
     def test_add_fiber_no_submodels_raises_error(self):
         """Test that adding a fiber without submodels raises ValueError."""
@@ -173,7 +175,7 @@ class TestDiscoverPlugins:
         assert plugins["MOCK"] is MockFiber
 
     @patch('pyfibers.model_enum.entry_points')
-    def test_discover_plugins_no_submodels_raises_error(self, mock_entry_points, capsys):
+    def test_discover_plugins_no_submodels_raises_error(self, mock_entry_points, caplog):
         """Test that plugins without submodels raise ValueError."""
         # Mock entry point with class that has no submodels
         mock_entry = MagicMock()
@@ -181,15 +183,15 @@ class TestDiscoverPlugins:
         mock_entry.name = "test_plugin"
         mock_entry_points.return_value = [mock_entry]
 
-        plugins = _discover_plugins()
+        with caplog.at_level(logging.ERROR, logger='pyfibers.model_enum'):
+            plugins = _discover_plugins()
 
         # Should be empty due to error
         assert len(plugins) == 0
-        captured = capsys.readouterr()
-        assert "Error loading plugin test_plugin" in captured.out
+        assert "Error loading plugin test_plugin" in caplog.text
 
     @patch('pyfibers.model_enum.entry_points')
-    def test_discover_plugins_load_error(self, mock_entry_points, capsys):
+    def test_discover_plugins_load_error(self, mock_entry_points, caplog):
         """Test handling of plugin loading errors."""
         # Mock entry point that raises an exception
         mock_entry = MagicMock()
@@ -197,12 +199,12 @@ class TestDiscoverPlugins:
         mock_entry.name = "broken_plugin"
         mock_entry_points.return_value = [mock_entry]
 
-        plugins = _discover_plugins()
+        with caplog.at_level(logging.ERROR, logger='pyfibers.model_enum'):
+            plugins = _discover_plugins()
 
         # Should be empty due to error
         assert len(plugins) == 0
-        captured = capsys.readouterr()
-        assert "Error loading plugin broken_plugin" in captured.out
+        assert "Error loading plugin broken_plugin" in caplog.text
 
     @patch('pyfibers.model_enum.entry_points')
     def test_discover_plugins_empty(self, mock_entry_points):
@@ -370,17 +372,17 @@ class TestFiberModelEnum:
 class TestIntegration:
     """Integration tests for the model_enum module."""
 
-    def test_import_prints_members(self, capsys):
-        """Test that importing the module prints available members."""
-        # Re-import the module to trigger the print statement
+    def test_import_prints_members(self, caplog):
+        """Test that importing the module logs available members."""
+        # Re-import the module to trigger the log statement
         import importlib
 
         import pyfibers.model_enum
 
-        importlib.reload(pyfibers.model_enum)
+        with caplog.at_level(logging.DEBUG, logger='pyfibers.model_enum'):
+            importlib.reload(pyfibers.model_enum)
 
-        captured = capsys.readouterr()
-        assert "Available FiberModel members:" in captured.out
+        assert "Available FiberModel members:" in caplog.text
 
     def test_register_and_use_custom_fiber(self):
         """Test the full workflow of registering and using a custom fiber."""

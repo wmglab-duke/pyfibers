@@ -6,6 +6,7 @@ both 1D and 3D fiber models in the NEURON environment.
 
 from __future__ import annotations
 
+import logging
 import math
 import typing
 import warnings
@@ -17,6 +18,9 @@ from nd_line.nd_line import nd_line
 from neuron import h
 
 h.load_file('stdrun.hoc')
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .model_enum import FiberModel
@@ -254,12 +258,14 @@ def _shift_fiber(
     # Shift in microns
     shift_in_um = shift_ratio * delta_z if shift_ratio is not None else shift
 
-    # Print informative message if modulo operation will change the shift
+    # Log informative message if modulo operation will change the shift
     if abs(shift_in_um) >= delta_z:
-        print(
-            f"Note: Requested shift of {shift_in_um:.3f} µm exceeds one internodal length "
-            f"(delta_z = {delta_z:.3f} µm). Using equivalent shift of {shift_in_um % delta_z:.3f} µm "
-            f"instead."
+        logger.info(
+            "Note: Requested shift of %.3f µm exceeds one internodal length "
+            "(delta_z = %.3f µm). Using equivalent shift of %.3f µm instead.",
+            shift_in_um,
+            delta_z,
+            shift_in_um % delta_z,
         )
 
     # Point to base shifting on
@@ -1185,7 +1191,7 @@ class Fiber:
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 
         if self.nodecount % 2 == 0 and enforce_odd_nodecount:
-            print(f"Altering node count from {self.nodecount} to {self.nodecount - 1} to enforce odd number.")
+            logger.info("Altering node count from %s to %s to enforce odd number.", self.nodecount, self.nodecount - 1)
             self.nodecount -= 1
 
         if self.nodecount < 3:
