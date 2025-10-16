@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v0.8.0 (2025-10-16)
+
+### Build System
+
+- Update build pipeline to use semantic release publishing
+  ([`d00b32a`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/d00b32af85ea40d57ab929ebb871b7ef762bf4fc))
+
+### Documentation
+
+- Add logging documentation
+  ([`b464ca4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
+
+- Autodoc will not eval default function args
+  ([`b464ca4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
+
+- Fix use of list in plotting tutorials
+  ([`b464ca4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
+
+- Update block tutorial to run faster
+  ([`b464ca4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
+
+### Features
+
+- Replace print statements with logging and expose user control of logging
+  ([`b464ca4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
+
+
 ## v0.7.0 (2025-09-26)
 
 ### Documentation
