@@ -4,10 +4,16 @@ In PyFibers, we have implemented a number of models describing the ultrastructur
 
 ## Myelinated Fiber Models
 
-We provide three variants of the McIntyre–Richardson–Grill (MRG) model {cite:p}`McIntyre2002` for myelinated fibers. The MRG model is a biophysically detailed model of a myelinated nerve fiber, and is widely used in the field of computational neuroscience. The three variants are:
+We provide four variants of myelinated fiber models:
+
+**MRG Models**: Three variants of the McIntyre–Richardson–Grill (MRG) model {cite:p}`McIntyre2002` for myelinated fibers. The MRG model is a biophysically detailed model of a myelinated nerve fiber, and is widely used in the field of computational neuroscience. The three variants are:
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_DISCRETE`: The original MRG model, as described in {cite:p}`McIntyre2002`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_INTERPOLATION`: An interpolation of the MRG model, which allows for modeling of any fiber diameter between 2 and 16 microns, as described in {cite:p}`musselman_ascent_2021`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.SMALL_MRG_INTERPOLATION`: A modification of MRG parameters to better replicate the behavior of thinly myelinated fibers, as described in {cite:p}`pena_cap_2024`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.PENA`: A modification of MRG parameters to better replicate the behavior of thinly myelinated fibers, as described in {cite:p}`pena_cap_2024`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.SMALL_MRG_INTERPOLATION`: **Deprecated.** Old name for {py:attr}`~pyfibers.model_enum.FiberModel.PENA`.
+
+**Sweeney Model**:
+- {py:attr}`~pyfibers.model_enum.FiberModel.SWEENEY`: A myelinated fiber model based on the Sweeney model, as described in {cite:p}`sweeney_modeling_1987`.
 
 ## Unmyelinated Fiber Models
 

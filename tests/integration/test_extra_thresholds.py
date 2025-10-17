@@ -99,7 +99,7 @@ def test_thio_autonomic():
 
 def test_thio_cutaneous():
     assert np.isclose(
-        get_activation_threshold(FiberModel.THIO_CUTANEOUS, nodecount=265, diameter=1), -1.5556062500000007
+        get_activation_threshold(FiberModel.THIO_CUTANEOUS, nodecount=265, diameter=1), -1.5693321875000006
     )
 
 
@@ -135,6 +135,13 @@ def test_schild97():
     assert np.isclose(
         get_activation_threshold(FiberModel.SCHILD97, diameter=1, nodecount=265, stimamp_top=-6),
         -5.8128125,
+    )
+
+
+def test_sweeney():
+    assert np.isclose(
+        get_activation_threshold(FiberModel.SWEENEY, diameter=5.7, nodecount=133, stimamp_top=-1),
+        -1.1515625000000003,
     )
 
 

@@ -10,7 +10,9 @@ Implementation of small interpolation model: https://doi.org/10.1371/journal.pcb
 
 from __future__ import annotations
 
+import logging
 import math
+import warnings
 from collections.abc import Callable
 from typing import TypedDict
 
@@ -19,6 +21,9 @@ from neuron import h
 from pyfibers.fiber import Fiber
 
 h.load_file("stdrun.hoc")
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 
 # Classes to enable type hinting for dictionaries
@@ -52,7 +57,7 @@ class MRGInterpolationParameters(TypedDict):  # noqa: D101
 class FiberParameters(TypedDict):  # noqa: D101
     MRG_DISCRETE: MRGDiscreteParameters
     MRG_INTERPOLATION: MRGInterpolationParameters
-    SMALL_MRG_INTERPOLATION: MRGInterpolationParameters
+    PENA: MRGInterpolationParameters
 
 
 # Parameters that define each fiber model variant
@@ -82,7 +87,7 @@ fiber_parameters_all: FiberParameters = {
         node_diam=lambda d: 0.01093 * d**2 + 0.1008 * d + 1.099,
         axon_diam=lambda d: 0.02361 * d**2 + 0.3673 * d + 0.7122,
     ),
-    "SMALL_MRG_INTERPOLATION": MRGInterpolationParameters(
+    "PENA": MRGInterpolationParameters(
         node_length=lambda d: 1.0,
         paranodal_length_1=lambda d: 3.0,
         rhoa=lambda d: 0.7e6,
@@ -100,7 +105,7 @@ fiber_parameters_all: FiberParameters = {
 class MRGFiber(Fiber):
     """Implementation of the MRG fiber model."""
 
-    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION']
+    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION', 'PENA']
 
     def __init__(self: MRGFiber, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
@@ -173,15 +178,25 @@ class MRGFiber(Fiber):
             }
             if self.diameter < 2 or self.diameter > 16:
                 raise ValueError("Diameter for MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
-        elif self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
-            fiber_param_interp = fiber_parameters_all["SMALL_MRG_INTERPOLATION"]
+        elif self.fiber_model.name in ["SMALL_MRG_INTERPOLATION", "PENA"]:
+            # Show deprecation warning for old name
+            if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
+                warnings.warn(
+                    "SMALL_MRG_INTERPOLATION is deprecated and will be removed in a future version. "
+                    "Use PENA instead.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
+
+            # Use PENA logic for both names
+            fiber_param_interp = fiber_parameters_all["PENA"]
             self.mrg_params = {
                 param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
             }
             if self.diameter < 1.011 or self.diameter > 16:
-                raise ValueError("Diameter for SMALL_MRG_INTERPOLATION must be between 1.011 and 16 um (inclusive)")
+                raise ValueError("Diameter for PENA must be between 1.011 and 16 um (inclusive)")
             if self.diameter > 5.7:
-                print(f"WARNING - {self.fiber_model} fiber model is not recommended for fiber diameters above 5.7 um")
+                logger.warning("%s fiber model is not recommended for fiber diameters above 5.7 um", self.fiber_model)
         self.delta_z = self.mrg_params["delta_z"]
 
     def create_mysa(self: MRGFiber, i: int) -> h.Section:
@@ -324,8 +339,8 @@ class MRGFiber(Fiber):
         node.xc[0] = 0  # short circuit
         node.xg[0] = 1e10  # short circuit
 
-        # adjust conductances (SMALL_MRG_INTERPOLATION  only)
-        if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
+        # adjust conductances (PENA only)
+        if self.fiber_model.name == "PENA":
             node.gnabar_axnode_myel = 2.333333
             node.gkbar_axnode_myel = 0.115556
 
