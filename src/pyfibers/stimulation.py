@@ -136,7 +136,7 @@ class Stimulation:
     def __str__(self: Stimulation) -> str:
         """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
         return (
-            f'{type(self).__name__}: {self.dt * self.tstop} ms (dt={self.dt} ms)'
+            f'{type(self).__name__}: {self.tstop} ms (dt={self.dt} ms)'
             f' (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)'
         )
 
