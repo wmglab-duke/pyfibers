@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v0.8.1 (2025-10-23)
+
+### Bug Fixes
+
+- Fix bug where stimulation __str__ did not print class tstop correctly
+  ([`34dc461`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/34dc461ed033d1a45b8bf76171d0e1dfbc9b8a7e))
+
+### Build System
+
+- Fix twine upload to be conditional upon new release
+  ([`443a913`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/443a913606ab8b586b3b760249dd47fcd5d15fd9))
+
+
 ## v0.8.0 (2025-10-16)
 
 ### Build System
