@@ -175,7 +175,7 @@ upload_to_release = true  # set to true if we want to enable releases
 version_toml = [
   "pyproject.toml:project.version"
 ]
-version_variable = [
+version_variables = [
   "docs/source/conf.py:release:nf"
 ]
 
