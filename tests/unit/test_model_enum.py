@@ -357,7 +357,7 @@ class TestFiberModelEnum:
 
     def test_fibermodel_member_values_are_classes(self):
         """Test that FiberModel member values are fiber classes."""
-        for _name, member in FiberModel.__members__.items():
+        for member in FiberModel:
             assert isinstance(member.value, type)
             # Should be a subclass of Fiber
             assert issubclass(member.value, Fiber)
