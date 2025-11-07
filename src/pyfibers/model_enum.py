@@ -73,6 +73,10 @@ def _discover_plugins() -> dict[str, type]:
 def _update_all_module_references(new_enum: Any) -> None:  # noqa: ANN401
     """Update all modules that have imported FiberModel with the new enum.
 
+    This function is called by register_custom_fiber whenever a new enum is created.
+    Since a new enum is always created when registering, we update all module references
+    to ensure consistency across the codebase.
+
     :param new_enum: The new FiberModel enum to propagate to all modules.
     """
     current_module = sys.modules[__name__]
@@ -85,8 +89,8 @@ def _update_all_module_references(new_enum: Any) -> None:  # noqa: ANN401
             and module.FiberModel is not new_enum
             and hasattr(module.FiberModel, "__members__")
             and hasattr(new_enum, "__members__")
-            and len(module.FiberModel.__members__) < len(new_enum.__members__)
         ):
+            # Always update if enum is different (register_custom_fiber always creates a new enum)
             module.FiberModel = new_enum  # type: ignore[attr-defined]
 
 
