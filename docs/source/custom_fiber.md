@@ -47,7 +47,9 @@ class HHFiber(Fiber):
 
 ### Step 3: Initialize the Subclass
 
-Define the ``__init__`` method, call the superclass initializer, and set any model-specific parameters. At minimum, set ``self.v_rest`` (resting membrane potential) and ``self.myelinated`` (whether the fiber is myelinated). It is also recommended to specify gating variables if you want to be able to record these values during simulations (these are specified in the .mod files describing the node mechanisms). Finally, set the ``delta_z`` parameter, which is the distance from the center of one node to the next node.
+Define the ``__init__`` method, call the superclass initializer, and set any model-specific parameters. At minimum, set ``self.v_rest`` (resting membrane potential) and ``self.myelinated`` (whether the fiber is myelinated). It is also recommended to specify gating variables if you want to be able to record these values during simulations (these are specified in the .mod files describing the node mechanisms).
+
+**For homogeneous fiber models**, set the ``delta_z`` parameter, which is the distance from the center of one node to the next node. This can be passed as an argument to ``__init__``.
 
 ```python
 def __init__(self, diameter: float, delta_z: float = 8.333, **kwargs):
@@ -61,6 +63,21 @@ def __init__(self, diameter: float, delta_z: float = 8.333, **kwargs):
     self.myelinated = False
     self.delta_z = delta_z
     self.v_rest = -65  # mV
+```
+
+**For heterogeneous fiber models** (e.g., myelinated fibers with multiple section types), ``delta_z`` must be calculated by you (the model implementer) in your ``__init__`` method based on the fiber diameter. It should **not** be accepted as an argument from users. You must:
+
+1. Check that ``delta_z`` is not in ``kwargs`` and raise an error if it is
+2. Calculate and set ``self.delta_z`` in your ``__init__`` method based on the diameter (or from model-specific parameters)
+
+```python
+def __init__(self, diameter: float, **kwargs):
+    """Initialize heterogeneous fiber class."""
+    if "delta_z" in kwargs:
+        raise ValueError("Cannot specify delta_z for this fiber model")
+    super().__init__(diameter=diameter, **kwargs)
+    # You must calculate delta_z based on diameter
+    self.delta_z = self.diameter * 100  # Example: simple calculation
 ```
 
 ### Step 4: Define the Node Creation Method(s)
@@ -188,6 +205,13 @@ def generate(self, **kwargs):
 ## Homogeneous vs Heterogeneous Fiber Models
 
 The class construction will differ depending on whether you are creating a "homogeneous" fiber model (i.e., all sections of the fiber are identical, typically unmyelinated fibers) or a "heterogeneous" fiber model (i.e., sections of the fiber have different properties, such as nodes and myelin). See the figure below for a visual representation of the construction of homogeneous and heterogeneous fiber models.
+
+```{tip}
+**Reference implementations**: You can find complete examples of both homogeneous and heterogeneous fiber models in the PyFibers codebase:
+
+- **Homogeneous models**: See ``pyfibers.models.sundt``, ``pyfibers.models.schild``, ``pyfibers.models.rattay``, ``pyfibers.models.thio``, and ``pyfibers.models.tigerholm``
+- **Heterogeneous models**: See ``pyfibers.models.mrg`` and ``pyfibers.models.sweeney``
+```
 
 ```{figure} images/fiber_construction.png
 :name: fiber-construction
