@@ -1048,8 +1048,11 @@ class Fiber:
     def sfap(current_matrix: np.ndarray, potentials: np.ndarray) -> np.ndarray:
         """Compute the Single-Fiber Action Potential (SFAP) by multiplying currents with recording potentials.
 
+        This method uses the principle of reciprocity to calculate the SFAP.
+
         :param current_matrix: 2D array of shape [timepoints, sections], containing currents in mA.
         :param potentials: 1D array of potentials (mV) at each section, length = number of sections.
+            These potentials should be for a 1 mA unit current source from the recording electrode.
         :raises ValueError: If the number of columns in the current matrix does not match the length of potentials.
         :return: The computed SFAP in microvolts (µV).
         """
@@ -1061,7 +1064,9 @@ class Fiber:
         """Compute the SFAP time course at a given electrode location.
 
         :param rec_potentials: 1D array of precomputed potentials (mV)
-            at each fiber section due to the electrode placement.
+            at each fiber section due to the electrode placement. These potentials should be calculated
+            assuming a 1 mA unit current source from the recording electrode
+            (e.g., using :meth:`Fiber.point_source_potentials` with ``i0=1``).
         :param downsample: Downsampling factor for the time vector (applies to the current matrix).
         :return: A tuple (``sfap_trace``, ``downsampled_time``) where ``sfap_trace`` is the computed single-fiber
             action potential in microvolts (µV) and ``downsampled_time`` is the corresponding time array (ms).
