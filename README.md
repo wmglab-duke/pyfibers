@@ -89,11 +89,25 @@ print(f"Threshold for 5.7 micron fiber: {amp} (mA)")
 ```
 For more examples, see the [documentation](https://wmglab-duke.github.io/pyfibers/).
 
+## Logging
+
+PyFibers provides helpful logging messages during simulations. By default, logging is disabled to avoid interfering with your application's logging configuration.
+
+To enable logging:
+
+```python
+import pyfibers
+
+pyfibers.enable_logging()  # Enable INFO level logging
+```
+
+For detailed logging configuration options, see the [API documentation](https://wmglab-duke.github.io/pyfibers/autodoc/index.html).
+
 ## Contributing
 If you develop additional functionality that would be generally useful to our users, please open a Pull Request for us to review. For detailed contribution guidelines, see our [contributing guide](https://github.com/wmglab-duke/pyfibers/blob/main/contributing.md).
 
 ## Authors and acknowledgment
-   - Developed at Duke University by Daniel Marshall, Elie Farrah, and Eric Musselman
+   - Developed at Duke University by Daniel Marshall, Elie Farah, and Eric Musselman
    - Please see: \<Paper REF Forthcoming>
 
 ## License

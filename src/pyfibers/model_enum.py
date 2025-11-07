@@ -12,11 +12,15 @@ Classes:
 
 from __future__ import annotations
 
+import logging
 import sys
 from importlib.metadata import entry_points
 from typing import TYPE_CHECKING, Any
 
 from . import models
+
+# Set up module-level logger
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -47,7 +51,7 @@ def _add_fiber_to_members(members: dict[str, type], fiber_class: type) -> None:
     for submodel in fiber_class.submodels:  # type: ignore[attr-defined]
         submodel_upper = submodel.upper()
         if submodel_upper in members:
-            print(f"Warning: Overwriting existing fiber model '{submodel_upper}' with {fiber_class}")
+            logger.warning("Overwriting existing fiber model '%s' with %s", submodel_upper, fiber_class)
         members[submodel_upper] = fiber_class
 
 
@@ -66,7 +70,7 @@ def _discover_plugins() -> dict[str, type]:
             else:
                 raise ValueError(f"Plugin {plugin_class} does not have a submodels attribute")
         except Exception as e:  # noqa: PIE786, B902
-            print(f"Error loading plugin {entry_point.name}: {e}")
+            logger.error("Error loading plugin %s: %s", entry_point.name, e)
     return plugins
 
 
@@ -123,9 +127,10 @@ def register_custom_fiber(fiber_class: type) -> None:
     FiberModel = _create_fiber_model_enum(current_members)
     _update_all_module_references(FiberModel)
 
-    print(
-        f"Successfully registered custom fiber model: {fiber_class.__name__} "
-        f"with submodels: {fiber_class.submodels}"  # type: ignore[attr-defined]
+    logger.info(
+        "Successfully registered custom fiber model: %s with submodels: %s",
+        fiber_class.__name__,
+        fiber_class.submodels,  # type: ignore[attr-defined]
     )
 
 
@@ -139,4 +144,4 @@ members.update(_discover_plugins())
 # Create the FiberModel enum with all discovered submodels
 FiberModel: Any = _create_fiber_model_enum(members)  # type: ignore[no-redef,misc]
 
-print(f"Available FiberModel members: {list(FiberModel.__members__.keys())}")
+logger.debug("Available FiberModel members: %s", list(FiberModel.__members__.keys()))

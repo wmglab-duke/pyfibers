@@ -41,7 +41,7 @@ license = {file = "LICENSE"}
 name = "pyfibers"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.7.0"  # This is the only place version should be hard coded
+version = "0.8.1"  # This is the only place version should be hard coded
 
 [project.optional-dependencies]
 dev = [
@@ -113,7 +113,8 @@ ignore = [
   "ANN002",  # Suppress annotations for *args/**kwargs (eventually consider removing)
   "ANN003",  # Suppress annotations for *args/**kwargs (eventually consider removing)
   "I900",  # Temporary suppression of dependency check (NEURON Windows 8.2.4+)
-  "DAR501"  # Disabling darglint complaint about ivar documentation
+  "DAR501",  # Disabling darglint complaint about ivar documentation
+  "PIE803"  # Complaint about log formatting
 ]
 max-complexity = 18
 max-line-length = 120
@@ -153,6 +154,7 @@ no_strict_optional = true
 [tool.rstcheck]
 ignore_directives = [
   "automodule",
+  "autofunction",
   "bibliography",
   "include",
   "autoclass",
@@ -169,12 +171,11 @@ commit_parser_options = {parse_squash_commits = true, ignore_merge_commits = tru
 major_on_zero = false  # set to true once we reach 1.0.0
 no_git_verify = true
 tag_format = "v{version}"
-upload_to_PyPI = true  # set to true once package is set up on PyPI
 upload_to_release = true  # set to true if we want to enable releases
 version_toml = [
   "pyproject.toml:project.version"
 ]
-version_variable = [
+version_variables = [
   "docs/source/conf.py:release:nf"
 ]
 
@@ -188,11 +189,6 @@ exclude_commit_patterns = [
   '''build\((?!deps\): .+)'''
 ]
 mode = "update"
-
-[tool.semantic_release.publish]
-dist_glob_patterns = ["dist/*"]
-repository = "pypi"
-upload_to_pypi = true
 
 [tool.semantic_release.remote]
 type = "gitlab"
