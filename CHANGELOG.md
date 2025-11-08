@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.8.2 (2025-11-08)
+
+### Build System
+
+- Update pyproject.toml so docs version variable is auto updated
+  ([`5a5a1a7`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/5a5a1a79a682969ac251500bd5fc2765cca6c650))
+
+
 ## v0.8.1 (2025-10-23)
 
 ### Bug Fixes
