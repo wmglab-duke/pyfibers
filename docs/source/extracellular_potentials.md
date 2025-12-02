@@ -29,7 +29,7 @@ fiber.point_source_potentials(
 
 ## Numerical Simulations (e.g., Finite Element Models)
 
-Extracellular potentials can be calculated using numerical methods such as the finite element method (FEM) in software packages like COMSOL, ANSYS, or FEniCS. These simulations provide high-resolution potential distributions that can be imported into PyFibers for fiber simulation studies. Such electrical potentials from external sources can be using in PyFibers with two main approaches:
+Extracellular potentials can be calculated using numerical methods such as the finite element method (FEM) in software packages like COMSOL, ANSYS, or FEniCS. These simulations provide high-resolution potential distributions that can be imported into PyFibers for fiber simulation studies. Such electrical potentials from external sources can be used in PyFibers with two main approaches:
 
 1. **Resampling (Recommended)**: Interpolate the high-resolution FEM potentials onto the fiber's coordinate system using the provided resampling methods in PyFibers. This is the recommended approach for most use cases, as it allows for flexible fiber discretization (testing new longitudinal alignments or fiber diameters on the same path).
 
