@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below. To cite a specific version, use the Zenodo DOI for that version."
+message: "If you use this software, please cite it as below. To cite a specific version, use the Zenodo DOI for that version. Please also cite the associated publication: https://doi.org/10.1371/journal.pcbi.1013764"
 authors:
   - family-names: "Marshall"
     given-names: "Daniel P."

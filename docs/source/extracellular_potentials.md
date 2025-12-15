@@ -58,7 +58,7 @@ When importing potentials from finite element models, follow these key steps:
        [euclidean(coords_3d[i - 1], coords_3d[i]) for i in range(1, len(coords_3d))]
    )
    # Resample the high-resolution FEM potentials onto the fiber's coordinates
-   fiber.resample_potentials(arc_lengths_fem, potentials_fem, inplace=True)
+   fiber.resample_potentials(potentials_fem, arc_lengths_fem, inplace=True)
    ```
 
 ### Direct Assignment

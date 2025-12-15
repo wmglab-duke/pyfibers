@@ -1,7 +1,9 @@
 # PyFibers
-*PyFibers paper citation will be available soon.*
 
+**PyFibers Paper**: Marshall DP, Farah ES, Musselman ED, Pelot NA, Grill WM (2025) PyFibers: An open-source NEURON-Python package to simulate responses of model nerve fibers to electrical stimulation. PLoS Comput Biol 21(12): e1013764. https://doi.org/10.1371/journal.pcbi.1013764
 
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/wmglab-duke/pyfibers)
+[![Documentation](https://img.shields.io/badge/Documentation-Latest-blue?logo=read-the-docs)](https://wmglab-duke.github.io/pyfibers/)
 [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760)
 [![Contributors](https://img.shields.io/github/contributors/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/graphs/contributors)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
@@ -38,8 +40,8 @@ Note that these installation instructions are for users. Developer instructions 
 It is recommended (But not required) you create a new virtual environment for PyFibers. For example, using Anaconda/Miniconda:
   - `conda create -n pyfibers`
   - `conda activate pyfibers`
-1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
-   - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)
+1. Install NEURON and add to PATH ([https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/))
+   - Make sure your NEURON and Python versions are compatible ([https://nrn.readthedocs.io/en/latest/changelog.html](https://nrn.readthedocs.io/en/latest/changelog.html))
    - Check your installation by running the following command: `python -c "import neuron; neuron.test(); quit()"`. If successful, test outputs along with "OK" should be printed to the terminal.
 2. Install PyFibers from PyPI and compile the `.mod` files.
    ```bash
@@ -54,8 +56,7 @@ Some notes for `pyfibers_compile`:
 
 
 ## Usage
-📖 **Documentation**: For detailed information on usage, see our [documentation](https://wmglab-duke.github.io/pyfibers/).
-
+📖 **Documentation**: For detailed information on usage, see our [documentation](https://wmglab-duke.github.io/pyfibers/):
 - [Tutorials](https://wmglab-duke.github.io/pyfibers/tutorials/index.html) on various operations.
 - [API Documentation](https://wmglab-duke.github.io/pyfibers/autodoc/index.html) on function/class arguments and outputs.
 
@@ -108,7 +109,7 @@ If you develop additional functionality that would be generally useful to our us
 
 ## Authors and acknowledgment
    - Developed at Duke University by Daniel Marshall, Elie Farah, and Eric Musselman
-   - Please see: \<Paper REF Forthcoming>
+   - Associated publication: [https://doi.org/10.1371/journal.pcbi.1013764](https://doi.org/10.1371/journal.pcbi.1013764)
 
 ## License
 See LICENSE
