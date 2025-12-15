@@ -38,8 +38,8 @@ Note that these installation instructions are for users. Developer instructions 
 It is recommended (But not required) you create a new virtual environment for PyFibers. For example, using Anaconda/Miniconda:
   - `conda create -n pyfibers`
   - `conda activate pyfibers`
-1. Install NEURON and add to PATH (https://nrn.readthedocs.io/en/latest/)
-   - Make sure your NEURON and Python versions are compatible (https://nrn.readthedocs.io/en/latest/changelog.html)
+1. Install NEURON and add to PATH ([https://nrn.readthedocs.io/en/latest/](https://nrn.readthedocs.io/en/latest/))
+   - Make sure your NEURON and Python versions are compatible ([https://nrn.readthedocs.io/en/latest/changelog.html](https://nrn.readthedocs.io/en/latest/changelog.html))
    - Check your installation by running the following command: `python -c "import neuron; neuron.test(); quit()"`. If successful, test outputs along with "OK" should be printed to the terminal.
 2. Install PyFibers from PyPI and compile the `.mod` files.
    ```bash
