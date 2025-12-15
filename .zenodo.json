@@ -34,5 +34,11 @@
       "simulation"
     ],
     "upload_type": "software",
-    "language": "eng"
+    "related_identifiers": [
+      {
+        "relation": "isDocumentedBy",
+        "identifier": "10.1371/journal.pcbi.1013764",
+        "scheme": "doi"
+      }
+    ]
   }
