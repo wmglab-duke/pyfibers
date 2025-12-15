@@ -1,6 +1,6 @@
 # Implementations of Fiber Models
 
-In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications. Unless otherwise specified, the model code was adapted from ASCENT {cite:p}`musselman_ascent_2021`. Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`placeholder`.
+In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications. Unless otherwise specified, the model code was adapted from ASCENT {cite:p}`musselman_ascent_2021`. Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`Marshall2025`.
 
 ## Myelinated Fiber Models
 

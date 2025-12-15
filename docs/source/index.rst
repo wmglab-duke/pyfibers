@@ -33,8 +33,4 @@ Welcome to the PyFibers documentation!
    :caption: External Links
 
    The Grill Lab <https://grill-lab.pratt.duke.edu>
-
-..
-   PyFibers Publication <TODO>
-   ASCENT on GitHub <TODO>
-..
+   PyFibers Publication <https://doi.org/10.1371/journal.pcbi.1013764>

@@ -1,6 +1,6 @@
 # Algorithms in PyFibers
 
-This page details the logic behind relevant algorithms in PyFibers, including the threshold search and simulation routines. The **simulation routines** apply the stimulus to the model fiber and track the membrane potential over time. The **threshold search** determines the minimum stimulus amplitude required to evoke an action potential or block conduction in a model nerve fiber. More details on the ethos behind these algorithms can be found in the PyFibers paper {cite:p}`placeholder`.
+This page details the logic behind relevant algorithms in PyFibers, including the threshold search and simulation routines. The **simulation routines** apply the stimulus to the model fiber and track the membrane potential over time. The **threshold search** determines the minimum stimulus amplitude required to evoke an action potential or block conduction in a model nerve fiber. More details on the ethos behind these algorithms can be found in the PyFibers paper {cite:p}`Marshall2025`.
 
 ## Threshold Search
 
