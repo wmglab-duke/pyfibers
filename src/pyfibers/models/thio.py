@@ -67,6 +67,37 @@ class ThioFiber(Fiber):
         self.delta_z = delta_z  # microns
         self.v_rest = -58.5  # mV
 
+        # pulled from state variable/name of mechanism
+        self.gating_variables = {
+            "m1.7": "m_nav7",
+            "h1.7": "h_nav7",
+            "h1.8": "h_newnav8",
+            "m1.8": "m_newnav8",
+            "s1.8": "s_newnav8",
+            "h1.9": "h_nav9",
+            "m1.9": "m_nav9",
+            "s1.9": "s_nav9",
+            "m_bk": "m_bk",
+            "h_bk": "h_bk",
+            "m_cav12": "m_cav12",  # Titus - L-Type Voltage Dependent Calcium Channel
+            "h_cav12": "h_cav12",
+            "m_cav22": "m_cav22",  # Titus - N-Type Voltage Dependent Calcium Channel
+            "h_cav22": "h_cav22",
+            "s_cav22": "s_cav22",
+            "n_km": "n_km",
+            "m_km": "m_km",
+            "m_hcn": "m_hcn",
+            "n_hcn": "n_hcn",
+            "h_kv21": "h_kv21",
+            "m_kv21": "m_kv21",
+            "h_ka34": "h_ka34",
+            "m_ka34": "m_ka34",
+            "h_ka14": "h_ka14",
+            "s_ka14": "s_ka14",
+            "m_ka14": "m_ka14",
+            "n_sk": "n_sk",
+        }
+
         if self.passive_end_nodes:
             warnings.warn("Ignoring passive_end_nodes for Thio fiber", UserWarning, stacklevel=2)
             self.passive_end_nodes: bool = False

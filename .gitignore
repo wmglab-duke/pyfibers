@@ -17,6 +17,7 @@ src/MOD_Files/nrnmech.dll
 *.c
 nrnmech.dll
 
+.DS_Store
 .ipynb_checkpoints
 .jupyter_cache
 jupyter_execute/
