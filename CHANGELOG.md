@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v0.8.3 (2025-12-17)
+
+### Bug Fixes
+
+- Add gating variable to thio model data logging
+  ([`a7472f8`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a7472f84068f73483509fa4583ebadbd5cdc9e5c))
+
+- Gating variables added to thio model init
+  ([`a7472f8`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a7472f84068f73483509fa4583ebadbd5cdc9e5c))
+
+### Build System
+
+- Disable config keeping major version at 0
+  ([`c5610e5`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/c5610e5fadc4a0f0684d2d1369c4e76c07d1c712))
+
+### Documentation
+
+- Add citation to pyfibers publication
+  ([`558e3bd`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/558e3bd8344bdeadcb2ed3adb43b4dd8c4bb3228))
+
+
 ## v0.8.2 (2025-11-08)
 
 ### Build System
