@@ -58,6 +58,8 @@ commitizen:
   script:
   - pip install commitizen
   - cz check --rev-range "$CI_MERGE_REQUEST_DIFF_BASE_SHA..$CI_COMMIT_SHA"
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 fixme:
   stage: lint
