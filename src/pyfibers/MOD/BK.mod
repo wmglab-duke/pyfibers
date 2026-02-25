@@ -70,6 +70,10 @@ PROCEDURE rates(Vm (mV)) (/ms) {
 	LOCAL Q10,sf,v12,vh12,pca
 UNITSOFF
 		Q10 = q10^((celsius-22)/10)
+		: clamp cai to avoid log of non-positive value
+		if(cai <= 0){
+			cai = 1e-9
+		}
 		pca = log10(cai)-3 :converts to log10(cai [molar])
 		v12 =  -50*pca-232
 		vh12 =  -8*pca+35
