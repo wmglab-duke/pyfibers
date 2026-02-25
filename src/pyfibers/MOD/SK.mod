@@ -65,6 +65,10 @@ DERIVATIVE states {
 PROCEDURE rates(Vm (mV)) (/ms) {
 	LOCAL Q10,sf,v12,pca
 UNITSOFF
+		: clamp cai to avoid log of non-positive value
+		if(cai <= 0){
+			cai = 1e-9
+		}
 		pca = log10(cai)-3
 		Q10 = q10^((celsius-22)/10)
         ninf= 1/(1+exp(-1*(pca + 6.4)/.12))
