@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v0.8.4 (2026-02-25)
+
+### Bug Fixes
+
+- Disallow negative cai vals for thio fiber mechanisms
+  ([`b50a750`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/b50a7500b6337254f474352c8c7ea38adf07723b))
+
+
 ## v0.8.3 (2025-12-17)
 
 ### Bug Fixes
