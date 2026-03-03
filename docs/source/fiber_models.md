@@ -1,6 +1,6 @@
 # Implementations of Fiber Models
 
-In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications. Unless otherwise specified, the model code was adapted from ASCENT {cite:p}`musselman_ascent_2021`. Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`Marshall2025`.
+In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications.  Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`Marshall2025`.
 
 ## Myelinated Fiber Models
 
@@ -18,11 +18,17 @@ We provide four variants of myelinated fiber models:
 ## Unmyelinated Fiber Models
 
 We provide several variants of unmyelinated C‑fiber models.
+- {py:attr}`~pyfibers.model_enum.FiberModel.THIO_AUTONOMIC`: An unmyelinated fiber model for autonomic fibers, as described in {cite:p}`Thio2024`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.THIO_CUTANEOUS`: An unmyelinated fiber model for cutaneous fibers, as described in {cite:p}`Thio2024`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.TIGERHOLM`: A biophysically detailed model of a C‑fiber, as described in {cite:p}`Tigerholm2014`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.RATTAY`: A simplified version of the Tigerholm model, as described in {cite:p}`Rattay1993`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD94`: A simple model of a C‑fiber, as described in {cite:p}`Schild1994`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD97`: A modification of the Schild 1994 model, as described in {cite:p}`Schild1997`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SUNDT`: A modification of the Schild 1994 model, as described in {cite:p}`Sundt2015`.
+
+## Changes to Fiber Models from original publications
+
+All MRG model implementations are based on the ASCENT implementation {cite:p}`ascent_zenodo_2024` (prior to PyFibers replacing ASCENT's fiber modeling code). Changes to the Sweeney model from the original publication are described in a supplement of the PyFibers manuscript {cite:p}`Marshall2025`. The Thio model mechanisms have been changed to prevent negative intracellular calcium. All other C-fiber models (Tigerholm, Rattay, Schild, and Sundt) are based on the Pelot 2021 implementation {cite:p}`Pelot2021`.
 
 ## Construction of Model Fibers
 
