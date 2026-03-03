@@ -1,4 +1,7 @@
-"""The copyrights of this software are owned by Duke University."""
+"""Implementation of Thio fiber models.
+
+As described in Thio 2024: https://doi.org/10.1371/journal.pcbi.1012475
+"""
 
 from __future__ import annotations
 

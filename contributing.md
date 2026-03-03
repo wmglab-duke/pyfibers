@@ -60,7 +60,7 @@ git checkout -b feat/your-new-feature
 6. Commit changes using clear messages following the [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) specification:
 
     ```
-    feat: add new fiber model based on Sweeney 2023
+    feat: add new fiber model based on Sweeney 1987
     ```
 
     - For work-in-progress commits, use `chore`.

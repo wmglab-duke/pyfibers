@@ -2,6 +2,7 @@
 : Calcium-Activated potassium channel of BK and SK Channel Contributions
 : Kv7.2 (n) and Kv7.3 (m). Kv7.5 was considered "similar enough" to
 : Kv7.2 so as to be considered a part of that current (n).
+: 2026-02-24: Changed by Michael Zhang to prevent negative intracellular calcium.
 : Data From:
 
 NEURON {
