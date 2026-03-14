@@ -69,10 +69,12 @@ jobs:
           tox-env: py310-neuron8
         - python: '3.11'
           tox-env: py311-neuron8
-        - python: '3.11'
-          tox-env: py311-neuron9
         - python: '3.12'
-          tox-env: py312-neuron8
+          tox-env: py312-neuron9
+        - python: '3.13'
+          tox-env: py313-neuron9
+        - python: '3.14'
+          tox-env: py314-neuron9
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -85,7 +87,7 @@ jobs:
         tox r -e ${{ matrix.tox-env }}
 
 ###############################################################################
-# Job: coverage (py311-neuron8,coverage)
+# Job: coverage (py313-neuron9,coverage)
 ###############################################################################
   coverage:
     name: coverage
@@ -96,11 +98,11 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         cache: pip
     - run: |
         pip install tox
-        tox r -e py311-neuron8,coverage
+        tox r -e py313-neuron9,coverage
     - uses: actions/upload-artifact@v4
       with:
         name: coverage-html
