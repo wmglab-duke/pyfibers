@@ -1,5 +1,5 @@
 default:
-  image: python:3.11
+  image: python:3.13
 
 workflow:
   rules:
@@ -73,7 +73,7 @@ tox_py311_w_cov:
   script:
   - pip install tox
   - tox -l
-  - tox r -e py311-neuron8,coverage
+  - tox r -e py313-neuron9,coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
     reports:
@@ -100,7 +100,7 @@ tox_py310:
 tox_py312:
   script:
   - pip install tox
-  - tox r -e py312-neuron8
+  - tox r -e py312-neuron9
   image: python:3.12
   rules:
   - changes:
@@ -110,18 +110,18 @@ tox_py312:
 tox_py313:
   script:
   - pip install tox
-  - tox r -e py313-neuron8
+  - tox r -e py313-neuron9
   image: python:3.13
   rules:
   - changes:
     - src/**/*
     - tests/**/*
 
-tox_neuron9:
+tox_py314:
   script:
   - pip install tox
-  - tox r -e py311-neuron9
-  image: python:3.11
+  - tox r -e py314-neuron9
+  image: python:3.14
   rules:
   - changes:
     - src/**/*
