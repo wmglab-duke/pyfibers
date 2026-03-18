@@ -20,15 +20,15 @@ classifiers = [
   "Operating System :: OS Independent"
 ]
 dependencies = [
-  "matplotlib==3.10.*",
-  "multiprocess==0.*",
-  # "neuron",
-  "numpy==2.2.*",
-  "pandas==2.2.*",
-  "scipy==1.15.*",
-  "seaborn==0.13.*",
-  "nd_line==0.2.*",
-  "aenum==3.1.*"
+  # "neuron", # NEURON cannot be installed from PyPI on Windows
+  "numpy>=2.2,<2.4",  # constrain minor version to avoid CI errors
+  "scipy>=1.15,<2",
+  "nd_line>=0.2,<0.3",
+  "aenum>=3.1,<4",
+  "matplotlib>=3.10,<4",
+  "multiprocess>=0.70,<0.71",
+  "pandas>=2.2,<3",
+  "seaborn>=0.13,<0.14"
 ]
 description = "Modeling stimulation of peripheral nerve fibers"
 keywords = [
@@ -46,21 +46,22 @@ version = "0.8.4"  # This is the only place version should be hard coded
 
 [project.optional-dependencies]
 dev = [
-  "mock==5.*",
-  "pre-commit==4.0.*",
-  "pytest==8.*",
-  "pytest-cov==6.*",
-  "pytest-sugar==1.*",
-  "sphinx==7.*",
-  "sphinx-rtd-theme==3.*",
-  "sphinx-copybutton==0.5.*",
-  "IPython==8.*",
-  "enum-tools[sphinx]==0.12.*",
-  "sphinxcontrib-bibtex==2.6.*",
-  "moviepy==2.1.*",
-  "sphinx_autodoc_typehints==2.3.*",
-  "piccolo-theme==0.24.*",
-  "myst-nb==1.2.*"
+  "mock>=5,<6",
+  "pre-commit>=4.0,<5",
+  "pytest>=8,<9",
+  "pytest-cov>=6,<7",
+  "pytest-sugar>=1,<2",
+  "coverage[toml]>=7,<8"
+]
+docs = [
+  "sphinx>=7,<8",
+  "enum-tools[sphinx]>=0.12,<0.13",
+  "IPython>=8,<9",
+  "myst-nb>=1.2,<2",
+  "piccolo-theme>=0.24,<0.25",
+  "sphinx-copybutton>=0.5,<0.6",
+  "sphinx_autodoc_typehints>=2.3,<3",
+  "sphinxcontrib-bibtex>=2.6,<3"
 ]
 
 [project.scripts]
