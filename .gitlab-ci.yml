@@ -42,7 +42,6 @@ before_script:
 - pip install virtualenv
 - virtualenv venv
 - source venv/bin/activate
-- pip install .
 
 pre-commit:
   stage: lint
@@ -86,6 +85,9 @@ tox_py311_w_cov:
   - changes:
     - src/**/*
     - tests/**/*
+    - tox.ini
+    - pyproject.toml
+    - .gitlab-ci.yml
 
 tox_py310:
   script:
@@ -96,6 +98,9 @@ tox_py310:
   - changes:
     - src/**/*
     - tests/**/*
+    - tox.ini
+    - pyproject.toml
+    - .gitlab-ci.yml
 
 tox_py312:
   script:
@@ -106,6 +111,9 @@ tox_py312:
   - changes:
     - src/**/*
     - tests/**/*
+    - tox.ini
+    - pyproject.toml
+    - .gitlab-ci.yml
 
 tox_py313:
   script:
@@ -116,6 +124,9 @@ tox_py313:
   - changes:
     - src/**/*
     - tests/**/*
+    - tox.ini
+    - pyproject.toml
+    - .gitlab-ci.yml
 
 tox_py314:
   script:
@@ -126,16 +137,18 @@ tox_py314:
   - changes:
     - src/**/*
     - tests/**/*
+    - tox.ini
+    - pyproject.toml
+    - .gitlab-ci.yml
 
 # Define the build_docs script as an anchor
 .build_docs: &build_docs
 - apt-get update && apt-get -y install libgl1
-- pip install neuron
-- pip install .[dev]
-- pyfibers_compile
-- pip install -Ur docs/rtd_requirements.txt
-- apt-get install -y pandoc
 - pip install --upgrade pip ipython ipykernel
+- pip install ".[dev,docs]"
+- pip install neuron
+- pyfibers_compile
+- apt-get install -y pandoc
 - ipython kernel install --name "python3" --user
 - sphinx-build -W -b html docs/source public
 

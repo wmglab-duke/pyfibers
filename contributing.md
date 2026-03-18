@@ -31,6 +31,12 @@ Install PyFibers locally along with all development dependencies:
 pip install .[dev]
 ```
 
+To build documentation locally, also install the `docs` optional dependency:
+
+```bash
+pip install .[dev,docs]
+```
+
 Compile NEURON mechanisms:
 ```bash
 pyfibers_compile

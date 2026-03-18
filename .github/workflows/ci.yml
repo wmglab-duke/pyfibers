@@ -128,10 +128,9 @@ jobs:
         sudo apt-get -y install libgl1 pandoc
     - name: Build HTML
       run: |
+        pip install ".[dev,docs]"
         pip install neuron
-        pip install ".[dev]"
         pyfibers_compile            # keep this if you rely on it
-        pip install -Ur docs/rtd_requirements.txt
         pip install --upgrade pip ipython ipykernel
         python -m ipykernel install --name python3 --user
 
