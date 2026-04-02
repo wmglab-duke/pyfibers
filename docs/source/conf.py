@@ -44,10 +44,11 @@ html_short_title = "PyFibers Documentation"
 # -- General configuration ---------------------------------------------------
 nitpicky = True  # raise warnings for missing references #noqa: E800
 nitpick_ignore = [
+    # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classe
     (
         'py:class',
         'h.Vector',
-    ),  # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classes
+    ),
     ('py:class', 'h.Section'),
     ('py:class', 'neuron.h.Section'),
     ('py:class', 'h.NetStim'),
@@ -80,7 +81,7 @@ autodoc_mock_imports = ['neuron', 'scipy', 'numpy.typing']
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
-    "neuron": ("https://nrn.readthedocs.io/en/latest", None),
+    "neuron": ("https://www.neuronsimulator.org/en/latest", None),
     'scipy': ('https://docs.scipy.org/doc/scipy', None),
     # "multiprocess": ("https://multiprocess.readthedocs.io/en/latest/", None),
     # "nd_line": ("https://github.com/thedannymarsh/nd_line", None),
