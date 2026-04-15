@@ -5,10 +5,10 @@ import os
 import sys
 from typing import TextIO
 
-from contextlib import suppress
-
 import neuron
 import importlib.metadata
+
+from .compile import running_compile
 
 # assign version number from pyproject.toml
 __version__ = importlib.metadata.version(__package__ or __name__)
@@ -65,7 +65,7 @@ def enable_logging(level: int = logging.INFO, format_string: str = None, stream:
 
 # load all NEURON files
 MOD_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'MOD')
-with suppress(RuntimeError):
+if not running_compile():
     neuron.load_mechanisms(MOD_dir)
 
 # load all python files

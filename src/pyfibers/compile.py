@@ -2,18 +2,57 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import shutil
 import subprocess
+import sys
 
 
-def main() -> None:
-    """Compile NEURON MOD files.
+def _clean_mod_dir(mod_dir: str) -> None:
+    """Remove generated C/C++ build intermediates from ``mod_dir``."""  # noqa: DAR101
+    removable_extensions = (".c", ".cpp", ".o")
+    for name in os.listdir(mod_dir):
+        path = os.path.join(mod_dir, name)
+        if not os.path.isfile(path):
+            continue
+
+        _, extension = os.path.splitext(name)
+        if extension.lower() in removable_extensions:
+            os.remove(path)
+
+
+def running_compile() -> bool:
+    """Return whether current process was launched via ``pyfibers_compile``."""  # noqa: DAR201
+    argv0 = os.path.basename(sys.argv[0]).lower()
+    return "pyfibers_compile" in argv0
+
+
+def _has_generated_c_files(mod_dir: str) -> bool:
+    """Return whether generated ``.c`` files are present in ``mod_dir``."""  # noqa: DAR101, DAR201
+    return any(os.path.splitext(name)[1].lower() == ".c" for name in os.listdir(mod_dir))
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Compile NEURON MOD files. # noqa: DAR101.
 
     :raises RuntimeError: If nrnivmodl is not found or fails.
     """
+    parser = argparse.ArgumentParser(description="Compile PyFibers NEURON mechanism (.mod) files.")
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Force removal of generated .c, .cpp, and .o files before compiling.",
+    )
+    args = parser.parse_args(argv)
+
+    mod_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "MOD")
+
+    if args.clean or _has_generated_c_files(mod_dir):
+        _clean_mod_dir(mod_dir)
+
     # Change to MOD directory
-    os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "MOD"))
+    os.chdir(mod_dir)
 
     # Check for nrnivmodl
     if not shutil.which("nrnivmodl"):
