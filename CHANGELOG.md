@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v0.8.5 (2026-04-15)
+
+### Bug Fixes
+
+- **compile**: Clean up old NEURON 8 files if compiling on NEURON 9
+  ([`68f7555`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/68f7555e2245c257b871e0089c2479973a1bbce4))
+
+- **compile**: Clean up old NEURON 8 files if compiling on NEURON 9
+  ([`68f7555`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/68f7555e2245c257b871e0089c2479973a1bbce4))
+
+Fixes error where old NEURON 8 .c/.o files would cause an error when compiling on NEURON 9+. Adds
+  --clean option when compiling to perform removal regardless. Skips mechanism loading if compiling
+  to avoid erroneous error message from nrnivmodl.
+
+### Documentation
+
+- Fix syntax for neuron reference
+  ([`39b7d00`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/39b7d00e5fdec0199e204435496dc31fff3de67c))
+
+- Update fiber model documentation
+  ([`54715ee`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/54715eeeae06ab4ea65ac43a756c1e4824a05439))
+
+
 ## v0.8.4 (2026-02-25)
 
 ### Bug Fixes
