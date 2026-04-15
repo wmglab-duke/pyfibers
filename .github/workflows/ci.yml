@@ -120,7 +120,7 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         cache: pip
     - name: System packages
       run: |
@@ -128,21 +128,15 @@ jobs:
         sudo apt-get -y install libgl1 pandoc
     - name: Build HTML
       run: |
+        pip install --upgrade pip ipython ipykernel
         pip install ".[dev,docs]"
         pip install neuron
-        pyfibers_compile            # keep this if you rely on it
-        pip install --upgrade pip ipython ipykernel
-        python -m ipykernel install --name python3 --user
-
-        # ── NEW: generate API docs ──────────────────────────
-        rm -rf docs/source/api
-        sphinx-apidoc -M -o docs/source/api src/pyfibers
-        # ───────────────────────────────────────────────────
-
-        sphinx-build -b html docs/source _site
+        pyfibers_compile
+        python -m ipykernel install --name "python3" --user
+        sphinx-build -W -b html docs/source public
     - uses: actions/upload-pages-artifact@v3
       with:
-        path: _site
+        path: public
 
 
 ###############################################################################
