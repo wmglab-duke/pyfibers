@@ -143,5 +143,25 @@ nb_execution_mode = "cache"
 nb_merge_streams = True
 suppress_warnings = ["mystnb.stderr"]
 
+# linkcheck
+# Run with: sphinx-build -b linkcheck docs/source docs/build
+linkcheck_timeout = 15
+linkcheck_retries = 2
+linkcheck_workers = 5
+linkcheck_anchors = True
+
+# Any redirect (request URL vs final response URL) counts as OK; linkcheck still
+# validates the final response (status, body, anchors as configured).
+linkcheck_allowed_redirects = {r".*": r".*"}
+
+# Unreachable to bots, anti-bot interstitials, or DOIs that consistently 403 in CI.
+linkcheck_ignore = [
+    r'^https://validate\.perfdrive\.com/.*',
+    r'^https://doi\.org/10\.1088/1741-2552/aa6a5f$',
+    # Journal of Neurophysiology / APS: resolver and journal site often 403 for automated checks.
+    r'^https://doi\.org/10\.1152/jn\.',
+    r'^https://journals\.physiology\.org/doi/',
+]
+
 # latex
 latex_engine = 'xelatex'
