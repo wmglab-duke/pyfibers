@@ -701,7 +701,7 @@ class Fiber:
         Note that ``recording_dt`` and ``recording_tvec`` are mutually exclusive.
         If both are None, the variable is recorded at every simulation timestep.
         For more info, see the NEURON docs:
-        https://nrn.readthedocs.io/en/latest/python/programming/math/vector.html#Vector.record
+        https://www.neuronsimulator.org/en/latest/progref/programming/math/vector.html
 
         :param ref_attr: The NEURON attribute to record (e.g. ``'_ref_v'``).
         :param allsec: If ``True``, record from sections (including nodes). Otherwise, only record from nodes.
@@ -951,7 +951,7 @@ class Fiber:
     def membrane_currents(self: Fiber, downsample: int = 1) -> np.ndarray:
         """Compute membrane currents at each section for each time point in the simulation.
 
-        Uses the methods described in Pena et. al 2024: http://dx.doi.org/10.1371/journal.pcbi.1011833
+        Uses the methods described in Pena et. al 2024: https://doi.org/10.1371/journal.pcbi.1011833
 
         For myelinated fibers, this calculation includes periaxonal currents between adjacent
         sections (based on `h.Section.xraxial <neuron.Section.xraxial>`). The result is a matrix of shape:

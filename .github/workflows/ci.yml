@@ -126,7 +126,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get -y install libgl1 pandoc
-    - name: Build HTML
+    - name: Build HTML and linkcheck
       run: |
         pip install --upgrade pip ipython ipykernel
         pip install ".[dev,docs]"
@@ -134,6 +134,7 @@ jobs:
         pyfibers_compile
         python -m ipykernel install --name "python3" --user
         sphinx-build -W -b html docs/source public
+        sphinx-build -b linkcheck docs/source docs/build/linkcheck
     - uses: actions/upload-pages-artifact@v3
       with:
         path: public

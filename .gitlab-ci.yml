@@ -141,7 +141,8 @@ tox_py314:
     - pyproject.toml
     - .gitlab-ci.yml
 
-# Define the build_docs script as an anchor
+# Define the build_docs script as an anchor (HTML then external linkcheck;
+# sphinx-build exits non-zero if linkcheck finds broken or timed-out links).
 .build_docs: &build_docs
 - apt-get update && apt-get -y install libgl1
 - pip install --upgrade pip ipython ipykernel
@@ -151,6 +152,7 @@ tox_py314:
 - apt-get install -y pandoc
 - ipython kernel install --name "python3" --user
 - sphinx-build -W -b html docs/source public
+- sphinx-build -b linkcheck docs/source docs/build/linkcheck
 
 test_docs:
   stage: test

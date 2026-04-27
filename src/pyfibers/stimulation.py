@@ -1158,7 +1158,7 @@ class ScaledStim(Stimulation):
 
         .. seealso::
 
-            For more information on the underlying math, see the `Algorithms <algorithms>`_ docs page.
+            For more information on the underlying math, see :doc:`/algorithms`.
 
         :param stimamp: Amplitude to scale the product of extracellular potentials and waveform.
             - Should be a single float for one source
