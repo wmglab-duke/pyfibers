@@ -161,6 +161,9 @@ linkcheck_ignore = [
     # Journal of Neurophysiology / APS: resolver and journal site often 403 for automated checks.
     r'^https://doi\.org/10\.1152/jn\.',
     r'^https://journals\.physiology\.org/doi/',
+    # Self-references to hosted docs can 404/redirect during CI preview builds.
+    r'^https://wmglab-duke\.github\.io/pyfibers/?',
+    r'^https://wmglab-duke\.github\.io/pyfibers/.*',
 ]
 
 # latex
