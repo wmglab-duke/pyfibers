@@ -164,6 +164,8 @@ linkcheck_ignore = [
     # Self-references to hosted docs can 404/redirect during CI preview builds.
     r'^https://wmglab-duke\.github\.io/pyfibers/?',
     r'^https://wmglab-duke\.github\.io/pyfibers/.*',
+    # AIP publishing
+    r"https://doi\.org/10\.1063/.*",
 ]
 
 # latex
