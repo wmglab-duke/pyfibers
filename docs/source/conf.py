@@ -103,6 +103,7 @@ exclude_patterns = []
 html_theme = 'piccolo_theme'
 html_static_path = ['_static']
 html_css_files = ["custom.css"]
+html_favicon = '_static/favicon.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
