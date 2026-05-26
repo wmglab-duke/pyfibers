@@ -102,6 +102,7 @@ exclude_patterns = []
 html_theme = 'piccolo_theme'
 html_static_path = ['_static']
 html_css_files = ["custom.css"]
+html_favicon = '_static/favicon.ico'
 
 # Piccolo theme: link each page to the matching path on GitHub ("View source" / repo icon).
 # See https://piccolo-theme.readthedocs.io/en/latest/configuration.html
