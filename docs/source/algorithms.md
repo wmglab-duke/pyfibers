@@ -2,7 +2,7 @@
 
 This page details the logic behind relevant algorithms in PyFibers, including the threshold search and simulation routines. The **simulation routines** apply the stimulus to the model fiber and track the membrane potential over time. The **threshold search** determines the minimum stimulus amplitude required to evoke an action potential or block conduction in a model nerve fiber. More details on the ethos behind these algorithms can be found in the PyFibers paper {cite:p}`Marshall2025`.
 
-## Threshold Search
+## Threshold search
 
 PyFibers provides {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` to determine the minimum (or “threshold”) stimulus amplitude that yields a specified outcome:
 - **Activation** threshold: The lowest amplitude that **generates** an action potential at a specified node.
@@ -29,7 +29,7 @@ the following steps occur:
    - Run simulations at the initial guesses for the upper and lower bounds.
    - If the upper bound is suprathreshold and the lower bound is subthreshold, proceed to bisection search.
    - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
-   - Repeat until the bounds straddle the threshold, or until the user‐defined maximum number of iterations is reached (default )
+   - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
 
 2. **Bisection Search**
    - Let `mid = (lb + ub) / 2`.
@@ -40,7 +40,7 @@ the following steps occur:
    - Update bounds:
      - If subthreshold → set `lb = mid`.
      - If suprathreshold → set `ub = mid`.
-   - Repeat until `ub/lb` is less than the tolerance (default 1% of amplitude).
+   - Repeat until `ub/lb` is less than the tolerance (default: 1% of amplitude).
 
 3. **Return**
    - The threshold is reported as the **upper bound** (`ub`) once `(ub/lb)` is small enough to meet the tolerance criteria.
@@ -63,7 +63,7 @@ Example threshold searches superimposed on the same axes—one with both initial
 Flowchart of the PyFibers algorithm to identify activation or block threshold. For simplification, several validation checks and details are omitted or simplified. Initial upper and lower bound amplitudes are provided. If the bounds are too low (both subthreshold), an upwards bounds search commences, and if the bounds are too high (both suprathreshold), a downwards bounds search commences. Once the bounds are established (lower bound subthreshold, upper bound suprathreshold), a bisection search executes until the user‐defined exit criterion is reached.
 ```
 
-### Caveats for Block Threshold Searches
+### Caveats for block threshold searches
 
 ```{warning}
 While **activation** threshold is straightforward—did we see an AP?—**block** threshold can be trickier.
@@ -78,9 +78,9 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
    – In the current implementation, it is up to the user to pick a meaningful upper bound that does not push the fiber into re‑excitation. Future versions may include a more sophisticated block detection algorithm that detects re-excitation, and/or determines the re-excitation threshold in addition to the block threshold.
 
 3. **Onset Response**
-   – High‑frequency signals can evoke short‑latency spikes at onset. PyFibers requires a certain delay (`block_delay` argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) before checking for block.
+   – High-frequency signals can evoke short-latency spikes at onset. PyFibers requires a certain delay (`block_delay` argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) before checking for block.
 
-### 1.5 Changes That Reduce Threshold Search Runtime
+### 1.5 Changes that reduce threshold search runtime
 
 Our threshold search was adapted from the algorithm provided in ASCENT {cite:p}`musselman_ascent_2021`. We made several modifications to speed up the search process:
 
@@ -95,7 +95,8 @@ Our threshold search was adapted from the algorithm provided in ASCENT {cite:p}`
 
 These measures collectively can reduce the total simulation time in typical threshold search tasks by >50%, as reported in our manuscript.
 
-## {py:func}`~pyfibers.stimulation.Stimulation.run_sim()` : Executing Simulations
+(algorithms-stimulation-run-sim)=
+## {py:func}`~pyfibers.stimulation.Stimulation.run_sim()` : executing simulations
 
 ### Overview
 
@@ -109,9 +110,17 @@ When {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` is called, it r
 run_sim(mid_amplitude, fiber)
 ```
 
-Therefore, custom {py:func}`~pyfibers.stimulation.Stimulation.run_sim()` implementations should follow these constraints. For more information, see [building custom simulations](custom_stim.md).
+Therefore, custom {py:func}`~pyfibers.stimulation.Stimulation.run_sim()` implementations should follow these constraints.
+
+:::{seealso}
+{doc}`custom_stim` contains worked examples of custom `run_sim()` implementations and low-level NEURON loops.
+:::
 
 ## {py:meth}`ScaledStim.run_sim() <pyfibers.stimulation.ScaledStim.run_sim()>`
+
+:::{seealso}
+{doc}`extracellular_potentials` contains information on analytical and FEM-derived potentials, resampling, and multiple sources.
+:::
 
 {py:class}`~pyfibers.stimulation.ScaledStim` is designed for **extracellular** stimulation. It expects that the fiber has an array of **extracellular potentials** (e.g., from a point source), each scaled by the provided stimulus amplitude and waveform(s) at each time step. The process is detailed below, and summarized in the diagram below.
 
@@ -156,6 +165,10 @@ Process of calculating the spatiotemporal profile of extracellular potentials ap
 ```
 
 ## {py:meth}`IntraStim.run_sim() <pyfibers.stimulation.IntraStim.run_sim()>`
+
+:::{seealso}
+{doc}`custom_stim` shows intracellular examples with {py:class}`~pyfibers.stimulation.IntraStim`, {py:class}`IClamp`, and custom loops.
+:::
 
 {py:class}`~pyfibers.stimulation.IntraStim` is a simpler class for **intracellular** stimulation. It injects current directly into a chosen fiber section. Key points:
 

@@ -1,24 +1,30 @@
-# Custom Fiber Models
+# Custom fiber models
 
 Creating a new fiber model involves defining a subclass of {py:class}`~pyfibers.fiber.Fiber` and implementing methods that describe the specific mechanisms and ultrastructure of the fiber. This section provides a step-by-step guide on how to create a new fiber model.
 
 ```{note}
 There are two main ways to make your custom fiber model available in PyFibers:
 
-1. **Runtime Registration** (Recommended for development/testing): Use the {py:func}`~pyfibers.model_enum.register_custom_fiber` function to register your fiber model at runtime. This allows you to use `build_fiber` with your custom model without modifying the main package.
+1. **Runtime registration** (Recommended for development/testing): Use the {py:func}`~pyfibers.model_enum.register_custom_fiber` function to register your fiber model at runtime. This allows you to use `build_fiber` with your custom model without modifying the main package.
 
-2. **Plugin System** (Recommended for distribution): Create a separate package and make it discoverable as a plugin. This is the best approach for sharing your fiber model with others.
+2. **Plugin system** (Recommended for distribution): Create a separate package and make it discoverable as a plugin. This is the best approach for sharing your fiber model with others.
 
 For most users, we recommend starting with **Runtime Registration** for development and testing, then moving to the **Plugin System** for distribution.
 ```
 
+:::{seealso}
+{doc}`fiber_models` contains information on built-in models, publication references, and construction details.
+
+{doc}`tutorials/1_create_fiber` shows how to create a fiber from an existing {py:enum}`~pyfibers.model_enum.FiberModel` before you customize internals.
+:::
+
 The implementation of a custom fiber model requires custom .MOD file(s) that describe the membrane mechanisms (e.g., ion channels) of your model, as well as a Python class that defines the fiber model. Note that models can either be homogeneous (each section is identical, e.g., Hodgkin-Huxley) or heterogeneous (sections can vary in repeating patterns, e.g., MRG). We will start with a homogeneous fiber model, and then describe how to extend the methods to a heterogeneous model.
 
-## Steps to Create a Fiber Model Subclass
+## Steps to create a fiber model subclass
 
 Let's walk through creating a custom fiber model step by step, using a Hodgkin-Huxley (homogeneous) fiber as an example:
 
-### Step 1: Inherit from {py:class}`~pyfibers.fiber.Fiber`
+### Step 1: inherit from {py:class}`~pyfibers.fiber.Fiber`
 
 Your new class should inherit from {py:class}`~pyfibers.fiber.Fiber`:
 
@@ -34,9 +40,9 @@ class HHFiber(Fiber):
     """Hodgkin-Huxley fiber model."""
 ```
 
-### Step 2: Specify the Submodels
+### Step 2: specify the submodels
 
-Define the ``submodels`` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:class}`FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as in {py:class}~pyfibers.models.mrg.MRGFiber), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the ``self.fiber_model`` attribute. Check the name by accessing ``self.fiber_model.name``.
+Define the ``submodels`` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:enum}`~pyfibers.model_enum.FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as the internal ``MRGFiber`` implementation), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the ``self.fiber_model`` attribute. Check the name by accessing ``self.fiber_model.name``.
 
 ```python
 class HHFiber(Fiber):
@@ -45,7 +51,7 @@ class HHFiber(Fiber):
     submodels = ["HH"]  # This will be available as FiberModel.HH
 ```
 
-### Step 3: Initialize the Subclass
+### Step 3: initialize the subclass
 
 Define the ``__init__`` method, call the superclass initializer, and set any model-specific parameters. At minimum, set ``self.v_rest`` (resting membrane potential) and ``self.myelinated`` (whether the fiber is myelinated). It is also recommended to specify gating variables if you want to be able to record these values during simulations (these are specified in the .mod files describing the node mechanisms).
 
@@ -80,7 +86,7 @@ def __init__(self, diameter: float, **kwargs):
     self.delta_z = self.diameter * 100  # Example: simple calculation
 ```
 
-### Step 4: Define the Node Creation Method(s)
+### Step 4: define the node creation method(s)
 
 Implement method(s) that create the specific sections of the fiber model. For a homogeneous fiber model, you will create a single method. For a heterogeneous fiber model, you will create multiple methods. These methods should return a NEURON {py:class}`h.Section` object representing the node or section.
 
@@ -107,7 +113,7 @@ def create_hh(self, ind: int, node_type: str):
     return node
 ```
 
-### Step 5: Define the `generate` Method
+### Step 5: define the `generate` method
 
 Implement the `generate` method, which calls the superclass {py:meth}`~pyfibers.fiber.Fiber.generate` method with a list of functions that create the specific sections of the fiber model. For a homogeneous fiber model, you will pass a single function in the list. For a heterogeneous fiber model, you will pass a list of functions.
 
@@ -117,11 +123,11 @@ def generate(self, **kwargs):
     return super().generate([self.create_hh], **kwargs)
 ```
 
-## Runtime Registration (Recommended for Development)
+## Runtime registration (recommended for development)
 
 The easiest way to use your custom fiber model is to register it at runtime using the {py:func}`~pyfibers.model_enum.register_custom_fiber` function. This approach allows you to use your custom fiber with the standard `build_fiber` function and `FiberModel` enum without modifying the main PyFibers package.
 
-### Basic Usage
+### Basic usage
 
 ```python
 from pyfibers import FiberModel, build_fiber, register_custom_fiber
@@ -135,7 +141,7 @@ model = FiberModel.MY_CUSTOM_FIBER  # Uses the submodels attribute
 fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=21)
 ```
 
-### Complete Example
+### Complete example
 
 Here's the complete `HHFiber` class definition:
 
@@ -188,7 +194,7 @@ class HHFiber(Fiber):
         return node
 ```
 
-### Heterogeneous Fiber Models
+### Heterogeneous fiber models
 
 For heterogeneous fiber models (e.g., myelinated fibers with nodes and myelin sections), the process is similar but you would define multiple creation methods and pass them as a list to the `generate` method:
 
@@ -202,7 +208,7 @@ def generate(self, **kwargs):
     return super().generate(function_list, **kwargs)
 ```
 
-## Homogeneous vs Heterogeneous Fiber Models
+## Homogeneous vs heterogeneous fiber models
 
 The class construction will differ depending on whether you are creating a "homogeneous" fiber model (i.e., all sections of the fiber are identical, typically unmyelinated fibers) or a "heterogeneous" fiber model (i.e., sections of the fiber have different properties, such as nodes and myelin). See the figure below for a visual representation of the construction of homogeneous and heterogeneous fiber models.
 
@@ -221,11 +227,11 @@ The class construction will differ depending on whether you are creating a "homo
 Construction of a model fiber. **A\)** For unmyelinated fibers and myelinated fibers with only one section type (i.e., homogeneous fiber), a fiber model describes a single set of mechanisms and ultrastructure for a node, which is then repeated to the target number of sections. **B\)** For fibers with multiple section types (e.g., MRG as shown), a repeating series of sections with heterogeneous membrane mechanisms and ultrastructure is described from one node until just before the next node. This sequence is repeated to one less than the target number of nodes, and a node is added to the end of the fiber for symmetry. Example shown: MRG model fiber with 4 nodes and 11 sections per node, resulting in a final section count of n<sub>sections</sub> = (n<sub>nodes</sub> - 1) * 11 + 1 = (4 - 1) * 11 + 1 = 34. Figure is not to scale.
 ```
 
-## Plugin System (Recommended for Distribution)
+## Plugin system (recommended for distribution)
 
 For sharing your fiber model with others or creating a permanent, distributable package, the plugin system is the best approach. Plugins are automatically discovered when PyFibers is imported and provide a clean way to extend the framework.
 
-### Creating a Plugin Package
+### Creating a plugin package
 
 Other research groups may wish to create their own fiber models in the `PyFibers` environment and publish them as a separate public repository. Such fiber models can be made discoverable as plugins which will become automatically available in `PyFibers` after installation. To make your fiber model discoverable as a plugin, follow these steps:
 

@@ -127,7 +127,7 @@ per-file-ignores = """
         example*.py: E800
         """
 rst-directives = ["seealso"]
-rst-roles = ["doc", "meth", "class", "func", "attr"]
+rst-roles = ["doc", "meth", "class", "func", "attr", "enum"]
 
 [tool.flynt]
 line-length = 120

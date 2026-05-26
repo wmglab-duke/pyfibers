@@ -10,7 +10,6 @@ import logging
 import math
 import typing
 import warnings
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -23,6 +22,8 @@ h.load_file('stdrun.hoc')
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .model_enum import FiberModel
 
 
@@ -38,7 +39,8 @@ def build_fiber(
     """Generate a 1D (straight) fiber model in NEURON.
 
     This function creates a model fiber as an instance of the :class:`Fiber` class
-    using the specific subclass specified from the :class:`FiberModel` enumerator.
+    using the specific subclass specified from the
+    :enum:`~pyfibers.model_enum.FiberModel` enumerator.
     with user-specified diameter and length
     (from one of: number of sections, number of nodes, or length in microns).
     Additional keyword arguments are forwarded to the fiber model class constructor.
@@ -48,7 +50,8 @@ def build_fiber(
     the method :meth:`Fiber.set_xyz` can be used to translate the fiber along the x, y, or z axes.
     To create fibers along a custom path in 3D space, use :func:`build_fiber_3d` instead.
 
-    :param fiber_model: A :class:`FiberModel` enumerator specifying the type of fiber to instantiate.
+    :param fiber_model: A :enum:`~pyfibers.model_enum.FiberModel`
+        enumerator specifying the type of fiber to instantiate.
     :param diameter: The fiber diameter in micrometers (µm).
     :param length: The total length of the fiber in micrometers (µm), if defining by length.
     :param n_sections: The total number of sections for discretizing the fiber, if defining by sections.
@@ -145,7 +148,8 @@ def build_fiber_3d(
     If ``center=True``, the shift is applied after the fiber is first centered about the midpoint of the 3D path.
     To test different 3D fiber positions, create a new fiber with the desired shift parameters.
 
-    :param fiber_model: A :class:`FiberModel` enumerator specifying the type of fiber to instantiate.
+    :param fiber_model: A :enum:`~pyfibers.model_enum.FiberModel`
+        enumerator specifying the type of fiber to instantiate.
     :param diameter: The fiber diameter in micrometers (µm).
     :param path_coordinates: A numpy array of shape (N, 3) specifying the 3D coordinates (x, y, z) of the fiber path.
     :param shift: A shift in microns to apply to the fiber coordinates.
@@ -300,7 +304,9 @@ class Fiber:
     ) -> None:
         """Initialize the :class:`Fiber` class.
 
-        :param fiber_model: The enumerator attribute (from :class:`FiberModel`) representing the type of fiber model.
+        :param fiber_model: The enumerator attribute (from
+            :enum:`~pyfibers.model_enum.FiberModel`) representing the
+            type of fiber model.
         :param diameter: The diameter of the fiber (µm).
         :param temperature: The temperature at which the fiber will be simulated, in Celsius.
         :param passive_end_nodes: If ``True``, automatically assign passive properties to the end nodes.
@@ -318,7 +324,8 @@ class Fiber:
         .. Intrinsic to the fiber
 
         :ivar diameter: The diameter of the fiber in micrometers.
-        :ivar fiber_model: The :class:`FiberModel` attribute name.
+        :ivar fiber_model: The
+            :enum:`~pyfibers.model_enum.FiberModel` attribute name.
         :ivar temperature: The temperature at which the fiber will be simulated [C].
         :ivar passive_end_nodes: The number of passive end nodes included at each end.
         :ivar delta_z: The center-to-center internodal length of the fiber.
