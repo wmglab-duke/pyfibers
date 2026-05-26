@@ -34,7 +34,7 @@ copyright_info = '2023, Duke University'
 # The full version, including alpha/beta/rc tags
 release = "0.8.5"
 
-html_short_title = "PyFibers Documentation"
+html_short_title = "PyFibers documentation"
 # html_logo = './static/logo.png' noqa: E800
 # pygments_style = "stata-dark" noqa: E800
 # html_theme_options = {
@@ -57,9 +57,8 @@ nitpick_ignore = [
     ('py:class', 'h.trainIClamp'),  # added from a pyfibers mod file, so no object.inv
     ('py:class', 'neuron.h.Vector'),
     ('py:class', 'nd_line'),  # no sphinx docs for this package
-    ('py:class', 'FiberModel'),  # Type references broken due to type hinting block in fiber.py
-    ('py:data', 'collections.abc.Callable'),  # Broken by sphinx_autodoc_typehints, post issue on GH
 ]
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -104,6 +103,13 @@ html_theme = 'piccolo_theme'
 html_static_path = ['_static']
 html_css_files = ["custom.css"]
 
+# Piccolo theme: link each page to the matching path on GitHub ("View source" / repo icon).
+# See https://piccolo-theme.readthedocs.io/en/latest/configuration.html
+html_theme_options = {
+    "source_url": "https://github.com/wmglab-duke/pyfibers",
+    "source_icon": "github",
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -117,6 +123,7 @@ html_show_sphinx = False
 # -- Options for extensions -------------------------------------------------
 
 myst_heading_anchors = 4
+myst_enable_extensions = ["colon_fence"]
 
 # default_dark_mode = False
 # Add the extension
@@ -135,6 +142,7 @@ bibtex_bibfiles = ['refs.bib']
 bibtex_reference_style = 'author_year'
 
 # mystnb
+nb_render_markdown_format = "myst"
 nb_execution_raise_on_error = True
 nb_execution_show_tb = True
 nb_output_stderr = 'remove-warn'

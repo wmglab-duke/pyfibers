@@ -1,9 +1,18 @@
 Tutorials
 =========
 
+Welcome to the PyFibers tutorials! These interactive tutorials will guide you through the key features and capabilities of PyFibers.
+
+.. admonition:: Note
+   :class: note
+
+   These tutorials are available as Jupyter notebooks (``.ipynb`` files) in the ``docs/source/tutorials/`` directory of the repository.
+   You can read the executed, rendered versions at the links below.
+   To execute or edit notebooks locally, download/clone the repository from GitHub and open them in a GUI such as Jupyter Notebook or VSCode.
+
 .. toctree::
    :maxdepth: 1
-   :caption: Basic Tutorials
+   :caption: Basic tutorials
 
    1_create_fiber
    2_sim_and_activation
@@ -12,7 +21,7 @@ Tutorials
 
 .. toctree::
    :maxdepth: 1
-   :caption: Advanced Tutorials
+   :caption: Advanced tutorials
 
    4_resampling_potentials
    5_block_threshold

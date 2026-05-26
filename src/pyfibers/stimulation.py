@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Callable
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
@@ -20,6 +19,8 @@ from neuron import h
 from scipy.signal import find_peaks
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pyfibers import Fiber
 
 h.load_file('stdrun.hoc')
@@ -956,7 +957,8 @@ class ScaledStim(Stimulation):
     ) -> None:
         """Initialize the ScaledStim class.
 
-        :param waveform: Callable or list of callables (e.g., function). Each callable should accept
+        :param waveform: :class:`~collections.abc.Callable` or list of
+            callables (e.g., function). Each callable should accept
             a single float argument for the simulation time (in ms) and return the waveform value at
             that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
             Support for waveform as a numpy array is retained for backwards compatibility, and will be

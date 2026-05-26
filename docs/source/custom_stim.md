@@ -1,16 +1,24 @@
-# Custom Simulation Code
+# Custom simulation code
 
 This section provides examples of how to run custom simulations using fibers. These examples demonstrate different methods, including directly using NEURON's {py:class}`IClamp` and `h.continuerun()`, leveraging the {py:class}`~pyfibers.stimulation.Stimulation` class with a custom `run_sim()` function, and using the {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` method with manual assignment of extracellular potentials.
 
-Before running any simulations, we must create a model fiber. See the [Fiber Tutorial](tutorials/1_create_fiber.ipynb) for information on how to do so. The tutorials assume that you have already created a model fiber called `fiber`.
+Before running any simulations, we must create a model fiber. The tutorials assume that you have already created a model fiber called `fiber`.
 
-## Custom Simulation with a Custom `run_sim()` Function
+:::{seealso}
+{doc}`tutorials/1_create_fiber` shows how to create a model fiber in the first tutorial notebook.
+:::
+
+## Custom simulation with a custom `run_sim()` function
 
 In this example, we demonstrate how to set up a custom simulation by providing a custom `run_sim` function to the {py:class}`~pyfibers.stimulation.Stimulation` class. You could also achieve this by creating a subclass and overriding the {py:meth}`~pyfibers.stimulation.Stimulation.run_sim` method.
 
 ```{note}
-Note, to use custom `run_sim()` methods with threshold searches, the custom method should take stimulation amplitude as the first argument, and return the number of action potentials generated and the time of the last action potential.
+To use custom `run_sim()` methods with threshold searches, the custom method should take stimulation amplitude as the first argument and return the number of action potentials generated and the time of the last action potential.
 ```
+
+:::{seealso}
+{doc}`algorithms` contains information on threshold search mechanics and requirements for custom `run_sim()` implementations.
+:::
 
 2. **Define the custom `run_sim()` function**:
 
@@ -42,9 +50,15 @@ stimulation.run_sim(fiber)
 
 ---
 
-## Custom `run_sim` in a Subclass of {py:class}`~pyfibers.stimulation.Stimulation`
+## Custom `run_sim` in a subclass of {py:class}`~pyfibers.stimulation.Stimulation`
 
-In this example, we demonstrate how to create a subclass of {py:class}`~pyfibers.stimulation.Stimulation` and override the {py:meth}`~pyfibers.stimulation.Stimulation.run_sim` method to provide custom simulation logic. See {py:meth}`pyfibers.stimulation.ScaledStim.run_sim` and {py:meth}`pyfibers.stimulation.IntraStim.run_sim` for examples.
+In this example, we demonstrate how to create a subclass of {py:class}`~pyfibers.stimulation.Stimulation` and override the {py:meth}`~pyfibers.stimulation.Stimulation.run_sim` method to provide custom simulation logic.
+
+:::{seealso}
+{ref}`algorithms-stimulation-run-sim` explains how `find_threshold` uses `run_sim` and what `run_sim` must return.
+
+{py:meth}`pyfibers.stimulation.ScaledStim.run_sim` and {py:meth}`pyfibers.stimulation.IntraStim.run_sim` provide built-in reference implementations.
+:::
 
 1. **Create a subclass of {py:class}`~pyfibers.stimulation.Stimulation`**:
 ```python
@@ -81,7 +95,7 @@ stimulation.run_sim(fiber)
 
 ---
 
-## Custom Simulation Using NEURON `IClamp` and `h.continuerun()`
+## Custom simulation using NEURON `IClamp` and `h.continuerun()`
 
 In this example, we demonstrate how to set up a custom simulation using NEURON's {py:class}`IClamp` and `h.continuerun()` without using the simulation classes included in PyFibers.
 
@@ -106,9 +120,13 @@ h.continuerun(20)
 
 ---
 
-## Custom Simulation Using {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` and Manual Extracellular Potentials
+## Custom simulation using {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` and manual extracellular potentials
 
 In this example, we demonstrate how to set up a custom simulation by using the {py:meth}`~pyfibers.stimulation.Stimulation.pre_run_setup` method and then manually assigning extracellular potentials in a loop.
+
+:::{seealso}
+{doc}`extracellular_potentials` shows how to prepare FEM-derived potentials and multiple sources before driving them in a custom loop.
+:::
 
 2. **Set up the {py:class}`~pyfibers.stimulation.Stimulation` instance**:
 ```python

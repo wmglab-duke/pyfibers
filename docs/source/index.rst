@@ -6,13 +6,13 @@ Welcome to the PyFibers documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Getting Started
+   :caption: Getting started
 
    tutorials/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: User Guide
+   :caption: User guide
 
    autodoc/index
    extracellular_potentials
@@ -30,7 +30,7 @@ Welcome to the PyFibers documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: External Links
+   :caption: External links
 
    The Grill Lab <https://grill-lab.pratt.duke.edu>
    PyFibers Publication <https://doi.org/10.1371/journal.pcbi.1013764>
