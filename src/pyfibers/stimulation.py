@@ -428,7 +428,7 @@ class Stimulation:
             if supra_top and exit_t_shift and condition == ThresholdCondition.ACTIVATION:
                 self._exit_t = t + exit_t_shift
                 logger.info(
-                    "Found AP at %s ms, subsequent runs will exit at %s ms. " "Change 'exit_t_shift' to modify this.",
+                    "Found AP at %s ms, subsequent runs will exit at %s ms. Change 'exit_t_shift' to modify this.",
                     t,
                     self._exit_t,
                 )
@@ -1041,13 +1041,13 @@ class ScaledStim(Stimulation):
             except Exception as e:  # noqa: B902
                 # provide some information on where the error happened to the user
                 raise RuntimeError(
-                    """Error encountered while processing callable into array. Does the callable produce
-                    valid output for all time steps?"""
+                    'Error encountered while processing callable into array.'
+                    'Does the callable produce valid output for all time steps?'
                 ) from e
         else:
             # process waveform provided as array for backwards compatibility
             warnings.warn(
-                """Specifying waveforms using lists/arrays is deprecated. """
+                """Specifying waveforms using lists/arrays is deprecated."""
                 """Please specify as callable or list of callables""",
                 FutureWarning,
                 stacklevel=2,

@@ -76,6 +76,7 @@ Repository = "https://github.com/wmglab-duke/pyfibers"
 [tool.black]
 line-length = 120
 skip-string-normalization = true
+target-version = ["py310"]  # increment as older versions are dropped
 
 [tool.coverage.html]
 directory = "coverage_html_report"
@@ -102,6 +103,7 @@ parallel = true
 source = ["pyfibers"]
 
 [tool.docformatter]
+black = true
 in-place = true
 wrap-descriptions = 0
 wrap-summaries = 0

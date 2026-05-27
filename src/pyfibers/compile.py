@@ -34,10 +34,10 @@ def _has_generated_c_files(mod_dir: str) -> bool:
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Compile NEURON MOD files. # noqa: DAR101.
+    """Compile NEURON MOD files.
 
     :raises RuntimeError: If nrnivmodl is not found or fails.
-    """
+    """  # noqa: DAR101
     parser = argparse.ArgumentParser(description="Compile PyFibers NEURON mechanism (.mod) files.")
     parser.add_argument(
         "--clean",
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> None:
     # Check for nrnivmodl
     if not shutil.which("nrnivmodl"):
         raise RuntimeError(
-            "nrnivmodl not found. Please install NEURON and add to PATH, or your NEURON version may be " "too old."
+            "nrnivmodl not found. Please install NEURON and add to PATH, or your NEURON version may be too old."
         )
     # Run nrnivmodl
     try:

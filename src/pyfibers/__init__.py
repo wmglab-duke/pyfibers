@@ -1,5 +1,6 @@
 # isort: skip_file
 """Initializer for core PyFibers code."""
+
 import logging
 import os
 import sys
