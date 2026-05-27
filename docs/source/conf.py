@@ -167,6 +167,7 @@ linkcheck_allowed_redirects = {r".*": r".*"}
 linkcheck_ignore = [
     r'^https://validate\.perfdrive\.com/.*',
     r'^https://doi\.org/10\.1088/1741-2552/aa6a5f$',
+    r'^https://doi\.org/10\.1162/neco\.1997\.9\.6\.1179$',
     # Journal of Neurophysiology / APS: resolver and journal site often 403 for automated checks.
     r'^https://doi\.org/10\.1152/jn\.',
     r'^https://journals\.physiology\.org/doi/',
