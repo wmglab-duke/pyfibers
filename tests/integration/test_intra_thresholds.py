@@ -23,7 +23,6 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
 
     Using intracellular stim
     """
-
     # create curve of potentials
     fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
 

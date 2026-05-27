@@ -23,13 +23,13 @@ repos:
 
   ### Check pre-commit hook versions
 - repo: https://github.com/pre-commit/sync-pre-commit-deps
-  rev: v0.0.3
+  rev: v0.0.4
   hooks:
   - id: sync-pre-commit-deps
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
-  rev: 6.0.1
+  rev: 9.0.0a3
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
@@ -38,24 +38,24 @@ repos:
   - id: flynt                      # Formats Python f-strings
 
 - repo: https://github.com/kynan/nbstripout
-  rev: 0.8.1
+  rev: 0.9.1
   hooks:
   - id: nbstripout                  # Strips outputs from Jupyter notebooks
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.20.0
+  rev: v3.21.2
   hooks:
   - id: pyupgrade                   # Upgrades Python syntax to specified version
     args: [--py310-plus]
 
 - repo: https://github.com/psf/black
-  rev: 25.1.0
+  rev: 26.5.1
   hooks:
   - id: black                       # Formats Python code
     types_or: [python, pyi]
 
 - repo: https://github.com/psf/black
-  rev: 25.1.0
+  rev: 26.5.1
   hooks:
   - id: black                       # Formats Python code
     additional_dependencies:
@@ -64,7 +64,7 @@ repos:
     args: [--line-length, '88']
 
 - repo: https://github.com/PyCQA/docformatter
-  rev: v1.7.7
+  rev: v1.7.8
   hooks:
   - id: docformatter                # Formats docstrings
     additional_dependencies:
@@ -72,15 +72,15 @@ repos:
     args: [--in-place, --config, ./pyproject.toml]
 
 - repo: https://github.com/adamchainz/blacken-docs
-  rev: 1.19.1
+  rev: 1.20.0
   hooks:
   - id: blacken-docs                # Formats Python code blocks in markdown files
     additional_dependencies:
-    - black==25.1.0
+    - black==26.5.1
     args: [--line-length, '88']
 
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.15.0
+  rev: v2.16.0
   hooks:
   - id: pretty-format-toml          # Formats TOML files
     args: [--autofix]
@@ -153,7 +153,7 @@ repos:
   - id: rst-inline-touching-normal     # Checks for inline code touching normal text in reStructuredText
 
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.45.0
+  rev: v0.48.0
   hooks:
   - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
@@ -167,20 +167,20 @@ repos:
     - rstcheck[toml]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.33.3
+  rev: 0.37.2
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
   - id: check-readthedocs           # Checks ReadTheDocs configuration
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.17.1
+  rev: v2.1.0
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.8.3
+  rev: v4.16.2
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]

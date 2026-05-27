@@ -1148,7 +1148,7 @@ class Fiber:
 
         if len(potential_coords.shape) != 2:
             raise ValueError(
-                "Potential coordinates must be a 2D array. " "If using arc lengths, use resample_potentials() instead."
+                "Potential coordinates must be a 2D array. If using arc lengths, use resample_potentials() instead."
             )
         if potential_coords.shape[1] != 3:
             raise ValueError("Must provide exactly 3 coordinates for x, y, z")
@@ -1198,7 +1198,7 @@ class Fiber:
                 raise ValueError("n_sections must be specified")
 
         if (n_sections - 1) % len(function_list) != 0:
-            raise ValueError(f"n_sections must be 1 + {len(function_list)}*n, " "where n is (number_of_nodes - 1).")
+            raise ValueError(f"n_sections must be 1 + {len(function_list)}*n, where n is (number_of_nodes - 1).")
 
         self.nodecount = int(1 + (n_sections - 1) / len(function_list))
 

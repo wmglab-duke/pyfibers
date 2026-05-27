@@ -30,7 +30,6 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
 
     Using point source
     """
-
     # create curve of potentials
     fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
     fiber.potentials = fiber.point_source_potentials(0, 100, fiber.length / 2, 1, 10)
