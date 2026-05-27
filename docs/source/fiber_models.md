@@ -14,7 +14,6 @@ We provide four variants of myelinated fiber models:
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_DISCRETE`: The original MRG model, as described in {cite:p}`McIntyre2002`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_INTERPOLATION`: An interpolation of the MRG model, which allows for modeling of any fiber diameter between 2 and 16 microns, as described in {cite:p}`musselman_ascent_2021`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.PENA`: A modification of MRG parameters to better replicate the behavior of thinly myelinated fibers, as described in {cite:p}`pena_cap_2024`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.SMALL_MRG_INTERPOLATION`: **Deprecated.** Old name for {py:attr}`~pyfibers.model_enum.FiberModel.PENA`.
 
 **Sweeney model**:
 - {py:attr}`~pyfibers.model_enum.FiberModel.SWEENEY`: A myelinated fiber model based on the Sweeney model, as described in {cite:p}`sweeney_modeling_1987`.
@@ -24,11 +23,11 @@ We provide four variants of myelinated fiber models:
 We provide several variants of unmyelinated C‑fiber models.
 - {py:attr}`~pyfibers.model_enum.FiberModel.THIO_AUTONOMIC`: An unmyelinated fiber model for autonomic fibers, as described in {cite:p}`Thio2024`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.THIO_CUTANEOUS`: An unmyelinated fiber model for cutaneous fibers, as described in {cite:p}`Thio2024`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.TIGERHOLM`: A biophysically detailed model of a C‑fiber, as described in {cite:p}`Tigerholm2014`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.RATTAY`: A simplified version of the Tigerholm model, as described in {cite:p}`Rattay1993`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD94`: A simple model of a C‑fiber, as described in {cite:p}`Schild1994`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.TIGERHOLM`: A model of cutaneous afferent c-fibers, as described in {cite:p}`Tigerholm2014`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.SUNDT`: A model of cutaneous afferent c-fibers, as described in {cite:p}`Sundt2015`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD94`: A  model of a vagal afferent C‑fiber, as described in {cite:p}`Schild1994`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD97`: A modification of the Schild 1994 model, as described in {cite:p}`Schild1997`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.SUNDT`: A modification of the Schild 1994 model, as described in {cite:p}`Sundt2015`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.RATTAY`: A model of the squid giant fiber, adjusted to 37°C, as described in {cite:p}`Rattay1993`.
 
 ## Changes to fiber models from original publications
 
