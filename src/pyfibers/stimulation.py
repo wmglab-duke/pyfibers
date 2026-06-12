@@ -124,7 +124,6 @@ class Stimulation:
         self.dt_init_ss = dt_init_ss
         self._exit_t: float = None
         self.custom_run_sim = custom_run_sim  # Store the custom run_sim function
-        self._n_timesteps = int(self.tstop / self.dt)
         # Attempt to record the global simulation time
         try:
             self.time = h.Vector().record(h._ref_t)
@@ -133,6 +132,52 @@ class Stimulation:
                 "Could not set up time recording vector. Make sure you have created "
                 "a fiber before initializing stimulation."
             )
+
+    @property
+    def dt(self: Stimulation) -> float:
+        """Time step for the simulation (ms).
+
+        :return: The simulation time step in milliseconds.
+        """
+        return self._dt
+
+    @dt.setter
+    def dt(self: Stimulation, value: float) -> None:
+        """Set the time step and automatically update number of timesteps.
+
+        :param value: The simulation time step in milliseconds. Must be positive.
+        :raises ValueError: If value is not positive.
+        """
+        if value <= 0:
+            raise ValueError("dt must be positive")
+        self._dt = value
+
+    @property
+    def tstop(self: Stimulation) -> float:
+        """Total duration of the simulation (ms).
+
+        :return: The simulation stop time in milliseconds.
+        """
+        return self._tstop
+
+    @tstop.setter
+    def tstop(self: Stimulation, value: float) -> None:
+        """Set the simulation stop time and automatically update number of timesteps.
+
+        :param value: The simulation stop time in milliseconds. Must be positive.
+        :raises ValueError: If value is not positive.
+        """
+        if value <= 0:
+            raise ValueError("tstop must be positive")
+        self._tstop = value
+
+    @property
+    def n_timesteps(self: Stimulation) -> int:
+        """Number of timesteps in the simulation (computed from tstop / dt).
+
+        :return: The number of timesteps (tstop / dt).
+        """
+        return int(self._tstop / self._dt)
 
     def __str__(self: Stimulation) -> str:
         """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
@@ -221,8 +266,6 @@ class Stimulation:
         # reassign time recorder
         # without this, time recording can get messed up for unclear reasons
         fiber.time = self.time = h.Vector().record(h._ref_t)
-        # recompute timesteps
-        self._n_timesteps = int(self.tstop / self.dt)
         # Set simulation temperature based on the fiber's temperature
         h.celsius = fiber.temperature
         # Initialize the simulation to the fiber's rest potential
@@ -847,7 +890,7 @@ class IntraStim(Stimulation):
         exit_func_kws = exit_func_kws or {}
 
         # Run simulation
-        for i in range(self._n_timesteps):
+        for i in range(self.n_timesteps):
             h.fadvance()
 
             # check for NaNs in fiber potentials
@@ -881,8 +924,6 @@ class IntraStim(Stimulation):
         :raises RuntimeError: If intracellular stimulation is not enabled.
         :raises TypeError: If stimamp is not a float or int.
         """
-        # recompute timesteps
-        self._n_timesteps = int(self.tstop / self.dt)
         if not np.all(fiber.potentials == 0):
             raise ValueError('Fiber potentials must be zero for IntracellularStim')
         if self.istim is None:
@@ -977,7 +1018,6 @@ class ScaledStim(Stimulation):
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
         self.pad = pad_waveform
         self.truncate = truncate_waveform
-        self._n_timesteps: int = None
         self.waveform = waveform
         self._prep_waveform()
 
@@ -1019,9 +1059,6 @@ class ScaledStim(Stimulation):
         :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
         :raises RuntimeError: if an error is encountered while processing a callable into an array
         """
-        # recompute timesteps
-        self._n_timesteps = int(self.tstop / self.dt)
-
         prepped_waveform = self.waveform
         # wrap waveform in a list in not already a list
         if not isinstance(prepped_waveform, list | np.ndarray):
@@ -1032,11 +1069,11 @@ class ScaledStim(Stimulation):
             if not all(callable(wf) for wf in prepped_waveform):
                 raise TypeError("Waveform must be specified as either a callable or a list of callables.")
 
-            # process callable(s) into 2d array with shape (len(prepped_waveform), self._n_timesteps)
+            # process callable(s) into 2d array with shape (len(prepped_waveform), self.n_timesteps)
             try:
                 prepped_waveform = np.fromfunction(
                     np.vectorize(lambda i, j: prepped_waveform[int(i)](j * self.dt)),
-                    (len(prepped_waveform), self._n_timesteps),
+                    (len(prepped_waveform), self.n_timesteps),
                 )
             except Exception as e:  # noqa: B902
                 # provide some information on where the error happened to the user
@@ -1065,19 +1102,19 @@ class ScaledStim(Stimulation):
             for row in prepped_waveform:
                 row = np.array(row)  # Ensure row is a numpy array
 
-                if self.pad and (self._n_timesteps > len(row)):
+                if self.pad and (self.n_timesteps > len(row)):
                     # Extend waveform row until it is of length tstop/dt
                     if row[-1] != 0:
                         warnings.warn("Padding a waveform that does not end with 0.", stacklevel=2)
-                    row = np.hstack([row, [0] * (self._n_timesteps - len(row))])
+                    row = np.hstack([row, [0] * (self.n_timesteps - len(row))])
 
-                if self.truncate and (self._n_timesteps < len(row)):
+                if self.truncate and (self.n_timesteps < len(row)):
                     # Truncate waveform row until it is of length tstop/dt
-                    if any(row[self._n_timesteps :]):
+                    if any(row[self.n_timesteps :]):
                         warnings.warn("Truncating waveform removed non-zero values.", stacklevel=2)
-                    row = row[: self._n_timesteps]
+                    row = row[: self.n_timesteps]
 
-                if len(row) != self._n_timesteps:
+                if len(row) != self.n_timesteps:
                     raise ValueError("Processed waveform length must match the number of time steps (tstop / dt).")
 
                 processed_waveforms.append(row)  # Append processed row to the list
@@ -1094,7 +1131,7 @@ class ScaledStim(Stimulation):
             )
 
         # make sure that number of columns in the waveform matches the number of time steps
-        if prepped_waveform.shape[1] != self._n_timesteps:
+        if prepped_waveform.shape[1] != self.n_timesteps:
             raise RuntimeError("Processed waveform length must match the number of time steps (tstop / dt).")
 
         self._prepped_waveform = prepped_waveform
@@ -1191,7 +1228,7 @@ class ScaledStim(Stimulation):
         exit_func_kws = exit_func_kws or {}
 
         # Advance the simulation in small steps, updating extracellular potentials each time
-        for i in range(self._n_timesteps):
+        for i in range(self.n_timesteps):
             timestep_potentials = self._potentials_at_time(i, fiber, stimamps)
             self._update_extracellular(fiber, timestep_potentials)
 
