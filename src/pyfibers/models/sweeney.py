@@ -22,7 +22,7 @@ class SweeneyFiber(Fiber):
     def __init__(self: SweeneyFiber, diameter: float, **kwargs) -> None:
         """Initialize SweeneyFiber class.
 
-        :param diameter: fiber diameter [microns]
+        :param diameter: fiber diameter (µm)
         :param kwargs: keyword arguments to pass to the base class
         """
         assert "delta_z" not in kwargs, "Cannot specify delta_z for Sweeney Fiber"

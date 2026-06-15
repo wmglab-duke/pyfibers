@@ -43,7 +43,9 @@ def custom_run_sim(self, stimamp, fiber):
 ```python
 from pyfibers import Stimulation
 
-stimulation = Stimulation(dt=0.001, tstop=20, custom_run_sim=custom_run_sim)
+stimulation = Stimulation(
+    dt=0.001, tstop=20, custom_run_sim=custom_run_sim
+)  # dt, tstop in ms
 
 stimulation.run_sim(fiber)
 ```
@@ -89,7 +91,7 @@ def run_sim(self, stimamp, fiber):  # defined as a method of CustomStimulation
 
 3. **Set up the `CustomStimulation` instance and run the simulation**:
 ```python
-stimulation = CustomStimulation(dt=0.001, tstop=20)
+stimulation = CustomStimulation(dt=0.001, tstop=20)  # dt, tstop in ms
 stimulation.run_sim(fiber)
 ```
 
@@ -132,7 +134,7 @@ In this example, we demonstrate how to set up a custom simulation by using the {
 ```python
 from pyfibers import Stimulation
 
-stimulation = Stimulation(dt=0.001, tstop=20)
+stimulation = Stimulation(dt=0.001, tstop=20)  # dt, tstop in ms
 
 # Pre-run setup using Stimulation.pre_run_setup
 stimulation.pre_run_setup(fiber)

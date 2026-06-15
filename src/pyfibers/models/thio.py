@@ -61,8 +61,8 @@ class ThioFiber(Fiber):
     def __init__(self: ThioFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize fiber class.
 
-        :param diameter: fiber diameter [microns]
-        :param delta_z: node spacing [microns]
+        :param diameter: fiber diameter (µm)
+        :param delta_z: node spacing (µm)
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)

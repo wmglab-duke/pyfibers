@@ -57,9 +57,9 @@ It is usually easiest to use a 1D fiber (even if your fiber follows a 3D path) w
 
 When importing potentials from finite element models, follow these key steps:
 
-1. **Use unit stimulus**: Calculate potentials using a unit current (e.g., 1 mA) in your FEM simulation. PyFibers will scale these potentials to the desired stimulation amplitude.
+1. **Use unit stimulus**: Calculate potentials using a unit reference (e.g., 1 mA) in your FEM simulation. PyFibers scales these via ``stimamp`` in :class:`~pyfibers.stimulation.ScaledStim`.
 
-2. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 um along the fiber path) for smooth interpolation.
+2. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 µm along the fiber path) for smooth interpolation.
 
 3. **Resample to fiber coordinates**: Ensure your coordinates represent the distance along the fiber path, not 3D Cartesian coordinates. If your FEM output provides 3D coordinates, convert them to arc-length. Then use {py:meth}`~pyfibers.fiber.Fiber.resample_potentials` to interpolate the high-resolution potentials onto your fiber's coordinate system.
    ```python
