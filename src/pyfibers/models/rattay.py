@@ -20,8 +20,8 @@ class RattayFiber(Fiber):
     def __init__(self: RattayFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize RattayFiber class.
 
-        :param diameter: Fiber diameter [microns].
-        :param delta_z: Node spacing [microns].
+        :param diameter: Fiber diameter (µm).
+        :param delta_z: Node spacing (µm).
         :param kwargs: Keyword arguments to pass to the base class.
         """
         super().__init__(diameter=diameter, **kwargs)

@@ -110,7 +110,7 @@ class MRGFiber(Fiber):
     def __init__(self: MRGFiber, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
 
-        :param diameter: Fiber diameter [microns].
+        :param diameter: Fiber diameter (µm).
         :param kwargs: Keyword arguments to pass to the base class.
         :raises ValueError: If delta_z is specified in kwargs.
         """
