@@ -42,7 +42,7 @@ def build_fiber(
     using the specific subclass specified from the
     :enum:`~pyfibers.model_enum.FiberModel` enumerator.
     with user-specified diameter and length
-    (from one of: number of sections, number of nodes, or length in microns).
+    (from one of: number of sections, number of nodes, or length in micrometers (µm)).
     Additional keyword arguments are forwarded to the fiber model class constructor.
 
     By default, the first section of the fiber is located at the origin (0, 0, 0),
@@ -142,7 +142,7 @@ def build_fiber_3d(
     **Shifting Behavior**: For 3D fibers, shifting is handled during fiber creation (not during potential resampling).
     This is because 3D fiber geometry represents the physical position of the fiber in space, so shifting
     affects the actual fiber coordinates. You can apply shifts using either:
-    - ``shift``: a shift in microns, OR
+    - ``shift``: a shift in micrometers (µm), OR
     - ``shift_ratio``: a fraction of ``delta_z`` (the internodal length).
 
     If ``center=True``, the shift is applied after the fiber is first centered about the midpoint of the 3D path.
@@ -151,9 +151,10 @@ def build_fiber_3d(
     :param fiber_model: A :enum:`~pyfibers.model_enum.FiberModel`
         enumerator specifying the type of fiber to instantiate.
     :param diameter: The fiber diameter in micrometers (µm).
-    :param path_coordinates: A numpy array of shape (N, 3) specifying the 3D coordinates (x, y, z) of the fiber path.
-    :param shift: A shift in microns to apply to the fiber coordinates.
-    :param shift_ratio: Ratio of the internodal length to shift the fiber coordinates.
+    :param path_coordinates: A numpy array of shape (N, 3) specifying the 3D coordinates
+        (x, y, z) of the fiber path (µm).
+    :param shift: A shift in microns (µm) to apply to the fiber coordinates.
+    :param shift_ratio: Ratio of the internodal length (dimensionless) to shift the fiber coordinates.
     :param center: If ``True``, center the fiber before applying the shift.
     :param kwargs: Additional arguments forwarded to the underlying fiber model class.
     :raises ValueError: If ``path_coordinates`` is not provided, or if ``n_sections``, ``n_nodes``, or ``length``
@@ -234,7 +235,7 @@ def _shift_fiber(
     The function calculates where to start placing fiber sections along a path or coordinate system.
 
     You can specify either:
-    - ``shift``: a shift in microns, OR
+    - ``shift``: a shift in micrometers (µm), OR
     - ``shift_ratio``: a fraction of ``delta_z`` (the internodal length).
 
     If the shift or shift_ratio exceed the internodal length (delta_z),
@@ -250,11 +251,11 @@ def _shift_fiber(
     :param fiber_length: The total length of the fiber (µm).
     :param delta_z: Internodal length of the fiber (µm).
     :param shift: Shift distance in microns (µm).
-    :param shift_ratio: Shift as a ratio of ``delta_z``.
+    :param shift_ratio: Shift as a ratio of ``delta_z`` (dimensionless).
     :param center: If ``True``, shift is applied after re-centering the
         fiber's length around the midpoint of the fiber path.
     :raises ValueError: If both ``shift`` and ``shift_ratio`` are provided.
-    :return: The shifted start position of the fiber along its length.
+    :return: The shifted start position of the fiber along its length (µm).
     """
     if shift_ratio is not None and shift != 0:
         raise ValueError("Cannot specify both shift and shift_ratio")
@@ -308,7 +309,7 @@ class Fiber:
             :enum:`~pyfibers.model_enum.FiberModel`) representing the
             type of fiber model.
         :param diameter: The diameter of the fiber (µm).
-        :param temperature: The temperature at which the fiber will be simulated, in Celsius.
+        :param temperature: The temperature at which the fiber will be simulated (°C).
         :param passive_end_nodes: If ``True``, automatically assign passive properties to the end nodes.
             Can also be an integer specifying how many passive end nodes to include at each end.
         :param is_3d: If ``True``, fiber coordinates are treated as 3D.
@@ -316,19 +317,19 @@ class Fiber:
 
         .. Intrinsic to the fiber model
 
-        :ivar v_rest: The resting membrane potential of the fiber (in mV).
+        :ivar v_rest: The resting membrane potential of the fiber (mV).
         :ivar gating_variables: A dictionary mapping gating variable
             names to their corresponding NEURON attribute names.
         :ivar myelinated: ``True`` if myelinated, ``False`` if unmyelinated.
 
         .. Intrinsic to the fiber
 
-        :ivar diameter: The diameter of the fiber in micrometers.
+        :ivar diameter: The diameter of the fiber in micrometers (µm).
         :ivar fiber_model: The
             :enum:`~pyfibers.model_enum.FiberModel` attribute name.
-        :ivar temperature: The temperature at which the fiber will be simulated [C].
+        :ivar temperature: The temperature at which the fiber will be simulated (°C).
         :ivar passive_end_nodes: The number of passive end nodes included at each end.
-        :ivar delta_z: The center-to-center internodal length of the fiber.
+        :ivar delta_z: The center-to-center internodal length of the fiber (µm).
 
         .. Intrinsic from build_fiber
 
@@ -337,9 +338,9 @@ class Fiber:
         :ivar sections: A list of NEURON :class:`Section <neuron:Section>` objects representing the fiber.
         :ivar nodes: A list of NEURON :class:`Section <neuron:Section>` objects representing
             the fiber nodes only (subset of ``Fiber.sections``).
-        :ivar coordinates: A numpy array of 3D coordinates for
+        :ivar coordinates: A numpy array of 3D coordinates (µm) for
             the center of each section along the fiber.
-        :ivar longitudinal_coordinates: A numpy array of 1D (arc-length) coordinates
+        :ivar longitudinal_coordinates: A numpy array of 1D (arc-length) coordinates (µm)
             of the center of each section along the fiber.
         :ivar path: A :class:`nd_line` object representing the 3D path of the fiber.
 
@@ -348,12 +349,13 @@ class Fiber:
         :ivar apc: A list of NEURON :class:`APCount <neuron:APCount>` objects for
             detecting action potentials (from :meth:Fiber.apcounts()).
         :ivar vm: A list of NEURON :class:`Vector <neuron:Vector>` objects
-            recording membrane voltage (from :meth:Fiber.record_vm()).
+            recording membrane voltage (mV) (from :meth:Fiber.record_vm()).
         :ivar im: A list of NEURON :class:`Vector <neuron:Vector>` objects
-            recording membrane current (from :meth:Fiber.record_im()).
+            recording membrane current density (mA/cm²) via ``i_membrane``
+            (from :meth:Fiber.record_im()).
         :ivar vext: A list of NEURON :class:`Vector <neuron:Vector>` objects
-            recording extracellular potential (from :meth:Fiber.record_vext()).
-        :ivar time: A NEURON :class:`Vector <neuron:Vector>` recording the simulation time.
+            recording extracellular potential (mV) (from :meth:Fiber.record_vext()).
+        :ivar time: A NEURON :class:`Vector <neuron:Vector>` recording the simulation time (ms).
         :ivar gating: A dictionary mapping gating variable names to lists of
             recorded NEURON :class:`Vector <neuron:Vector>` objects
             (from :meth:Fiber.record_gating()).
@@ -366,7 +368,7 @@ class Fiber:
 
         .. set by user
 
-        :ivar potentials: A numpy array of extracellular potentials at each node along the fiber.
+        :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
             For more info see the documentation on `extracellular potentials <extracellular potentials.md>` in PyFibers.
         """
         self.diameter = diameter
@@ -601,7 +603,7 @@ class Fiber:
         **Shifting Behavior**: For 1D fibers, shifting is handled during potential resampling.
         This allows you to test various fiber positions relative to a given potential distribution without
         recreating the fiber. You can apply shifts using either:
-        - ``shift``: a shift in microns, OR
+        - ``shift``: a shift in micrometers (µm), OR
         - ``shift_ratio``: a fraction of ``delta_z`` (the internodal length).
 
         If ``center=True``, both the input coordinates and the fiber's coordinates will be
@@ -610,14 +612,14 @@ class Fiber:
         **Note**: Unlike 3D fibers, 1D fiber shifting is temporary and only affects the potential resampling.
         The underlying fiber remains unchanged.
 
-        :param potentials: 1D array of external potential values.
-        :param potential_coords: 1D array of coordinates corresponding to ``potentials``.
+        :param potentials: 1D array of external potential values (mV).
+        :param potential_coords: 1D array of arc-length coordinates (µm) corresponding to ``potentials``.
         :param center: If ``True``, center the potentials around the midpoint of each domain.
             If a shift is also specified, the shift is applied after centering.
         :param inplace: If ``True``, update ``Fiber.potentials`` with the resampled values.
         :param shift: Shift distance in microns (µm).
-        :param shift_ratio: Shift as a ratio of ``delta_z``.
-        :return: Interpolated potential values aligned with ``Fiber.longitudinal_coordinates``.
+        :param shift_ratio: Shift as a ratio of ``delta_z`` (dimensionless).
+        :return: Interpolated potential values (mV) aligned with ``Fiber.longitudinal_coordinates``.
         :raises ValueError: If input array sizes or monotonicity checks fail, or if potential
             coordinates don't span the fiber coordinates.
         """
@@ -714,7 +716,7 @@ class Fiber:
         :param allsec: If ``True``, record from sections (including nodes). Otherwise, only record from nodes.
         :param indices: Specific indices to record from (if ``None``, record from all).
         :param allow_missing: If ``True``, allows missing attributes without raising an error (returns ``None``).
-        :param recording_dt: The time step [ms] for recording the values (separate from simulation dt).
+        :param recording_dt: The time step (ms) for recording the values (separate from simulation dt).
             Should be larger than the simulation dt.
         :param recording_tvec: A NEURON :class:`Vector <neuron:Vector>`
             of time points at which to record the values (ms).
@@ -761,16 +763,17 @@ class Fiber:
         """Record membrane voltage (mV) along the fiber.
 
         :param kwargs: Additional arguments passed to :meth:`Fiber.record_values`.
-        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording membrane voltage.
+        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording membrane voltage (mV).
         """
         self.vm = self.record_values('_ref_v', **kwargs)
         return self.vm
 
     def record_im(self: Fiber, **kwargs) -> list[h.Vector | None]:
-        """Record membrane current (nA) along the fiber.
+        """Record membrane current density (mA/cm²) via ``i_membrane`` along the fiber.
 
         :param kwargs: Additional arguments passed to :meth:`Fiber.record_values`.
-        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording membrane current.
+        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording
+            ``i_membrane`` (mA/cm²).
         """
         self.im = self.record_values('_ref_i_membrane', **kwargs)
         return self.im
@@ -778,7 +781,7 @@ class Fiber:
     def record_vext(self: Fiber) -> list[h.Vector]:
         """Record extracellular potential (mV) from each section along the fiber.
 
-        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording extracellular potential.
+        :return: A list of NEURON :class:`Vector <neuron:Vector>` objects recording extracellular potential (mV).
         """
         self.vext = [h.Vector().record(sec(0.5)._ref_vext[0]) for sec in self.sections]
         return self.vext
@@ -1133,12 +1136,12 @@ class Fiber:
         Alternatively, you can create a 1D fiber and calculate the coordinate arc lengths.
         For more information, see :doc:`/extracellular_potentials`.
 
-        :param potentials: 1D array of external potential values.
-        :param potential_coords: 2D array of shape (N, 3) representing the (x, y, z) coordinates
+        :param potentials: 1D array of external potential values (mV).
+        :param potential_coords: 2D array of shape (N, 3) representing the (x, y, z) coordinates (µm)
             where the potentials are measured or computed.
         :param center: If ``True``, center the potentials around the midpoint of each domain.
         :param inplace: If ``True``, update ``Fiber.potentials`` with the resampled values.
-        :return: Interpolated potential values aligned with the fiber's 3D arc-length coordinates.
+        :return: Interpolated potential values (mV) aligned with the fiber's 3D arc-length coordinates.
         :raises ValueError: If called on a non-3D fiber or if input coordinate shapes are invalid.
         """
         if not self.__is_3d:

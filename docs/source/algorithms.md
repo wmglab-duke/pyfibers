@@ -102,7 +102,7 @@ These measures collectively can reduce the total simulation time in typical thre
 
 The **{py:func}`~pyfibers.stimulation.Stimulation.run_sim()`** method is the core time-stepped simulation routine in each PyFibers simulation class. It **applies** the specified stimulation to the model fiber at each time step and uses NEURON’s solver to update the membrane potential and gating variables. At the end, `run_sim()` returns:
 - The **number of action potentials** recorded at a designated node (by default, the one closest to 90% fiber length).
-- The **time of the last action potential** crossing (if any).
+- The **time of the last action potential** crossing (if any), in ms.
 
 When {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` is called, it repeatedly calls:
 
@@ -175,5 +175,5 @@ Process of calculating the spatiotemporal profile of extracellular potentials ap
 - The user specifies:
   - **Pulse** parameters: width, frequency, duration.
   - **Location** along the fiber: e.g., the middle node or the first node.
-- `IntraStim.run_sim(amplitude, fiber)` sets up and applies a square current pulse inside the specified section. The amplitude is scaled by the given stimulation amplitude.
+- `IntraStim.run_sim(amplitude, fiber)` sets up and applies a square current pulse inside the specified section. The strength of current injection set during initialization of the class is scaled by the given stimulation amplitude.
 - For multi‑pulse waveforms, {py:class}`~pyfibers.stimulation.IntraStim` repeats square pulses at intervals (pulse repetition frequency) until `tstop`.

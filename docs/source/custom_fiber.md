@@ -58,7 +58,9 @@ Define the ``__init__`` method, call the superclass initializer, and set any mod
 **For homogeneous fiber models**, set the ``delta_z`` parameter, which is the distance from the center of one node to the next node. This can be passed as an argument to ``__init__``.
 
 ```python
-def __init__(self, diameter: float, delta_z: float = 8.333, **kwargs):
+def __init__(
+    self, diameter: float, delta_z: float = 8.333, **kwargs
+):  # diameter, delta_z in µm
     """Initialize HHFiber class."""
     super().__init__(diameter=diameter, **kwargs)
     self.gating_variables = {
@@ -83,7 +85,7 @@ def __init__(self, diameter: float, **kwargs):
         raise ValueError("Cannot specify delta_z for this fiber model")
     super().__init__(diameter=diameter, **kwargs)
     # You must calculate delta_z based on diameter
-    self.delta_z = self.diameter * 100  # Example: simple calculation
+    self.delta_z = self.diameter * 100  # µm; example calculation
 ```
 
 ### Step 4: define the node creation method(s)
@@ -98,8 +100,8 @@ To incorporate custom mechanisms into the section method, you should place the .
 def create_hh(self, ind: int, node_type: str):
     """Create a Hodgkin-Huxley node."""
     node = h.Section(name=f"{node_type} node {ind}")  # create section
-    node.L = self.delta_z  # length of node
-    node.diam = self.diameter  # diameter of fiber
+    node.L = self.delta_z  # µm, length of node
+    node.diam = self.diameter  # µm, diameter of fiber
     node.nseg = 1  # one segment
 
     node.insert("extracellular")  # extracellular NEURON mechanism
@@ -108,8 +110,8 @@ def create_hh(self, ind: int, node_type: str):
     node.v = self.v_rest  # rest potential
 
     node.insert("hh")  # hodgkin-huxley mechanism built into NEURON
-    node.Ra = 100  # axial resistivity
-    node.cm = 1  # membrane capacitance
+    node.Ra = 100  # Ω·cm, axial resistivity (NEURON units)
+    node.cm = 1  # µF/cm², membrane capacitance (NEURON units)
     return node
 ```
 
@@ -138,7 +140,9 @@ register_custom_fiber(MyCustomFiber)
 
 # Now you can use it with build_fiber
 model = FiberModel.MY_CUSTOM_FIBER  # Uses the submodels attribute
-fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_nodes=21)
+fiber = build_fiber(
+    diameter=5.7, fiber_model=model, temperature=37, n_nodes=21
+)  # diameter in µm, temperature in °C
 ```
 
 ### Complete example
@@ -160,7 +164,9 @@ class HHFiber(Fiber):
 
     submodels = ["HH"]  # This will be available as FiberModel.HH
 
-    def __init__(self, diameter: float, delta_z: float = 8.333, **kwargs):
+    def __init__(
+        self, diameter: float, delta_z: float = 8.333, **kwargs
+    ):  # diameter, delta_z in µm
         """Initialize HHFiber class."""
         super().__init__(diameter=diameter, **kwargs)
         self.gating_variables = {
@@ -179,8 +185,8 @@ class HHFiber(Fiber):
     def create_hh(self, ind: int, node_type: str):
         """Create a Hodgkin-Huxley node."""
         node = h.Section(name=f"{node_type} node {ind}")  # create section
-        node.L = self.delta_z  # length of node
-        node.diam = self.diameter  # diameter of fiber
+        node.L = self.delta_z  # µm, length of node
+        node.diam = self.diameter  # µm, diameter of fiber
         node.nseg = 1  # one segment
 
         node.insert("extracellular")  # extracellular NEURON mechanism
@@ -189,8 +195,8 @@ class HHFiber(Fiber):
         node.v = self.v_rest  # rest potential
 
         node.insert("hh")  # hodgkin-huxley mechanism built into NEURON
-        node.Ra = 100  # axial resistivity
-        node.cm = 1  # membrane capacitance
+        node.Ra = 100  # Ω·cm, axial resistivity (NEURON units)
+        node.cm = 1  # µF/cm², membrane capacitance (NEURON units)
         return node
 ```
 
