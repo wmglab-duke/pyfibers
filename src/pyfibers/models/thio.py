@@ -112,7 +112,7 @@ class ThioFiber(Fiber):
         """Create a THIO node.
 
         :param ind: node index in the fiber
-        :param node_type: node type ('active' or 'passive')
+        :param node_type: node type (``'active'`` or ``'passive'``)
         :returns: NEURON section with THIO node mechanisms
         """
         node = self.nodebuilder(ind, node_type)

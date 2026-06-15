@@ -65,7 +65,7 @@ class SchildFiber(Fiber):
         """Create a SCHILD node.
 
         :param ind: node index in the fiber
-        :param node_type: node type ('active' or 'passive')
+        :param node_type: node type (``'active'`` or ``'passive'``)
         :return: created node with SCHILD mechanisms
         """
         R = 8314  # noqa: N806 # molar gas constant

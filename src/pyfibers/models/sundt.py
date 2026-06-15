@@ -42,7 +42,7 @@ class SundtFiber(Fiber):
         """Create a SUNDT node.
 
         :param ind: node index in the fiber
-        :param node_type: node type ('active' or 'passive')
+        :param node_type: node type (``'active'`` or ``'passive'``)
         :return: created node with  Sundt mechanisms
         """
         node = self.nodebuilder(ind, node_type)
