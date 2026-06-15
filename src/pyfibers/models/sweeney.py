@@ -53,7 +53,7 @@ class SweeneyFiber(Fiber):
         """Create a node of Ranvier.
 
         :param index: Section index in the fiber.
-        :param node_type: Node type ('active' or 'passive').
+        :param node_type: Node type (``'active'`` or ``'passive'``).
         :return: Created node with Sweeney mechanisms
         """
         name = f"{node_type} node {index}"

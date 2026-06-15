@@ -28,7 +28,7 @@ def enable_logging(level: int = logging.INFO, format_string: str = None, stream:
         Defaults to a standard format showing level, logger name, and message.
     :param stream: Output stream for logging. Defaults to stderr (standard for logging).
         Use sys.stdout for notebooks or when you want logging mixed with regular output.
-        If None and PYFIBERS_DOCS_BUILD=1, automatically uses stdout for documentation builds.
+        If ``None`` and ``PYFIBERS_DOCS_BUILD=1``, automatically uses stdout for documentation builds.
 
     .. code-block:: python
 

@@ -314,7 +314,7 @@ class MRGFiber(Fiber):
         """Create a node of Ranvier for MRG_DISCRETE fiber type.
 
         :param index: index of fiber segment
-        :param node_type: type of node (active or passive)
+        :param node_type: type of node (``'active'`` or ``'passive'``)
         :return: nrn.h.Section
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]

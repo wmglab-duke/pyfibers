@@ -41,7 +41,7 @@ class RattayFiber(Fiber):
         """Create a RATTAY node.
 
         :param ind: Node index in the fiber.
-        :param node_type: Node type ('active' or 'passive').
+        :param node_type: Node type (``'active'`` or ``'passive'``).
         :return: Created node with Rattay mechanisms.
         """
         node = self.nodebuilder(ind, node_type)

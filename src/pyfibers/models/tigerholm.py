@@ -62,7 +62,7 @@ class TigerholmFiber(Fiber):
         """Create a TIGERHOLM node.
 
         :param ind: node index in fiber
-        :param node_type: node type ('active' or 'passive')
+        :param node_type: node type (``'active'`` or ``'passive'``)
         :return: NEURON section with TIGERHOLM mechanism
         """
         node = self.nodebuilder(ind, node_type)

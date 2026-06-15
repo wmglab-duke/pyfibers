@@ -36,7 +36,7 @@ def _add_fiber_to_members(members: dict[str, type], fiber_class: type) -> None:
 
     :param members: Dictionary to add the fiber class to.
     :param fiber_class: The fiber class to add.
-    :raises ValueError: If the fiber class does not have a 'submodels' attribute or is not a subclass of Fiber.
+    :raises ValueError: If the fiber class does not have a ``'submodels'`` attribute or is not a subclass of Fiber.
     """
     # Validate the fiber class
     # Import here to avoid circular imports
@@ -56,10 +56,10 @@ def _add_fiber_to_members(members: dict[str, type], fiber_class: type) -> None:
 
 
 def _discover_plugins() -> dict[str, type]:
-    """Discover plugin classes using entry points under the 'pyfibers.fiber_plugins' group.
+    """Discover plugin classes using entry points under the ``'pyfibers.fiber_plugins'`` group.
 
     :return: A dictionary mapping each submodel name (converted to uppercase) to the plugin class.
-    :raises ValueError: If a discovered plugin class does not contain a submodels attribute.
+    :raises ValueError: If a discovered plugin class does not contain a ``submodels`` attribute.
     """
     plugins: dict[str, type] = {}
     for entry_point in entry_points(group='pyfibers.fiber_plugins'):
@@ -113,7 +113,7 @@ def register_custom_fiber(fiber_class: type) -> None:
     This function allows users to dynamically add custom fiber models to the
     FiberModel enum without needing to modify the main package or create a plugin.
 
-    :param fiber_class: The fiber model class to register. Must have a 'submodels' attribute.
+    :param fiber_class: The fiber model class to register. Must have a ``'submodels'`` attribute.
     """
     global FiberModel
 
