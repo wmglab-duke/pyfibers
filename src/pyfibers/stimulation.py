@@ -244,8 +244,8 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate for APs.
         :param ap_detect_location: Normalized location along the fiber in [0,1] to check for APs.
         :param precision: Decimal places to round the detected AP time.
-        :param check_all_apc: If True, raise a warning if APs occur elsewhere but not at the detect location.
-        :return: A tuple (num_aps, last_ap_time). If no APs are detected, last_ap_time is None.
+        :param check_all_apc: If ``True``, raise a warning if APs occur elsewhere but not at the detect location.
+        :return: A tuple (num_aps, last_ap_time). If no APs are detected, last_ap_time is ``None``.
         :raises RuntimeError: If the detected AP time is non-positive.
         """
         # Convert user-specified location to an integer node index
@@ -294,13 +294,13 @@ class Stimulation:
 
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
-        :param block: If True, check for block threshold; otherwise, check for activation threshold.
+        :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
         :param block_delay: Time after simulation start to check for block (ms).
         :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
-        :return: True if stimulation is suprathreshold; False if subthreshold.
+        :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
-        :raises NotImplementedError: If block is True and thresh_num_aps != 1.
+        :raises NotImplementedError: If block is ``True`` and thresh_num_aps != 1.
         :raises RuntimeError: If no APs are detected at all in a block threshold search.
         """
         if thresh_num_aps <= 0:
@@ -577,7 +577,7 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check for an action potential.
         :param ap_detect_location: Normalized location to check in [0,1].
         :param thresh_num_aps: Number of APs required to consider it suprathreshold.
-        :return: True if the specified number of APs has occurred at or before this time.
+        :return: ``True`` if the specified number of APs has occurred at or before this time.
         """
         return self.threshold_checker(
             fiber, ap_detect_location=ap_detect_location, thresh_num_aps=thresh_num_aps, check_all_apc=False
@@ -596,13 +596,13 @@ class Stimulation:
         or issue a warning based on fail_on_end_excitation.
 
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check.
-        :param multi_site_check: If True, warn if multiple activation sites are detected.
+        :param multi_site_check: If ``True``, warn if multiple activation sites are detected.
         :param fail_on_end_excitation: Controls handling of end-excitation:
-            - True: Raise RuntimeError if end-excitation is detected.
-            - False: Only warn if end-excitation is detected.
-            - None: Skip the check entirely.
-        :return: True if end excitation is detected, False otherwise.
-        :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is True.
+            - ``True``: Raise RuntimeError if end-excitation is detected.
+            - ``False``: Only warn if end-excitation is detected.
+            - ``None``: Skip the check entirely.
+        :return: ``True`` if end excitation is detected, ``False`` otherwise.
+        :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is ``True``.
         """
         times = np.array([0] + [apc.time for apc in fiber.apc] + [0])
         times[np.where(times == 0)] = float("Inf")
@@ -825,14 +825,14 @@ class IntraStim(Stimulation):
             - If stimamp is a list of floats, each float is applied to the corresponding source
         :param fiber: The :class:`~pyfibers.fiber.Fiber` to be stimulated.
         :param ap_detect_location: Location to detect action potentials (percent along fiber)
-        :param exit_func: Function to call to check if simulation should be exited
-        :param exit_func_interval: Interval to call exit_func
-        :param exit_func_kws: Keyword arguments to pass to exit_func
-        :param use_exit_t: If True, use the time returned by exit_func as the simulation end time
+        :param exit_func: Function to call to check if simulation should be exited early.
+        :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
+        :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
+        :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
         :param fail_on_end_excitation: Behavior for end excitation detection
-            - if True, raise error if end excitation is detected
-            - if False, continue simulation if end excitation is detected
-            - if None, do not check for end excitation
+            - if ``True``, raise error if end excitation is detected
+            - if ``False``, continue simulation if end excitation is detected
+            - if ``None``, do not check for end excitation
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV)
         :raises RuntimeError: If NaNs are detected in fiber potentials
         :return: Number of detected APs and time of last detected AP.
@@ -967,12 +967,12 @@ class ScaledStim(Stimulation):
         :param tstop: Total simulation duration (ms).
         :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
         :param dt_init_ss: Large time step used during the steady-state period (ms).
-        :param pad_waveform: If True, extend the waveform with zeros to match simulation time.
-        :param truncate_waveform: If True, truncate the waveform if it exceeds the simulation time.
+        :param pad_waveform: If ``True``, extend the waveform with zeros to match simulation time.
+        :param truncate_waveform: If ``True``, truncate the waveform if it exceeds the simulation time.
         :ivar waveform: The waveform(s) to be applied to the fiber potentials.
             See :class:`ScaledStim` for more info.
-        :ivar pad: If True, extend the waveform with zeros to match simulation time.
-        :ivar truncate: If True, truncate the waveform if it exceeds the simulation time.
+        :ivar pad: If ``True``, extend the waveform with zeros to match simulation time.
+        :ivar truncate: If ``True``, truncate the waveform if it exceeds the simulation time.
         """
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
         self.pad = pad_waveform
@@ -1171,11 +1171,11 @@ class ScaledStim(Stimulation):
         :param exit_func: Callback to check if the simulation can be ended early (e.g., upon detection of an AP).
         :param exit_func_interval: How often (in time steps) to call exit_func.
         :param exit_func_kws: Additional arguments for exit_func.
-        :param use_exit_t: If True, simulation will stop after self._exit_t (if set).
+        :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
         :param fail_on_end_excitation: Behavior for end excitation detection
-            - If True, raise error if end excitation is detected
-            - If False, continue simulation if end excitation is detected
-            - If None, do not check for end excitation
+            - If ``True``, raise error if end excitation is detected
+            - If ``False``, continue simulation if end excitation is detected
+            - If ``None``, do not check for end excitation
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV)
         :raises RuntimeError: If NaNs are detected in membrane potentials or if required setup (e.g., istim) is missing.
         :return: Tuple (number_of_APs, time_of_last_AP).
