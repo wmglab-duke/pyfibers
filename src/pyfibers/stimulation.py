@@ -364,15 +364,14 @@ class Stimulation:
             (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
         :param bounds_search_mode: The bounds search mode
             (:attr:`BoundsSearchMode.PERCENT_INCREMENT` or :attr:`BoundsSearchMode.ABSOLUTE_INCREMENT`).
-        :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search
-            - if bounds_search_mode is "percent" this is the percentage increase/decrease
-            - if bounds_search_mode is "absolute" this is the absolute increase/decrease
+        :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search:
+            if bounds_search_mode is ``"percent"``, this is the percentage increase/decrease;
+            if bounds_search_mode is ``"absolute"``, this is the absolute increase/decrease.
         :param termination_mode: The termination mode
             (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
-
-        :param termination_tolerance: Difference between upper and lower bounds that indicates convergence
-            - absolute difference if termination_mode is "absolute"
-            - percentage difference if termination_mode is "percent"
+        :param termination_tolerance: Difference between upper and lower bounds that indicates convergence:
+            absolute difference if termination_mode is ``"absolute"``;
+            percentage difference if termination_mode is ``"percent"``.
         :param stimamp_top: Initial upper-bound scaling factor passed to :meth:`run_sim`.
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param max_iterations: Maximum attempts to find bounding amplitudes before bisection.
@@ -380,9 +379,9 @@ class Stimulation:
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
         :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
-        :param thresh_num_aps: Number of action potentials for threshold search
-            - if activation, suprathreshold requires detected aps >= thresh_num_aps
-            - if block, suprathreshold requires detected aps < thresh_num_aps
+        :param thresh_num_aps: Number of action potentials for threshold search:
+            if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
+            if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         :raises ValueError: If invalid enum values are provided for
@@ -599,9 +598,9 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check.
         :param multi_site_check: If ``True``, warn if multiple activation sites are detected.
         :param fail_on_end_excitation: Controls handling of end-excitation:
-            - ``True``: Raise RuntimeError if end-excitation is detected.
-            - ``False``: Only warn if end-excitation is detected.
-            - ``None``: Skip the check entirely.
+            if ``True``, raise RuntimeError if end-excitation is detected;
+            if ``False``, only warn if end-excitation is detected;
+            if ``None``, skip the check entirely.
         :return: ``True`` if end excitation is detected, ``False`` otherwise.
         :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is ``True``.
         """
@@ -740,13 +739,12 @@ class IntraStim(Stimulation):
         :param istim_ind: the :class:`~pyfibers.fiber.Fiber` section index (unmyelinated) or
             node of Ranvier number (myelinated) receiving stimulation
         :param istim_loc: node location along the  :class:`~pyfibers.fiber.Fiber` (using NEURON style indexing)
-        :param clamp_kws: keyword arguments for the :class:`h.trainIClamp`.
-            All optional, default given in parentheses.
-            - ``'delay'``: (0) the delay from simulation start to the onset of the intracellular stimulation [ms]
-            - ``'pw'``: (1) the pulse duration of the intracellular stimulation [ms]
-            - ``'dur'``: (50) the duration from simulation start to the end of the intracellular stimulation [ms]
-            - ``'freq'``: (100) the intracellular pulse repetition rate [Hz]
-            - ``'amp'``: (1) the intracellular stimulation amplitude [nA]
+        :param clamp_kws: keyword arguments for the :class:`h.trainIClamp` (default in parentheses):
+            ``delay`` (0) delay from simulation start to onset of intracellular stimulation [ms];
+            ``pw`` (1) pulse duration [ms];
+            ``dur`` (50) duration from simulation start to end of stimulation [ms];
+            ``freq`` (100) pulse repetition rate [Hz];
+            ``amp`` (1) stimulation amplitude [nA].
             Note that ``amp`` is scaled by the ``stimamp`` parameter in :meth:`run_sim`. Therefore, it is
             recommended to set to 1 so that scaling is easily interpretable.
         :ivar istim: the NEURON :class:`h.trainIClamp` object for intracellular stimulation
@@ -831,10 +829,10 @@ class IntraStim(Stimulation):
         :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
         :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
-        :param fail_on_end_excitation: Behavior for end excitation detection
-            - if ``True``, raise error if end excitation is detected
-            - if ``False``, continue simulation if end excitation is detected
-            - if ``None``, do not check for end excitation
+        :param fail_on_end_excitation: Behavior for end excitation detection:
+            if ``True``, raise an error if end excitation is detected;
+            if ``False``, continue the simulation if end excitation is detected;
+            if ``None``, do not check for end excitation.
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV).
         :raises RuntimeError: If NaNs are detected in fiber potentials
         :return: Tuple (num_aps, last_ap_time in ms).
@@ -1166,20 +1164,24 @@ class ScaledStim(Stimulation):
 
             For more information on the underlying math, see :doc:`/algorithms`.
 
-        :param stimamp: Amplitude to scale the product of extracellular potentials and waveform.
-            - Should be a single float for one source
-            - If stimamp is a single float and there are multiple sources, the same stimamp is applied to all sources
-            - If stimamp is a list of floats, each float is applied to the corresponding source
+        :param stimamp: Amplitude scaling factor for the product of extracellular potentials and waveform:
+            if there is a single source, ``stimamp`` should be a single float;
+            if there are multiple sources (i.e., ``fiber.potentials`` has multiple rows)
+            and ``stimamp`` is a single float,
+            the same stimamp is applied to all sources;
+            if there are multiple sources (i.e., ``fiber.potentials`` has multiple rows)
+            and ``stimamp`` is a list of floats,
+            each float is applied to the corresponding source. (List length must match number of sources.)
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param ap_detect_location: Normalized location in [0,1] to check for APs.
         :param exit_func: Callback to check if the simulation can be ended early (e.g., upon detection of an AP).
         :param exit_func_interval: How often (in time steps) to call exit_func.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
-        :param fail_on_end_excitation: Behavior for end excitation detection
-            - If ``True``, raise error if end excitation is detected
-            - If ``False``, continue simulation if end excitation is detected
-            - If ``None``, do not check for end excitation
+        :param fail_on_end_excitation: Behavior for end excitation detection:
+            if ``True``, raise an error if end excitation is detected;
+            if ``False``, continue the simulation if end excitation is detected;
+            if ``None``, do not check for end excitation.
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV).
         :raises RuntimeError: If NaNs are detected in membrane potentials or if required setup (e.g., istim) is missing.
         :return: Tuple (num_aps, last_ap_time in ms).
