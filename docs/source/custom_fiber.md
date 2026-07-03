@@ -90,7 +90,7 @@ def __init__(self, diameter: float, **kwargs):
 
 ### Step 4: define the node creation method(s)
 
-Implement method(s) that create the specific sections of the fiber model. For a homogeneous fiber model, you will create a single method. For a heterogeneous fiber model, you will create multiple methods. These methods should return a NEURON {py:class}`h.Section` object representing the node or section.
+Implement method(s) that create the specific sections of the fiber model. For a homogeneous fiber model, you will create a single method. For a heterogeneous fiber model, you will create multiple methods. These methods should return a NEURON {py:class}`Section <neuron:Section>` object representing the node or section.
 
 ```{note}
 To incorporate custom mechanisms into the section method, you should place the .mod files in a directory, compile them using `nrnivmodl`, and then load them by placing `neuron.load_mechanisms(dir)` at the top of your python file, where "dir" is the directory containing your compile mechanisms.
