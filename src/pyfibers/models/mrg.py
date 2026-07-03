@@ -107,6 +107,16 @@ class MRGFiber(Fiber):
 
     submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION', 'PENA']
 
+    myelinated = True
+    v_rest = -80  # millivolts
+
+    gating_variables = {
+        "h": "h_axnode_myel",
+        "m": "m_axnode_myel",
+        "mp": "mp_axnode_myel",
+        "s": "s_axnode_myel",
+    }
+
     def __init__(self: MRGFiber, diameter: float, **kwargs) -> None:
         """Initialize MRGFiber class.
 
@@ -118,14 +128,6 @@ class MRGFiber(Fiber):
         if "delta_z" in kwargs:
             raise ValueError("Cannot specify delta_z for MRG Fiber")
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_axnode_myel",
-            "m": "m_axnode_myel",
-            "mp": "mp_axnode_myel",
-            "s": "s_axnode_myel",
-        }
-        self.myelinated = True
-        self.v_rest = -80  # millivolts
         self.get_mrg_params()
 
     def generate(self: MRGFiber, **kwargs) -> Fiber:

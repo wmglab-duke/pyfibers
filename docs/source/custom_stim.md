@@ -10,7 +10,7 @@ Before running any simulations, we must create a model fiber. The tutorials assu
 
 ## Custom simulation with a custom `run_sim()` function
 
-In this example, we demonstrate how to set up a custom simulation by providing a custom `run_sim` function to the {py:class}`~pyfibers.stimulation.Stimulation` class. You could also achieve this by creating a subclass and overriding the {py:meth}`~pyfibers.stimulation.Stimulation.run_sim` method.
+In this example, we demonstrate how to set up a custom simulation by providing a custom `run_sim()` function to the {py:class}`~pyfibers.stimulation.Stimulation` class. You could also achieve this by creating a subclass and overriding the {py:meth}`~pyfibers.stimulation.Stimulation.run_sim` method.
 
 ```{note}
 To use custom `run_sim()` methods with threshold searches, the custom method should take stimulation amplitude as the first argument and return the number of action potentials generated and the time of the last action potential.

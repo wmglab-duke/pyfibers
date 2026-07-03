@@ -53,24 +53,32 @@ class HHFiber(Fiber):
 
 ### Step 3: initialize the subclass
 
-Define the ``__init__`` method, call the superclass initializer, and set any model-specific parameters. At minimum, set ``self.v_rest`` (resting membrane potential) and ``self.myelinated`` (whether the fiber is myelinated). It is also recommended to specify gating variables if you want to be able to record these values during simulations (these are specified in the .mod files describing the node mechanisms).
+Define ``myelinated`` (whether the fiber is myelinated), ``v_rest`` (resting membrane potential), and ``gating_variables`` (specified in the .mod files describing the node mechanisms) as class attributes. Setting ``gating_variables`` is optional, but important if you want to be able to record these values during simulations.
 
-**For homogeneous fiber models**, set the ``delta_z`` parameter, which is the distance from the center of one node to the next node. This can be passed as an argument to ``__init__``.
+Next, define the ``__init__`` method, call the superclass initializer, set the ``delta_z`` instance variable (the distance from the center of one node to the next node), and, if needed, set other instance variables within ``__init__``.
+
+**For homogeneous fiber models**, ``delta_z`` can be added as an argument to ``__init__`` and assigned therein.
 
 ```python
-def __init__(
-    self, diameter: float, delta_z: float = 8.333, **kwargs
-):  # diameter, delta_z in µm
-    """Initialize HHFiber class."""
-    super().__init__(diameter=diameter, **kwargs)
-    self.gating_variables = {
+class HHFiber(Fiber):
+    """Hodgkin-Huxley fiber model."""
+
+    submodels = ["HH"]
+
+    myelinated = False
+    v_rest = -65  # mV
+    gating_variables = {
         "h": "h_hh",
         "m": "m_hh",
         "n": "n_hh",
     }
-    self.myelinated = False
-    self.delta_z = delta_z
-    self.v_rest = -65  # mV
+
+    def __init__(
+        self, diameter: float, delta_z: float = 8.333, **kwargs
+    ):  # diameter, delta_z in µm
+        """Initialize HHFiber class."""
+        super().__init__(diameter=diameter, **kwargs)
+        self.delta_z = delta_z
 ```
 
 **For heterogeneous fiber models** (e.g., myelinated fibers with multiple section types), ``delta_z`` must be calculated by you (the model implementer) in your ``__init__`` method based on the fiber diameter. It should **not** be accepted as an argument from users. You must:
@@ -164,19 +172,20 @@ class HHFiber(Fiber):
 
     submodels = ["HH"]  # This will be available as FiberModel.HH
 
+    myelinated = False
+    v_rest = -65  # mV
+    gating_variables = {
+        "h": "h_hh",
+        "m": "m_hh",
+        "n": "n_hh",
+    }
+
     def __init__(
         self, diameter: float, delta_z: float = 8.333, **kwargs
     ):  # diameter, delta_z in µm
         """Initialize HHFiber class."""
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_hh",
-            "m": "m_hh",
-            "n": "n_hh",
-        }
-        self.myelinated = False
         self.delta_z = delta_z
-        self.v_rest = -65  # mV
 
     def generate(self, **kwargs):
         """Generate the fiber model sections."""

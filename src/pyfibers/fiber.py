@@ -293,7 +293,14 @@ class Fiber:
     - Calculating extracellular potentials and single fiber action potentials
     - Measuring conduction velocity along the fiber
     - Handling 3D or 1D fiber geometry
+
+    Subclasses should define ``gating_variables``, ``myelinated``, and ``v_rest`` as class attributes,
+    and ``delta_z`` as an instance attribute.
     """
+
+    myelinated: bool | None = None
+    v_rest: float | None = None  # millivolts (mV)
+    gating_variables: dict[str, str] = {}
 
     def __init__(
         self: Fiber,
@@ -379,7 +386,6 @@ class Fiber:
 
         # recording
         self.gating: dict[str, h.Vector] = None
-        self.gating_variables: dict[str, str] = {}
         self.vm: list = None
         self.apc: list = None
         self.im: list = None
@@ -392,8 +398,6 @@ class Fiber:
         self.stim: h.NetStim = None
 
         # fiber attributes
-        self.myelinated: bool = None
-        self.v_rest = None
         self.balanced = False
         self.nodecount: int = None
         self.delta_z: float = None
