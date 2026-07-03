@@ -203,7 +203,7 @@ class MRGFiber(Fiber):
         """Create a single MYSA segment for MRG fiber type.
 
         :param i: index of fiber segment
-        :return: nrn.h.Section
+        :return: :class:`Section <neuron:Section>`
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]
         mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
@@ -237,7 +237,7 @@ class MRGFiber(Fiber):
         """Create a single FLUT segment for MRG fiber type.
 
         :param i: index of fiber segment
-        :return: nrn.h.Section
+        :return: :class:`Section <neuron:Section>`
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]
         mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
@@ -273,7 +273,7 @@ class MRGFiber(Fiber):
         """Create a STIN segment for MRG fiber type.
 
         :param i: index of fiber segment
-        :return: nrn.h.Section
+        :return: :class:`Section <neuron:Section>`
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]
         mycm = self.mrg_params["mycm"]  # lamella membrane capacitance [uF/cm2]
@@ -315,7 +315,7 @@ class MRGFiber(Fiber):
 
         :param index: index of fiber segment
         :param node_type: type of node (``'active'`` or ``'passive'``)
-        :return: nrn.h.Section
+        :return: :class:`Section <neuron:Section>`
         """
         rhoa = self.mrg_params["rhoa"]  # intracellular resistivity [Ohm-um]
         node_diam = self.mrg_params["node_diam"]  # diameter of node of Ranvier fiber segment [um]
