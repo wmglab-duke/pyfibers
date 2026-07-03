@@ -17,6 +17,16 @@ class SundtFiber(Fiber):
 
     submodels = ['SUNDT']
 
+    myelinated = False
+    v_rest = -60  # millivolts
+
+    gating_variables = {
+        "h": "h_nahh",
+        "m": "m_nahh",
+        "n": "n_borgkdr",
+        "l": "l_borgkdr",
+    }
+
     def __init__(self: SundtFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize SundtFiber class.
 
@@ -25,14 +35,6 @@ class SundtFiber(Fiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_nahh",
-            "m": "m_nahh",
-            "n": "n_borgkdr",
-            "l": "l_borgkdr",
-        }
-        self.myelinated = False
-        self.v_rest = -60  # millivolts
         self.delta_z = delta_z
 
     def generate(self: SundtFiber, **kwargs) -> Fiber:  # noqa: D102

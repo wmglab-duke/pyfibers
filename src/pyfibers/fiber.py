@@ -293,7 +293,14 @@ class Fiber:
     - Calculating extracellular potentials and single fiber action potentials
     - Measuring conduction velocity along the fiber
     - Handling 3D or 1D fiber geometry
+
+    Subclasses should define ``gating_variables``, ``myelinated``, and ``v_rest`` as class attributes,
+    and ``delta_z`` as an instance attribute.
     """
+
+    myelinated: bool | None = None
+    v_rest: float | None = None  # millivolts (mV)
+    gating_variables: dict[str, str] = {}
 
     def __init__(
         self: Fiber,
@@ -347,18 +354,18 @@ class Fiber:
         .. data recording
 
         :ivar apc: A list of NEURON :class:`APCount <neuron:APCount>` objects for
-            detecting action potentials (from :meth:Fiber.apcounts()).
+            detecting action potentials (from :meth:`Fiber.apcounts`).
         :ivar vm: A list of NEURON :class:`Vector <neuron:Vector>` objects
-            recording membrane voltage (mV) (from :meth:Fiber.record_vm()).
+            recording membrane voltage (mV) (from :meth:`Fiber.record_vm`).
         :ivar im: A list of NEURON :class:`Vector <neuron:Vector>` objects
             recording membrane current density (mA/cm²) via ``i_membrane``
-            (from :meth:Fiber.record_im()).
+            (from :meth:`Fiber.record_im`).
         :ivar vext: A list of NEURON :class:`Vector <neuron:Vector>` objects
-            recording extracellular potential (mV) (from :meth:Fiber.record_vext()).
+            recording extracellular potential (mV) (from :meth:`Fiber.record_vext`).
         :ivar time: A NEURON :class:`Vector <neuron:Vector>` recording the simulation time (ms).
         :ivar gating: A dictionary mapping gating variable names to lists of
             recorded NEURON :class:`Vector <neuron:Vector>` objects
-            (from :meth:Fiber.record_gating()).
+            (from :meth:`Fiber.record_gating`).
 
         .. synapse
 
@@ -369,7 +376,7 @@ class Fiber:
         .. set by user
 
         :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
-            For more info see the documentation on `extracellular potentials <extracellular potentials.md>` in PyFibers.
+            For more info, see :doc:`/extracellular_potentials`.
         """
         self.diameter = diameter
         self.fiber_model = fiber_model
@@ -379,7 +386,6 @@ class Fiber:
 
         # recording
         self.gating: dict[str, h.Vector] = None
-        self.gating_variables: dict[str, str] = {}
         self.vm: list = None
         self.apc: list = None
         self.im: list = None
@@ -392,8 +398,6 @@ class Fiber:
         self.stim: h.NetStim = None
 
         # fiber attributes
-        self.myelinated: bool = None
-        self.v_rest = None
         self.balanced = False
         self.nodecount: int = None
         self.delta_z: float = None
@@ -419,7 +423,7 @@ class Fiber:
         :param loc: Location in the range [0, 1].
         :param target: Specifies whether to retrieve from ``'nodes'`` or ``'sections'``.
         :raises ValueError: If ``loc`` is not in [0, 1] or if ``target`` is not ``'nodes'`` or ``'sections'``.
-        :return: The chosen node or section as a :class:`h.Section`.
+        :return: The chosen node or section as a :class:`Section <neuron:Section>`.
         """
         if not (0 <= loc <= 1):
             raise ValueError("Location must be between 0 and 1")
@@ -476,7 +480,7 @@ class Fiber:
         :param target: Can be either ``'nodes'`` or ``'sections'``.
         :return: The count of nodes or sections.
         :raises RuntimeError: If nodecount does not match the actual number of nodes.
-        :raises ValueError: If target is not 'nodes' or 'sections'.
+        :raises ValueError: If target is not ``'nodes'`` or ``'sections'``.
         """
         if self.nodecount != len(self.nodes):
             raise RuntimeError("Node count does not match number of nodes")
@@ -490,7 +494,7 @@ class Fiber:
         """Index into the fiber nodes by integer index.
 
         :param item: Zero-based index of the node to retrieve.
-        :return: The node (:class:`h.Section`) at the specified index.
+        :return: The node (:class:`Section <neuron:Section>`) at the specified index.
         """
         return self.nodes[item]
 
@@ -504,7 +508,7 @@ class Fiber:
     def __contains__(self: Fiber, item: h.Section) -> bool:
         """Check if a given section is part of this fiber.
 
-        :param item: A NEURON :class:`h.Section` to check for membership.
+        :param item: A NEURON :class:`Section <neuron:Section>` to check for membership.
         :return: ``True`` if the section is in this fiber, else ``False``.
         """
         return item in self.sections
@@ -822,7 +826,7 @@ class Fiber:
 
         .. seealso::
 
-            Documentation on `extracellular potentials <extracellular potentials.md>` in PyFibers.
+            :doc:`/extracellular_potentials`
 
         :param x: x-coordinate of the source in µm.
         :param y: y-coordinate of the source in µm.
@@ -945,8 +949,8 @@ class Fiber:
     def calculate_periaxonal_current(from_sec: h.Section, to_sec: h.Section, vext_from: float, vext_to: float) -> float:
         """Compute the periaxonal current between two compartments for myelinated models.
 
-        :param from_sec: The NEURON :class:`h.Section` from which current flows.
-        :param to_sec: The NEURON :class:`h.Section` receiving current.
+        :param from_sec: The NEURON :class:`Section <neuron:Section>` from which current flows.
+        :param to_sec: The NEURON :class:`Section <neuron:Section>` receiving current.
         :param vext_from: Extracellular (periaxonal) potential at ``from_sec`` (mV).
         :param vext_to: Extracellular (periaxonal) potential at ``to_sec`` (mV).
         :return: The periaxonal current in mA.
@@ -1224,7 +1228,7 @@ class Fiber:
         by each internodal section in order. Each node is optionally converted to a passive node
         if it is within the range of ``Fiber.passive_end_nodes``.
 
-        :param function_list: A list of functions that each return a new NEURON :class:`h.Section`.
+        :param function_list: A list of functions that each return a new NEURON :class:`Section <neuron:Section>`.
         :return: The updated :class:`Fiber` instance.
 
         :meta public:
@@ -1259,7 +1263,7 @@ class Fiber:
 
         For more info, see :doc:`/fiber_models`.
 
-        :param node: The node :class:`h.Section` to be made passive.
+        :param node: The node :class:`Section <neuron:Section>` to be made passive.
         :return: The modified section with a passive mechanism inserted.
         :raises ValueError: If the node's name does not contain ``'passive'``.
 
@@ -1289,7 +1293,7 @@ class Fiber:
 
         :param ind: Index of this node in the overall fiber construction.
         :param node_type: A string identifying the node as ``'active'`` or ``'passive'``.
-        :return: The newly created node as a NEURON :class:`h.Section`.
+        :return: The newly created node as a NEURON :class:`Section <neuron:Section>`.
         """
         node = h.Section(name=f"{node_type} node {ind}")
         node.L = self.delta_z
