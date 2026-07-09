@@ -321,6 +321,7 @@ class Fiber:
             Can also be an integer specifying how many passive end nodes to include at each end.
         :param is_3d: If ``True``, fiber coordinates are treated as 3D.
             Usually set automatically by :func:`build_fiber_3d`.
+        :raises ValueError: If ``diameter`` or ``temperature`` is not positive.
 
         .. Intrinsic to the fiber model
 
@@ -378,9 +379,13 @@ class Fiber:
         :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
             For more info, see :doc:`/extracellular_potentials`.
         """
-        self.diameter = diameter
+        if diameter <= 0:
+            raise ValueError("Diameter must be positive")
+        if temperature <= 0:
+            raise ValueError("Temperature must be positive")
+        self._diameter = diameter
         self.fiber_model = fiber_model
-        self.temperature = temperature
+        self._temperature = temperature
         self.passive_end_nodes = passive_end_nodes
         self.__is_3d = is_3d
 
@@ -583,48 +588,24 @@ class Fiber:
     def diameter(self: Fiber) -> float:
         """The diameter of the fiber in micrometers (µm).
 
-        :return: The fiber diameter in micrometers.
-        """
+        Set at fiber construction.
+        """  # noqa: DAR201
         return self._diameter
-
-    @diameter.setter
-    def diameter(self: Fiber, value: float) -> None:
-        """Set the fiber diameter with validation.
-
-        :param value: The fiber diameter in micrometers. Must be positive.
-        :raises ValueError: If value is not positive.
-        """
-        if value <= 0:
-            raise ValueError("Diameter must be positive")
-        self._diameter = value
 
     @property
     def temperature(self: Fiber) -> float:
         """The temperature at which the fiber will be simulated [C].
 
-        :return: The simulation temperature in Celsius.
-        """
+        Set at fiber construction.
+        """  # noqa: DAR201
         return self._temperature
-
-    @temperature.setter
-    def temperature(self: Fiber, value: float) -> None:
-        """Set the simulation temperature with validation.
-
-        :param value: The simulation temperature in Celsius.
-        :raises ValueError: If value is not positive.
-        """
-        if value <= 0:
-            raise ValueError("Temperature must be positive")
-        self._temperature = value
 
     @property
     def length(self: Fiber) -> float:
         """The total length of the fiber in micrometers (end-to-end).
 
         Computed from the sum of all section lengths.
-
-        :return: The total fiber length in micrometers.
-        """
+        """  # noqa: DAR201
         return float(np.sum([section.L for section in self.sections]))
 
     @property
@@ -632,12 +613,10 @@ class Fiber:
         """A numpy array of 1D (arc-length) coordinates of the center of each section along the fiber.
 
         Computed from the cumulative sum of section lengths.
-
-        :return: A numpy array of 1D coordinates for each section.
-        """
+        """  # noqa: DAR201
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
-        return np.cumsum((start_coords + end_coords) / 2)  # type: ignore
+        return np.cumsum((start_coords + end_coords) / 2)
 
     def _set_3d(self: Fiber) -> None:
         """Mark the fiber as 3D.
