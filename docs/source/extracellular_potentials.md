@@ -107,7 +107,7 @@ fiber.potentials = np.loadtxt("fem_results.csv")
 ## Electrical Potentials from Multiple Stimulation Sources
 
 ```{note}
-Stimulation amplitudes passed to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim` for multiple sources can be a single float that is applied to all sources, or a list of floats for each source. At present, threshold searches using {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` only support passing a single "stimamp" input to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`. To scale potentials from multiple sources independently during a threshold search, you must either scale them in advance using superposition (see below), or create a custom threshold search function (see {doc}`Algorithms in PyFibers <algorithms>`).
+Stimulation amplitudes passed to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim` for multiple sources can be a single float that is applied to all sources, or a list of floats for each source. At present, threshold searches using {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` only support passing a single "stimamp" input to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`. To scale potentials from multiple sources independently during a threshold search, you must either scale them in advance using superposition (see below), or create a custom threshold search function (see {doc}`algorithms`).
 ```
 
 ### Superposition

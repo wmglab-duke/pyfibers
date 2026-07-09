@@ -19,6 +19,14 @@ class SweeneyFiber(Fiber):
 
     submodels = ["SWEENEY"]
 
+    myelinated = True
+    v_rest = -80  # millivolts
+
+    gating_variables = {
+        "h": "h_sweeney",
+        "m": "m_sweeney",
+    }
+
     def __init__(self: SweeneyFiber, diameter: float, **kwargs) -> None:
         """Initialize SweeneyFiber class.
 
@@ -27,13 +35,7 @@ class SweeneyFiber(Fiber):
         """
         assert "delta_z" not in kwargs, "Cannot specify delta_z for Sweeney Fiber"
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_sweeney",
-            "m": "m_sweeney",
-        }
-        self.myelinated = True
         self.delta_z = self.diameter * 100
-        self.v_rest = -80  # millivolts
 
     def generate(self: SweeneyFiber, **kwargs) -> Fiber:
         """Build fiber model sections with NEURON.

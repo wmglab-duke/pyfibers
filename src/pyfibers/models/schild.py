@@ -21,6 +21,38 @@ class SchildFiber(Fiber):
 
     submodels = ['SCHILD97', 'SCHILD94']
 
+    myelinated = False
+    v_rest = -46.5  # [mV] Resting membrane potential
+
+    gating_variables_schild94 = {
+        "d_cat": "d_cat",
+        "f_cat": "f_cat",
+        "d_can": "d_can",
+        "fn1_can": "f1_can",
+        "fn2_can": "f2_can",
+        "m_naf": "m_naf",
+        "h_naf": "h_naf",
+        "j_naf": "l_naf",
+        "m_nas": "m_nas",
+        "h_nas": "h_nas",
+        "n": "n_kd",
+        "p": "p_ka",
+        "q": "q_ka",
+        "x": "x_kds",
+        "y": "y1_kds",
+        "c": "c_kca",
+    }
+
+    # update gating variables for Schild 1997 variant
+    gating_variables_schild97 = {
+        **gating_variables_schild94,
+        "m_naf": "m_naf97mean",
+        "h_naf": "h_naf97mean",
+        "m_nas": "m_nas97mean",
+        "h_nas": "h_nas97mean",
+    }
+    del gating_variables_schild97["j_naf"]  # remove j_naf from gating_variables_schild97
+
     def __init__(self: SchildFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize SchildFiber class.
 
@@ -29,34 +61,10 @@ class SchildFiber(Fiber):
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)
-        self.myelinated = False
-        self.gating_variables = {
-            "d_cat": "d_cat",
-            "f_cat": "f_cat",
-            "d_can": "d_can",
-            "fn1_can": "f1_can",
-            "fn2_can": "f2_can",
-            "m_naf": "m_naf",
-            "h_naf": "h_naf",
-            "j_naf": "l_naf",
-            "m_nas": "m_nas",
-            "h_nas": "h_nas",
-            "n": "n_kd",
-            "p": "p_ka",
-            "q": "q_ka",
-            "x": "x_kds",
-            "y": "y1_kds",
-            "c": "c_kca",
-        }
-        self.v_rest = -46.5  # [mV] Resting membrane potential
         self.delta_z = delta_z
-        # update gating variables for Schild 1997 model
-        if self.fiber_model.name == 'SCHILD97':
-            self.gating_variables["m_naf"] = "m_naf97mean"
-            self.gating_variables["m_nas"] = "m_nas97mean"
-            self.gating_variables["h_naf"] = "h_naf97mean"
-            self.gating_variables["h_nas"] = "h_nas97mean"
-            self.gating_variables.pop("j_naf")
+        self.gating_variables = (
+            self.gating_variables_schild97 if self.fiber_model.name == "SCHILD97" else self.gating_variables_schild94
+        )
 
     def generate(self: SchildFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_schild], **kwargs)

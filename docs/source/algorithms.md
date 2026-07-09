@@ -167,7 +167,7 @@ Process of calculating the spatiotemporal profile of extracellular potentials ap
 ## {py:meth}`IntraStim.run_sim() <pyfibers.stimulation.IntraStim.run_sim()>`
 
 :::{seealso}
-{doc}`custom_stim` shows intracellular examples with {py:class}`~pyfibers.stimulation.IntraStim`, {py:class}`IClamp`, and custom loops.
+{doc}`custom_stim` shows intracellular examples with {py:class}`~pyfibers.stimulation.IntraStim`, {py:class}`IClamp <neuron:IClamp>`, and custom loops.
 :::
 
 {py:class}`~pyfibers.stimulation.IntraStim` is a simpler class for **intracellular** stimulation. It injects current directly into a chosen fiber section. Key points:
