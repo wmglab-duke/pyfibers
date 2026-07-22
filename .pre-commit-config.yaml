@@ -29,7 +29,7 @@ repos:
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
-  rev: 9.0.0a3
+  rev: 9.0.0b1
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
@@ -153,7 +153,7 @@ repos:
   - id: rst-inline-touching-normal     # Checks for inline code touching normal text in reStructuredText
 
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.48.0
+  rev: v0.49.1
   hooks:
   - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
@@ -167,20 +167,20 @@ repos:
     - rstcheck[toml]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.37.2
+  rev: 0.37.4
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
   - id: check-readthedocs           # Checks ReadTheDocs configuration
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v2.1.0
+  rev: v2.3.0
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.8.3
+  rev: v4.16.5
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
