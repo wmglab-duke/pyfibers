@@ -49,6 +49,8 @@ nitpick_ignore = [
         'py:class',
         'h.Vector',
     ),
+    ('py:class', 'h.APCount'),
+    ('py:class', 'neuron.h.APCount'),
     ('py:class', 'h.Section'),
     ('py:class', 'neuron.h.Section'),
     ('py:class', 'h.NetStim'),

@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from neuron import h
-from scipy.signal import find_peaks
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -592,7 +591,7 @@ class Stimulation:
         """Check for end-excitation.
 
         Determines activation sites by finding local minima in each node's AP time.
-        If an AP is detected near in or adjacent to the passive end nodes, raise an error
+        If an AP is detected in or adjacent to the passive end nodes, raise an error
         or issue a warning based on fail_on_end_excitation.
 
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to check.
@@ -604,21 +603,9 @@ class Stimulation:
         :return: ``True`` if end excitation is detected, ``False`` otherwise.
         :raises RuntimeError: If end excitation is detected and fail_on_end_excitation is ``True``.
         """
-        times = np.array([0] + [apc.time for apc in fiber.apc] + [0])
-        times[np.where(times == 0)] = float("Inf")
+        init_nodes, n_sites, _ = fiber.initiation_nodes()
 
-        # Find troughs (local minima) in the negative times array
-        troughs, edges = find_peaks(-times, plateau_size=(0, float("inf")))
-
-        # Identify the node indices for each trough or plateau
-        init_nodes = []
-        for left_edge, right_edge in zip(edges["left_edges"], edges["right_edges"]):
-            # Correct for the padding we added
-            init_nodes += list(range(left_edge - 1, right_edge))
-        init_nodes = np.array(init_nodes)
-
-        # If more than one trough is found, we might have multiple activation sites
-        if len(troughs) > 1 and multi_site_check:
+        if n_sites > 1 and multi_site_check:
             warnings.warn(
                 "Multiple activation sites detected. "
                 "(Can sometimes mean threshold is incorrect due to virtual anode block.)",
@@ -627,8 +614,9 @@ class Stimulation:
             )
 
         # Identify indices near the start or end of the fiber
+        n_nodes = len(fiber)
         end_excited_nodes = init_nodes[
-            (init_nodes <= int(fiber.passive_end_nodes)) | (init_nodes >= len(times) - int(fiber.passive_end_nodes) - 3)
+            (init_nodes <= int(fiber.passive_end_nodes)) | (init_nodes >= n_nodes - int(fiber.passive_end_nodes) - 1)
         ]
 
         if len(end_excited_nodes) and fail_on_end_excitation is not None:

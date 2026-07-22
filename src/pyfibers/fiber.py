@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from nd_line.nd_line import nd_line
 from neuron import h
+from scipy.signal import find_peaks
 
 h.load_file('stdrun.hoc')
 
@@ -699,6 +700,42 @@ class Fiber:
         self.apc = [h.APCount(node(0.5)) for node in self]
         for apc in self.apc:
             apc.thresh = thresh
+
+    def initiation_nodes(self: Fiber) -> tuple[np.ndarray, int, np.ndarray]:
+        """Identify node indices where action potentials initiate.
+
+        Initiation sites are found as local minima in each node's last AP detection
+        time. Adjacent nodes sharing the same earliest time (a plateau) are all included.
+
+        :raises RuntimeError: If AP counters have not been set up.
+        :return: Tuple of initiation node indices, the number of distinct initiation sites,
+            and last AP times at each node (``np.nan`` where no AP was detected).
+        """
+        if self.apc is None:
+            raise RuntimeError("AP counters not set up. Call fiber.apcounts() first.")
+
+        # Add padding with Inf since we are detecting local minima
+        # Note that non-detections register as t=0, so we migrate all zeros to Inf
+        node_times = np.array([apc.time for apc in self.apc], dtype=float)
+        padded_times = np.array([0] + node_times.tolist() + [0], dtype=float)
+        padded_times[np.where(padded_times == 0)] = float("Inf")
+
+        troughs, edges = find_peaks(-padded_times, plateau_size=(0, float("inf")))
+
+        init_nodes = []
+        for left_edge, right_edge in zip(edges["left_edges"], edges["right_edges"]):
+            # Adjust nodes to account for padding
+            init_nodes += list(range(left_edge - 1, right_edge))
+        init_nodes = np.array(init_nodes, dtype=int)
+
+        # Check to make sure activation was not detected in the padding
+        n_nodes = len(node_times)
+        if init_nodes.size and ((init_nodes < 0).any() or (init_nodes >= n_nodes).any()):
+            raise RuntimeError("Initiation node indices include padding artifacts. Check AP counter setup.")
+
+        times = node_times.copy()
+        times[(times == 0) | np.isinf(times)] = np.nan
+        return init_nodes, len(troughs), times
 
     def record_values(
         self: Fiber,
