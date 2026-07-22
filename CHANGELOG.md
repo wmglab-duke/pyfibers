@@ -2,6 +2,84 @@
 
 <!-- version list -->
 
+## v0.9.0 (2026-07-22)
+
+### Build System
+
+- Add link checking to docs build process
+  ([`ecde876`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ecde87667928ab9281bca78bad174f45fed20153))
+
+- Add link checking to docs build process
+  ([`ecde876`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ecde87667928ab9281bca78bad174f45fed20153))
+
+Closes: #389
+
+(cherry picked from commit 670ccbe262bd088f1c200b5a288b8786e0bfb75f)
+
+Co-authored-by: Daniel Marshall <dpm42@duke.edu>
+
+- Add linkcheck exception for github docs
+  ([`f9e0c44`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/f9e0c443ed3e632fd0137c31ca58bb5f86c379fd))
+
+- Add linkcheck exception for github docs
+  ([`84f4c89`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/84f4c898ee6b96c807f988025f4e03facb7323c1))
+
+- Fix github docs ci for linkcheck
+  ([`ecde876`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/ecde87667928ab9281bca78bad174f45fed20153))
+
+- Fix issue with docs building using new linkcheck on github
+  ([`8f01f54`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/8f01f5474b798ba7dcb44efeaedbe03d6e8b431b))
+
+- Ignore link that is broken for checklinks
+  ([`c5df37c`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/c5df37cba88eead9c85d979d74101ec3a172ce6e))
+
+### Documentation
+
+- Add docs on plotting initiation sites and measuring cv
+  ([`314daab`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/314daaba03c7827f92db11c51496d1f4dd6f83f2))
+
+- Add double backticks to code references
+  ([`5a85345`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/5a85345324f05cc1ddb18fe6bacefa30fd74aa91))
+
+- Add favicon to docs
+  ([`8e5a0fa`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/8e5a0faef5b30392615a6ddc5c818da0f21402fc))
+
+- Add new publications using PyFibers to docs
+  ([`2dcb252`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/2dcb2524908be75db47bb7513d1d3491e92c61c8))
+
+- Fix broken cross references and add new NEURON class references
+  ([`c4410b6`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/c4410b6a7460ce1fc1d5954b6b234c041fb404d2))
+
+- Fix xrefs and add units where needed
+  ([`c4410b6`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/c4410b6a7460ce1fc1d5954b6b234c041fb404d2))
+
+- Possible fix for enum docs not rendering on github docs
+  ([`4da69ba`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/4da69baa376407b73c0e97957d450fe1ca038207))
+
+- Update custom fiber docs for class attributes
+  ([`09f93f5`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/09f93f580010cb2836c8130a014d2bf3b51a2467))
+
+- Update docs to describe units where needed
+  ([`5c5db16`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/5c5db16d01ab9c88054fc5a1748acc12d5bdb5b5))
+
+- Update fiber models descriptions
+  ([`a452cdf`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/a452cdf4dfe21c98149aac5ed4bc1855906dff5d))
+
+- Update parallelism tutorial to not use deprecated "silent" parameter
+  ([`0da2491`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/0da2491f5bf2b242cbc206173d6d5eb12a18baf7))
+
+- Update parameter documentation to remove bullets that rendered improperly
+  ([`3908729`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/39087290beef71f5186325d81defce87ef395d4c))
+
+- Updates to documentation for clarity and readability
+  ([`06659b4`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/06659b4696dc61512877d6d71f0e3b5f2b9c36bc))
+
+### Features
+
+- Add fiber function to check initiation nodes
+  ([`314daab`](https://gitlab.oit.duke.edu/wmglab/wmglab-neuron/-/commit/314daaba03c7827f92db11c51496d1f4dd6f83f2))
+
+
 ## v0.8.5 (2026-04-15)
 
 ### Bug Fixes
