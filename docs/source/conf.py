@@ -32,7 +32,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = "0.8.5"
+release = "0.9.0"
 
 html_short_title = "PyFibers documentation"
 # html_logo = './static/logo.png' noqa: E800
@@ -49,6 +49,8 @@ nitpick_ignore = [
         'py:class',
         'h.Vector',
     ),
+    ('py:class', 'h.APCount'),
+    ('py:class', 'neuron.h.APCount'),
     ('py:class', 'h.Section'),
     ('py:class', 'neuron.h.Section'),
     ('py:class', 'h.NetStim'),
