@@ -1232,6 +1232,8 @@ class Fiber:
         :return: The updated :class:`Fiber` instance after generation.
         :raises ValueError: If the computed number of sections does not align with the
             function_list-based pattern.
+        :raises ValueError: If the fiber has too few nodes for the requested
+            ``passive_end_nodes`` (left and right passive regions would leave no active nodes).
         """
         if n_nodes is not None:
             n_sections = (n_nodes - 1) * len(function_list) + 1
@@ -1252,6 +1254,15 @@ class Fiber:
 
         if self.nodecount < 3:
             warnings.warn("Fiber has fewer than 3 nodes. Consider increasing the fiber length.", stacklevel=2)
+
+        n_passive = int(self.passive_end_nodes)
+        if n_passive and 2 * n_passive >= self.nodecount:
+            raise ValueError(
+                f"Fiber is too short for the requested number of passive end nodes: "
+                f"nodecount={self.nodecount}, passive_end_nodes={self.passive_end_nodes}. "
+                f"Need at least {2 * n_passive + 1} nodes so that "
+                f"{n_passive} passive node(s) at each end leave at least one active node."
+            )
 
         self._create_sections(function_list)
         self._calculate_coordinates()
@@ -1278,9 +1289,8 @@ class Fiber:
                 # passive or active node
                 node_type = 'active'
                 # If within the range of passive end nodes
-                if (
-                    self.passive_end_nodes
-                    and ind / len(function_list) < self.passive_end_nodes
+                if self.passive_end_nodes and (
+                    ind / len(function_list) < self.passive_end_nodes
                     or self.nodecount - 1 - ind / len(function_list) < self.passive_end_nodes
                 ):
                     node_type = 'passive'

@@ -25,6 +25,36 @@ def test_bad_fiber_model():
         build_fiber(diameter=5.7, fiber_model='bad_model', temperature=37, n_sections=133)
 
 
+def test_passive_end_nodes_fiber_too_short():
+    """Raise when passive end nodes would leave no active nodes."""
+    with pytest.raises(ValueError, match="too short for the requested number of passive end nodes"):
+        build_fiber(
+            diameter=5.7,
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            temperature=37,
+            n_nodes=5,
+            passive_end_nodes=3,
+        )
+
+
+def test_passive_end_nodes_allowed_when_active_node_remains():
+    """Allow passive ends when at least one active node remains in the middle."""
+    fiber = build_fiber(
+        diameter=5.7,
+        fiber_model=FiberModel.MRG_INTERPOLATION,
+        temperature=37,
+        n_nodes=5,
+        passive_end_nodes=2,
+    )
+    assert fiber.nodecount == 5
+    assert fiber.passive_end_nodes == 2
+    assert 'passive' in fiber.nodes[0].name()
+    assert 'passive' in fiber.nodes[1].name()
+    assert 'passive' not in fiber.nodes[2].name()
+    assert 'passive' in fiber.nodes[3].name()
+    assert 'passive' in fiber.nodes[4].name()
+
+
 def test_len():
     assert len(get_fiber()) == (133 - 1) / 11 + 1
 
