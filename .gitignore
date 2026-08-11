@@ -1,5 +1,8 @@
 __pycache__
 dist/*
+
+# Nested test repo for GitHub-as-merge-target dry runs
+sandbox/
 docs/build/*
 .idea/*
 .spyproject/*
