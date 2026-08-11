@@ -89,19 +89,6 @@ tox_py311_w_cov:
     - pyproject.toml
     - .gitlab-ci.yml
 
-tox_py310:
-  script:
-  - pip install tox
-  - tox r -e py310-neuron8
-  image: python:3.10
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
-
 tox_py312:
   script:
   - pip install tox

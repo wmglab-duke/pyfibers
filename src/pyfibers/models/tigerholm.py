@@ -1,5 +1,9 @@
 """Implementation of Tigerholm fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 As described in Tigerholm 2014: https://doi.org/10.1152/jn.00777.2012
 """
 

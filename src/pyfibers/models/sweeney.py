@@ -1,5 +1,9 @@
 """Implementation of the Sweeney fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 Based on:
 Sweeney, J. D., Mortimer, J. T., & Durand, D. (1987).
 Modeling of mammalian myelinated nerve for functional neuromuscular stimulation.
