@@ -1,9 +1,18 @@
 default:
   image: python:3.13
 
+# Variables (Settings → CI/CD → Variables; Masked=on, Protected=off for MR visibility):
+#   GH_TOKEN         — GitHub PAT: contents, pull_requests, workflows (read/write)
+#   GITLAB_API_TOKEN — GitLab PAT: Merge Request write + Code write (promote close + daily sync)
+#
+# Daily sync schedule (required): Build → Pipeline schedules → cron "0 0 * * *" (midnight UTC)
+#   Target branch: main, Activated: on
+
 workflow:
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event" #run on mr
+  - if: $CI_PIPELINE_SOURCE == "schedule" # daily sync from GitHub
+  - if: $CI_PIPELINE_SOURCE == "web" # manual pipelines (sync play button)
   - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS #don't run duplicate pipelines for MR
     when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH #run on main
@@ -16,6 +25,7 @@ workflow:
 variables:
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
   PRE_COMMIT_HOME: $CI_PROJECT_DIR/.cache/pre-commit
+  GITHUB_REPO: wmglab-duke/pyfibers
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/topics/caching/
@@ -26,6 +36,8 @@ variables:
 stages:
 - lint
 - test
+- mirror
+- sync
 - deploy
 
 cache:
@@ -43,14 +55,25 @@ before_script:
 - virtualenv venv
 - source venv/bin/activate
 
+# Skip lint/test/pages on schedule/web (those pipelines are sync-only).
+.ci_rules: &ci_rules
+- if: $CI_PIPELINE_SOURCE == "schedule"
+  when: never
+- if: $CI_PIPELINE_SOURCE == "web"
+  when: never
+- if: $CI_PIPELINE_SOURCE == "merge_request_event"
+- if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 pre-commit:
   stage: lint
   script:
-  - pip install pre-commit
+  - pip install pre-commit .
   - pre-commit run --all-files
+  - pre-commit run --all-files --hook-stage pre-merge-commit
   cache:
     paths:
     - .cache/pre-commit
+  rules: *ci_rules
 
 commitizen:
   stage: lint
@@ -65,13 +88,37 @@ fixme:
   script:
   - pip install flake8 flake8-fixme
   - flake8 --select T100,T101,T102 src/
+  rules: *ci_rules
 
 ### TESTING STAGE
-tox_py311_w_cov:
+# Matrix matches .github/workflows/tox-matrix.yml (py313 owned by tox_coverage).
+tox:
   stage: test
+  image: python:${PYTHON_VERSION}
+  parallel:
+    matrix:
+    - PYTHON_VERSION: '3.10'
+      TOX_ENV: py310-neuron8
+    - PYTHON_VERSION: '3.11'
+      TOX_ENV: py311-neuron8
+    - PYTHON_VERSION: '3.12'
+      TOX_ENV: py312-neuron9
+    - PYTHON_VERSION: '3.14'
+      TOX_ENV: py314-neuron9
+  before_script:
+  - python --version
   script:
   - pip install tox
-  - tox -l
+  - tox r -e ${TOX_ENV}
+  rules: *ci_rules
+
+tox_coverage:
+  stage: test
+  image: python:3.13
+  before_script:
+  - python --version
+  script:
+  - pip install tox
   - tox r -e py313-neuron9,coverage
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
@@ -81,65 +128,7 @@ tox_py311_w_cov:
         path: coverage.xml
     paths:
     - coverage_html_report/
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
-
-tox_py310:
-  script:
-  - pip install tox
-  - tox r -e py310-neuron8
-  image: python:3.10
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
-
-tox_py312:
-  script:
-  - pip install tox
-  - tox r -e py312-neuron9
-  image: python:3.12
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
-
-tox_py313:
-  script:
-  - pip install tox
-  - tox r -e py313-neuron9
-  image: python:3.13
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
-
-tox_py314:
-  script:
-  - pip install tox
-  - tox r -e py314-neuron9
-  image: python:3.14
-  rules:
-  - changes:
-    - src/**/*
-    - tests/**/*
-    - tox.ini
-    - pyproject.toml
-    - .gitlab-ci.yml
+  rules: *ci_rules
 
 # Define the build_docs script as an anchor (HTML then external linkcheck;
 # sphinx-build exits non-zero if linkcheck finds broken or timed-out links).
@@ -154,12 +143,165 @@ tox_py314:
 - sphinx-build -W -b html docs/source public
 - sphinx-build -b linkcheck docs/source docs/build/linkcheck
 
+# Docs + linkcheck on MRs (and non-default branches). Pages deploy is separate.
 test_docs:
   stage: test
   script:
   - *build_docs
   rules:
-  - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+  - if: $CI_PIPELINE_SOURCE == "schedule"
+    when: never
+  - if: $CI_PIPELINE_SOURCE == "web"
+    when: never
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+
+### MIRROR STAGE (GitHub is the merge target)
+
+# Play button on the MR pipeline: open/update GitHub PR, then close this MR.
+# Do NOT use GitLab Merge into main.
+open_github_pr:
+  stage: mirror
+  needs:
+  - pre-commit
+  - commitizen
+  - fixme
+  - tox
+  - tox_coverage
+  - test_docs
+  image:
+    name: maniator/gh:latest
+    entrypoint: ['']
+  before_script: []
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    when: manual
+    allow_failure: true
+  script:
+  - |
+    set -euo pipefail
+    test -n "${GH_TOKEN:-}" || { echo "GH_TOKEN is required" >&2; exit 1; }
+    export GH_TOKEN
+    if [ -z "${GITLAB_API_TOKEN:-}" ]; then
+      echo "WARNING: GITLAB_API_TOKEN unset — will open GitHub PR but cannot close this MR." >&2
+      echo "Uncheck Protected on the variable so MR pipelines can see it." >&2
+    fi
+    if command -v apk >/dev/null 2>&1; then
+      apk add --no-cache curl git >/dev/null
+    elif command -v apt-get >/dev/null 2>&1; then
+      apt-get update -qq && apt-get install -y -qq curl git >/dev/null
+    fi
+
+    GH_BRANCH="gitlab/mr-${CI_MERGE_REQUEST_IID}"
+    GH_REMOTE_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPO}.git"
+    git remote remove github 2>/dev/null || true
+    git remote add github "${GH_REMOTE_URL}"
+
+    if git ls-remote --exit-code --heads github "${GH_BRANCH}" >/dev/null 2>&1; then
+      git fetch github "refs/heads/${GH_BRANCH}"
+      REMOTE_SHA="$(git rev-parse FETCH_HEAD)"
+      LOCAL_SHA="$(git rev-parse HEAD)"
+      if [ "${REMOTE_SHA}" = "${LOCAL_SHA}" ]; then
+        echo "GitHub ${GH_BRANCH} already at ${LOCAL_SHA}"
+      elif git merge-base --is-ancestor "${REMOTE_SHA}" "${LOCAL_SHA}"; then
+        git push github "HEAD:refs/heads/${GH_BRANCH}"
+      else
+        git push --force-with-lease="refs/heads/${GH_BRANCH}:${REMOTE_SHA}" \
+          github "HEAD:refs/heads/${GH_BRANCH}"
+      fi
+    else
+      git push github "HEAD:refs/heads/${GH_BRANCH}"
+    fi
+
+    BODY="$(printf 'Mirrored from GitLab MR !%s (branch %s)\n\n%s\n\n---\nSource: %s/-/merge_requests/%s' \
+      "${CI_MERGE_REQUEST_IID}" \
+      "${CI_COMMIT_REF_NAME}" \
+      "${CI_MERGE_REQUEST_DESCRIPTION}" \
+      "${CI_PROJECT_URL}" \
+      "${CI_MERGE_REQUEST_IID}")"
+
+    PR_NUMBER="$(gh pr list --repo "${GITHUB_REPO}" --head "${GH_BRANCH}" --state open --json number --jq '.[0].number // empty')"
+    if [ -n "${PR_NUMBER}" ]; then
+      gh pr edit "${PR_NUMBER}" --repo "${GITHUB_REPO}" \
+        --title "${CI_MERGE_REQUEST_TITLE}" --body "$BODY"
+    else
+      gh pr create --repo "${GITHUB_REPO}" \
+        --base main --head "${GH_BRANCH}" \
+        --title "${CI_MERGE_REQUEST_TITLE}" --body "$BODY"
+    fi
+
+    PR_URL="$(gh pr list --repo "${GITHUB_REPO}" --head "${GH_BRANCH}" --state open --json url --jq '.[0].url')"
+    echo "GitHub PR: ${PR_URL}"
+
+    if [ -z "${GITLAB_API_TOKEN:-}" ]; then
+      echo "Skipping MR close. Close !${CI_MERGE_REQUEST_IID} manually after merging on GitHub." >&2
+      exit 0
+    fi
+
+    AUTH_HEADER="PRIVATE-TOKEN: ${GITLAB_API_TOKEN}"
+    curl --fail-with-body -sS -X POST \
+      -H "${AUTH_HEADER}" \
+      -H "Content-Type: application/json" \
+      --data "$(printf '{"body":"Promoted to GitHub for merge: %s\\n\\nClosing this MR without merging. Merge on GitHub; GitLab main syncs daily."}' "${PR_URL}")" \
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
+    curl --fail-with-body -sS -X PUT \
+      -H "${AUTH_HEADER}" \
+      -H "Content-Type: application/json" \
+      --data '{"state_event":"close"}' \
+      "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}"
+    echo "Closed GitLab MR !${CI_MERGE_REQUEST_IID} without merging."
+
+### SYNC STAGE (GitHub → GitLab; GitHub-hosted runners cannot reach Duke GitLab)
+
+# Create schedule: Build → Pipeline schedules → cron "0 0 * * *" (midnight UTC).
+sync_from_github:
+  stage: sync
+  image: alpine/git:latest
+  before_script: []
+  variables:
+    GIT_STRATEGY: clone
+    GIT_DEPTH: '0'
+  rules:
+  - if: $CI_PIPELINE_SOURCE == "schedule"
+  - if: $CI_PIPELINE_SOURCE == "web"
+    when: manual
+    allow_failure: true
+  script:
+  - |
+    set -euo pipefail
+    test -n "${GH_TOKEN:-}" || { echo "GH_TOKEN is required to fetch GitHub" >&2; exit 1; }
+    test -n "${GITLAB_API_TOKEN:-}" || {
+      echo "GITLAB_API_TOKEN is required to push to GitLab main (Code write)." >&2
+      exit 1
+    }
+
+    apk add --no-cache bash >/dev/null
+    git config --global user.email "ci@${CI_SERVER_HOST}"
+    git config --global user.name "gitlab-sync-from-github"
+
+    git remote remove github 2>/dev/null || true
+    git remote add github "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPO}.git"
+    git fetch github main --tags
+
+    LOCAL_SHA="$(git rev-parse refs/heads/${CI_DEFAULT_BRANCH} 2>/dev/null || git rev-parse HEAD)"
+    REMOTE_SHA="$(git rev-parse refs/remotes/github/main)"
+    echo "GitLab ${CI_DEFAULT_BRANCH}=${LOCAL_SHA}"
+    echo "GitHub main=${REMOTE_SHA}"
+
+    if [ "${LOCAL_SHA}" = "${REMOTE_SHA}" ]; then
+      echo "Already up to date."
+      exit 0
+    fi
+
+    if ! git merge-base --is-ancestor "${LOCAL_SHA}" "${REMOTE_SHA}"; then
+      echo "Refusing non-fast-forward update. Reset GitLab main manually if intentional." >&2
+      exit 1
+    fi
+
+    PUSH_URL="https://oauth2:${GITLAB_API_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+    git push "${PUSH_URL}" "refs/remotes/github/main:refs/heads/${CI_DEFAULT_BRANCH}"
+    git push "${PUSH_URL}" --tags
+    echo "Synced GitHub main → GitLab ${CI_DEFAULT_BRANCH} and tags."
 
 ### DEPLOY STAGE
 
@@ -171,43 +313,8 @@ pages:
     paths:
     - public
   rules:
-  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-version_and_publish:
-  stage: deploy
-  variables:
-    GIT_DEPTH: 0
-    GIT_COMMIT_AUTHOR: semantic-release <$GITLAB_USER_EMAIL>
-    TWINE_USERNAME: __token__
-    TWINE_PASSWORD: $PYPI_TOKEN
-  script:
-    # Make sure old artifacts can't fool us
-  - rm -rf dist/ build/ *.egg-info
-
-  - git checkout "$CI_COMMIT_REF_NAME"
-  - pip install "python-semantic-release==9.*" twine build
-
-    # Let PSR decide if a release should happen; exits 0 either way
-    # If a release is created, PSR runs build_command and populates dist/
-  - semantic-release -vv version
-
-    # Push changes and tags to GitHub
-  - git remote add github https://x-access-token:$GH_TOKEN@github.com/wmglab-duke/pyfibers.git
-  - git push github -f --follow-tags
-
-    # Upload to PyPI ONLY if PSR actually built artifacts
-  - |
-    if ls dist/* >/dev/null 2>&1; then
-      echo "Artifacts found — uploading to PyPI."
-      twine upload dist/*
-    else
-      echo "No new release (no artifacts) — skipping PyPI upload."
-    fi
-
-  rules:
-    # Don't run on automatic commits
-  - if: $CI_COMMIT_AUTHOR =~ /semantic-release.*/
+  - if: $CI_PIPELINE_SOURCE == "schedule"
     when: never
-    # Run on default branch
+  - if: $CI_PIPELINE_SOURCE == "web"
+    when: never
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    when: always
