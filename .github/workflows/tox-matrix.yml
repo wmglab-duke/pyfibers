@@ -1,0 +1,33 @@
+# Reusable tox matrix — called from CI and weekly maintenance.
+# py313-neuron9 is owned by the coverage job (avoids a double run).
+name: Tox matrix
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: tox ${{ matrix.tox-env }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - python: '3.10'
+          tox-env: py310-neuron8
+        - python: '3.11'
+          tox-env: py311-neuron8
+        - python: '3.12'
+          tox-env: py312-neuron9
+        - python: '3.14'
+          tox-env: py314-neuron9
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+        cache: pip
+    - run: |
+        pip install tox
+        tox -l
+        tox r -e ${{ matrix.tox-env }}

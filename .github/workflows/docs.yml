@@ -1,0 +1,38 @@
+# Reusable Sphinx HTML + linkcheck (CI and weekly maintenance).
+name: Docs
+
+on:
+  workflow_call:
+    inputs:
+      upload_pages_artifact:
+        description: Upload GitHub Pages artifact (main push only)
+        type: boolean
+        default: false
+
+jobs:
+  docs:
+    name: build docs + linkcheck
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        cache: pip
+    - name: System packages
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libgl1 pandoc
+    - name: Build HTML and linkcheck
+      run: |
+        pip install --upgrade pip ipython ipykernel
+        pip install ".[dev,docs]"
+        pip install neuron
+        pyfibers_compile
+        python -m ipykernel install --name "python3" --user
+        sphinx-build -W -b html docs/source public
+        sphinx-build -b linkcheck docs/source docs/build/linkcheck
+    - uses: actions/upload-pages-artifact@v3
+      if: inputs.upload_pages_artifact
+      with:
+        path: public
