@@ -1,4 +1,8 @@
-"""Example use case of wmglab_neuron.
+"""Example use case of PyFibers.
+
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
 
 NOTE this is for development only
 """

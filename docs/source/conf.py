@@ -1,5 +1,9 @@
 """Configuration file for the Sphinx documentation builder.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 This file only contains a selection of the most common options.
 For a full list see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
