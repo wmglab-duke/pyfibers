@@ -14,8 +14,8 @@ jobs:
     name: build docs + linkcheck
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
@@ -32,7 +32,7 @@ jobs:
         python -m ipykernel install --name "python3" --user
         sphinx-build -W -b html docs/source public
         sphinx-build -b linkcheck docs/source docs/build/linkcheck
-    - uses: actions/upload-pages-artifact@v3
+    - uses: actions/upload-pages-artifact@v5
       if: inputs.upload_pages_artifact
       with:
         path: public

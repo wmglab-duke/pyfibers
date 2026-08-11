@@ -24,8 +24,8 @@ jobs:
     name: pre-commit
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
@@ -42,10 +42,10 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
@@ -61,8 +61,8 @@ jobs:
     name: flake8-fixme
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
@@ -86,15 +86,15 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
     - run: |
         pip install tox
         tox r -e py313-neuron9,coverage
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: coverage-html
         path: coverage_html_report
@@ -124,4 +124,4 @@ jobs:
       id-token: write
     steps:
     - id: deployment
-      uses: actions/deploy-pages@v4
+      uses: actions/deploy-pages@v5

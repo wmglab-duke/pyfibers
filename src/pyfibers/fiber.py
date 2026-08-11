@@ -1,5 +1,9 @@
 """Defines the :class:`Fiber` class and helper functions for building fiber models.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 This module provides functionality for building and simulating
 both 1D and 3D fiber models in the NEURON environment.
 """

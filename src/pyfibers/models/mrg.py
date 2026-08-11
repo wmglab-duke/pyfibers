@@ -1,5 +1,9 @@
 """Implementation of the MRG fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 Based on the following papers:
 Original implementation: https://doi.org/10.1152/jn.00353.2001
 Extension to 2 um diameter: https://doi.org/10.1152/jn.00989.2003

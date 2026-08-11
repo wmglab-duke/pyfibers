@@ -97,8 +97,6 @@ tox:
   image: python:${PYTHON_VERSION}
   parallel:
     matrix:
-    - PYTHON_VERSION: '3.10'
-      TOX_ENV: py310-neuron8
     - PYTHON_VERSION: '3.11'
       TOX_ENV: py311-neuron8
     - PYTHON_VERSION: '3.12'

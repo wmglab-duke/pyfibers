@@ -13,8 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - python: '3.10'
-          tox-env: py310-neuron8
         - python: '3.11'
           tox-env: py311-neuron8
         - python: '3.12'
@@ -22,8 +20,8 @@ jobs:
         - python: '3.14'
           tox-env: py314-neuron9
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
         cache: pip
