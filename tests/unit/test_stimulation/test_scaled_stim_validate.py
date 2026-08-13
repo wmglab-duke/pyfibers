@@ -77,7 +77,10 @@ def test_waveform_length_mismatch(mock_neuron):
 
 
 def test_mixed_callable_and_array_rejected(mock_neuron):
-    with patch("pyfibers.stimulation.h", mock_neuron), pytest.raises(TypeError, match="callable or a list of callables"):
+    with (
+        patch("pyfibers.stimulation.h", mock_neuron),
+        pytest.raises(TypeError, match="callable or a list of callables"),
+    ):
         ScaledStim(waveform=[lambda t: 1, [0, 1, 0]], dt=0.01, tstop=0.05)
 
 
