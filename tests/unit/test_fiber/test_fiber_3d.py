@@ -107,6 +107,73 @@ class TestFiber3D:
         assert np.allclose(fiber.longitudinal_coordinates, fiber3d.longitudinal_coordinates)
         assert np.isclose(fiber.length, fiber3d.length)
 
+    def test_is_3d_flag(self):
+        fiber3d = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=self.path_coordinates
+        )
+        fiber1d = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, n_nodes=5)
+        assert fiber3d.is_3d() is True
+        assert fiber1d.is_3d() is False
+
+    def test_path_coordinates_required(self):
+        with pytest.raises(ValueError, match="path_coordinates must be provided"):
+            build_fiber_3d(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=None)
+
+    def test_3d_rejects_n_nodes_length(self):
+        with pytest.raises(ValueError, match="cannot specify n_sections, n_nodes, or length"):
+            build_fiber_3d(
+                fiber_model=FiberModel.MRG_INTERPOLATION,
+                diameter=self.diameter,
+                path_coordinates=self.path_coordinates,
+                n_nodes=5,
+            )
+
+    def test_3d_shift_changes_coordinates(self):
+        fiber0 = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            diameter=self.diameter,
+            path_coordinates=self.path_coordinates,
+            shift=0,
+        )
+        fiber1 = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            diameter=self.diameter,
+            path_coordinates=self.path_coordinates,
+            shift=100,
+        )
+        assert not np.allclose(fiber0.coordinates, fiber1.coordinates)
+
+    def test_3d_shift_and_shift_ratio_conflict(self):
+        with pytest.raises(ValueError, match="Cannot specify both shift and shift_ratio"):
+            build_fiber_3d(
+                fiber_model=FiberModel.MRG_INTERPOLATION,
+                diameter=self.diameter,
+                path_coordinates=self.path_coordinates,
+                shift=10,
+                shift_ratio=0.1,
+            )
+
+    def test_set_xyz_raises_on_3d(self):
+        fiber = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=self.path_coordinates
+        )
+        with pytest.raises(ValueError, match="not compatible with 3D"):
+            fiber.set_xyz(1, 1, 1)
+
+    def test_resample_potentials_3d_rejects_1d_fiber(self):
+        fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, n_nodes=5)
+        with pytest.raises(ValueError, match="only compatible with 3D"):
+            fiber.resample_potentials_3d(np.array([1, 2, 3]), np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]]))
+
+    def test_resample_potentials_3d_shape_errors(self):
+        fiber = build_fiber_3d(
+            fiber_model=FiberModel.MRG_INTERPOLATION, diameter=self.diameter, path_coordinates=self.path_coordinates
+        )
+        with pytest.raises(ValueError, match="2D array"):
+            fiber.resample_potentials_3d(np.array([1, 2, 3, 4]), np.array([0, 1, 2, 3]))
+        with pytest.raises(ValueError, match="exactly 3 coordinates"):
+            fiber.resample_potentials_3d(np.array([1, 2, 3, 4]), np.array([[0, 0], [1, 0], [2, 0], [3, 0]]))
+
 
 if __name__ == "__main__":
     pytest.main()

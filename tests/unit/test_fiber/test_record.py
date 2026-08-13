@@ -135,5 +135,41 @@ def test_bad_indices(setup_fiber):
         fiber.record_values(ref_attr=ref_attr, allsec=True, indices=indices)
 
 
+def test_record_values_dt_and_tvec_conflict(setup_fiber):
+    fiber = setup_fiber
+    with pytest.raises(ValueError, match="Cannot specify both recording_dt and recording_tvec"):
+        fiber.record_values("_ref_v", recording_dt=0.1, recording_tvec=h.Vector([0, 1]))
+
+
+def test_record_values_recording_dt(setup_fiber):
+    fiber = setup_fiber
+    recorded = fiber.record_values("_ref_v", recording_dt=0.1, indices=[0, 1])
+    assert len(recorded) == 2
+    assert all(record is not None for record in recorded)
+
+
+def test_record_gating_empty_raises(setup_fiber):
+    fiber = setup_fiber
+    fiber.gating_variables = {}
+    with pytest.raises(RuntimeError, match="Gating variables not defined"):
+        fiber.record_gating()
+
+
+def test_record_gating_uses_model_map(setup_fiber):
+    fiber = setup_fiber
+    gating = fiber.record_gating()
+    assert set(gating) == {"h", "m", "mp", "s"}
+    assert len(gating["h"]) == len(fiber.nodes)
+
+
+def test_set_save_aliases(setup_fiber):
+    from pyfibers.fiber import Fiber
+
+    assert Fiber.set_save_vm is Fiber.record_vm
+    assert Fiber.set_save_im is Fiber.record_im
+    assert Fiber.set_save_vext is Fiber.record_vext
+    assert Fiber.set_save_gating is Fiber.record_gating
+
+
 if __name__ == "__main__":
     pytest.main()
