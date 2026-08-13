@@ -64,6 +64,31 @@ before_script:
 - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+# Tox / coverage: run when test-related paths change; otherwise no-op succeed
+# so open_github_pr can unlock (skipped≠failed; failed still blocks promote).
+.tox_changes: &tox_changes
+- src/**/*
+- tests/**/*
+- tox.ini
+- pyproject.toml
+- .gitlab-ci.yml
+
+.tox_rules: &tox_rules
+- if: $CI_PIPELINE_SOURCE == "schedule"
+  when: never
+- if: $CI_PIPELINE_SOURCE == "web"
+  when: never
+- if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  changes: *tox_changes
+- if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  changes: *tox_changes
+- if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    TOX_NOOP: '1'
+- if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  variables:
+    TOX_NOOP: '1'
+
 pre-commit:
   stage: lint
   script:
@@ -91,7 +116,7 @@ fixme:
   rules: *ci_rules
 
 ### TESTING STAGE
-# Matrix matches .github/workflows/tox-matrix.yml (py313 owned by tox_coverage).
+# Matrix matches .github/workflows/tox-matrix.yml (cobertura from every cell).
 tox:
   stage: test
   image: python:${PYTHON_VERSION}
@@ -101,32 +126,36 @@ tox:
       TOX_ENV: py311-neuron8
     - PYTHON_VERSION: '3.12'
       TOX_ENV: py312-neuron9
+    - PYTHON_VERSION: '3.13'
+      TOX_ENV: py313-neuron9
     - PYTHON_VERSION: '3.14'
       TOX_ENV: py314-neuron9
   before_script:
   - python --version
   script:
+  - |
+    if [ "${TOX_NOOP:-}" = "1" ]; then
+      echo "No tox-related path changes; skipping ${TOX_ENV}."
+      mkdir -p coverage_html_report
+      : > coverage.xml
+      exit 0
+    fi
   - pip install tox
+  - tox -l
   - tox r -e ${TOX_ENV}
-  rules: *ci_rules
-
-tox_coverage:
-  stage: test
-  image: python:3.13
-  before_script:
-  - python --version
-  script:
-  - pip install tox
-  - tox r -e py313-neuron9,coverage
+  - tox exec -e ${TOX_ENV} -- coverage report
+  - tox exec -e ${TOX_ENV} -- coverage xml
+  - tox exec -e ${TOX_ENV} -- coverage html
   coverage: /(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
   artifacts:
+    paths:
+    - coverage_html_report/
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-    paths:
-    - coverage_html_report/
-  rules: *ci_rules
+    when: on_success
+  rules: *tox_rules
 
 # Define the build_docs script as an anchor (HTML then external linkcheck;
 # sphinx-build exits non-zero if linkcheck finds broken or timed-out links).
@@ -165,7 +194,6 @@ open_github_pr:
   - commitizen
   - fixme
   - tox
-  - tox_coverage
   - test_docs
   image:
     name: maniator/gh:latest

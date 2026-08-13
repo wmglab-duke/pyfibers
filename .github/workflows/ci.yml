@@ -5,7 +5,8 @@ name: CI
 # Triggers
 ###############################################################################
 on:
-  pull_request:            # PRs: lint, tox, coverage, docs (no pages deploy)
+  pull_request:            # PRs: lint, tox (+coverage artifacts per Python), docs
+
   push:
     branches: [main]       # main: same checks + deploy docs
 
@@ -71,33 +72,35 @@ jobs:
         flake8 --select T100,T101,T102 src/
 
 ###############################################################################
-# Job-set: test matrix (reusable; py313 owned by coverage job)
+# Path filter: tox/coverage only when test-related paths change (mirrors GitLab)
+###############################################################################
+  tox-paths:
+    name: tox path filter
+    runs-on: ubuntu-latest
+    outputs:
+      tox: ${{ steps.filter.outputs.tox }}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          tox:
+            - 'src/**'
+            - 'tests/**'
+            - 'tox.ini'
+            - 'pyproject.toml'
+            - '.github/workflows/ci.yml'
+            - '.github/workflows/tox-matrix.yml'
+
+###############################################################################
+# Job-set: test matrix (includes py313+coverage; artifacts only from 3.13)
 ###############################################################################
   test:
     name: tox matrix
-    needs: [pre-commit, fixme]
+    needs: [pre-commit, fixme, tox-paths]
+    if: needs.tox-paths.outputs.tox == 'true'
     uses: ./.github/workflows/tox-matrix.yml
-
-###############################################################################
-# Job: coverage (py313-neuron9,coverage) — mirrors GitLab tox_coverage
-###############################################################################
-  coverage:
-    name: coverage
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: '3.13'
-        cache: pip
-    - run: |
-        pip install tox
-        tox r -e py313-neuron9,coverage
-    - uses: actions/upload-artifact@v7
-      with:
-        name: coverage-html
-        path: coverage_html_report
 
 ###############################################################################
 # Job: build docs + linkcheck (reusable; pages artifact only on main push)

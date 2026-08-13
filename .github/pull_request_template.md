@@ -2,15 +2,18 @@
 
 <!-- What changed and why? -->
 
-## Related GitLab MR (if any)
+## Issue ticket number and link
 
-<!-- e.g. https://gitlab.oit.duke.edu/.../merge_requests/123 -->
+<!-- If resolving an issue, paste the link here. -->
 
-## Test plan
+## Checklist before requesting a review
 
-- [ ] Tests added/updated as needed
-- [ ] Docs updated as needed
-- [ ] Local checks pass (`pre-commit`, relevant tox/tests)
+- [ ] I have performed a self-review of my code
+- [ ] I have commented my code thoroughly, particularly in hard-to-understand areas
+- [ ] I have added a label and reviewer to this pull request
+- [ ] I have made all relevant changes to the documentation
+- [ ] I have tested the code and it works as expected (if n/a remove this line)
+
 
 ## Notes for reviewers
 

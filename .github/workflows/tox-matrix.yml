@@ -1,5 +1,5 @@
 # Reusable tox matrix — called from CI and weekly maintenance.
-# py313-neuron9 is owned by the coverage job (avoids a double run).
+# Every cell writes coverage and uploads HTML/cobertura artifacts.
 name: Tox matrix
 
 on:
@@ -17,6 +17,8 @@ jobs:
           tox-env: py311-neuron8
         - python: '3.12'
           tox-env: py312-neuron9
+        - python: '3.13'
+          tox-env: py313-neuron9
         - python: '3.14'
           tox-env: py314-neuron9
     steps:
@@ -29,3 +31,12 @@ jobs:
         pip install tox
         tox -l
         tox r -e ${{ matrix.tox-env }}
+        tox exec -e ${{ matrix.tox-env }} -- coverage report
+        tox exec -e ${{ matrix.tox-env }} -- coverage xml
+        tox exec -e ${{ matrix.tox-env }} -- coverage html
+    - uses: actions/upload-artifact@v7
+      with:
+        name: coverage-py${{ matrix.python }}
+        path: |
+          coverage_html_report
+          coverage.xml
