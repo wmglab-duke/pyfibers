@@ -5,9 +5,10 @@ name: CI
 # Triggers
 ###############################################################################
 on:
-  pull_request:            # PRs run everything except deploy
+  pull_request:            # PRs: lint, tox (+coverage artifacts per Python), docs
+
   push:
-    branches: [main]       # main branch also deploys docs
+    branches: [main]       # main: same checks + deploy docs
 
 ###############################################################################
 # Global settings
@@ -15,10 +16,6 @@ on:
 env:
   PIP_CACHE_DIR: ~/.cache/pip
   PRE_COMMIT_HOME: ~/.cache/pre-commit
-
-defaults:
-  run:
-    shell: bash -l {0}
 
 ###############################################################################
 # Job: Lint with pre-commit hooks
@@ -31,12 +28,32 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         cache: pip
     - run: |
         pip install pre-commit .
         pre-commit run --all-files
         pre-commit run --all-files --hook-stage pre-merge-commit
+
+###############################################################################
+# Job: conventional commit messages (PRs only; mirrors GitLab commitizen)
+###############################################################################
+  commitizen:
+    name: commitizen
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+    - name: Check commits since base
+      run: |
+        pip install commitizen
+        cz check --rev-range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
 
 ###############################################################################
 # Job: flake8-fixme check
@@ -48,109 +65,73 @@ jobs:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         cache: pip
     - run: |
         pip install flake8 flake8-fixme
         flake8 --select T100,T101,T102 src/
 
 ###############################################################################
-# Job-set: test matrix (mirrors tox jobs in GitLab)
+# Path filter: tox/coverage only when test-related paths change (mirrors GitLab)
+###############################################################################
+  tox-paths:
+    name: tox path filter
+    runs-on: ubuntu-latest
+    outputs:
+      tox: ${{ steps.filter.outputs.tox }}
+    steps:
+    - uses: actions/checkout@v7
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          tox:
+            - 'src/**'
+            - 'tests/**'
+            - 'tox.ini'
+            - 'pyproject.toml'
+            - '.github/workflows/ci.yml'
+            - '.github/workflows/tox-matrix.yml'
+
+###############################################################################
+# Job-set: test matrix (includes py313+coverage; artifacts only from 3.13)
+# Always invoked so the four cells post a status (real run or no-op).
 ###############################################################################
   test:
-    name: tox ${{ matrix.tox-env }}
-    needs: [pre-commit, fixme]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - python: '3.11'
-          tox-env: py311-neuron8
-        - python: '3.12'
-          tox-env: py312-neuron9
-        - python: '3.13'
-          tox-env: py313-neuron9
-        - python: '3.14'
-          tox-env: py314-neuron9
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python }}
-        cache: pip
-    - run: |
-        pip install tox
-        tox -l
-        tox r -e ${{ matrix.tox-env }}
+    name: tox matrix
+    needs: [pre-commit, fixme, tox-paths]
+    uses: ./.github/workflows/tox-matrix.yml
+    with:
+      noop: ${{ needs.tox-paths.outputs.tox != 'true' }}
 
 ###############################################################################
-# Job: coverage (py313-neuron9,coverage)
-###############################################################################
-  coverage:
-    name: coverage
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: '3.13'
-        cache: pip
-    - run: |
-        pip install tox
-        tox r -e py313-neuron9,coverage
-    - uses: actions/upload-artifact@v7
-      with:
-        name: coverage-html
-        path: coverage_html_report
-
-###############################################################################
-# Job: build docs  (mirrors *build_docs anchor)
+# Job: build docs + linkcheck (reusable; pages artifact only on main push)
 ###############################################################################
   docs:
     name: build docs
     needs: pre-commit
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: '3.13'
-        cache: pip
-    - name: System packages
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libgl1 pandoc
-    - name: Build HTML and linkcheck
-      run: |
-        pip install --upgrade pip ipython ipykernel
-        pip install ".[dev,docs]"
-        pip install neuron
-        pyfibers_compile
-        python -m ipykernel install --name "python3" --user
-        sphinx-build -W -b html docs/source public
-        sphinx-build -b linkcheck docs/source docs/build/linkcheck
-    - uses: actions/upload-pages-artifact@v5
-      with:
-        path: public
-
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs.yml
+    with:
+      upload_pages_artifact: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
 
 ###############################################################################
-# Job: Deploy to GitHub Pages  (runs only on main)
+# Job: Deploy to GitHub Pages  (main push only; wait for lint + tox like GitLab)
 ###############################################################################
   deploy-pages:
     name: deploy pages
     environment:
       name: github-pages
-    needs: docs
-    if: github.ref == 'refs/heads/main'
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: [docs, pre-commit, fixme, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      pages: write           # allow publish
-      id-token: write        # OIDC for deploy step
+      pages: write
+      id-token: write
     steps:
     - id: deployment
       uses: actions/deploy-pages@v5
