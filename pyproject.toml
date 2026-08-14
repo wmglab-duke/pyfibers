@@ -55,7 +55,7 @@ docs = [
   # Sphinx 9 breaks enum-tools (logger removed from autodoc); stay on 8.x until fixed upstream
   "sphinx>=8.2,<9",
   "enum-tools[sphinx]>=0.13,<0.14",
-  "sphinx-toolbox>=4.1,<4.2",  # 4.2+ targets Sphinx 9 APIs incompatible with 8.2
+  "sphinx-toolbox>=4.1,<4.4",  # 4.2+ targets Sphinx 9 APIs incompatible with 8.2
   "IPython>=9,<10",
   "myst-nb>=1.4,<2",
   "piccolo-theme>=0.24,<0.25",
