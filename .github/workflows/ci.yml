@@ -95,12 +95,14 @@ jobs:
 
 ###############################################################################
 # Job-set: test matrix (includes py313+coverage; artifacts only from 3.13)
+# Always invoked so the four cells post a status (real run or no-op).
 ###############################################################################
   test:
     name: tox matrix
     needs: [pre-commit, fixme, tox-paths]
-    if: needs.tox-paths.outputs.tox == 'true'
     uses: ./.github/workflows/tox-matrix.yml
+    with:
+      noop: ${{ needs.tox-paths.outputs.tox != 'true' }}
 
 ###############################################################################
 # Job: build docs + linkcheck (reusable; pages artifact only on main push)
@@ -108,18 +110,23 @@ jobs:
   docs:
     name: build docs
     needs: pre-commit
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     uses: ./.github/workflows/docs.yml
     with:
       upload_pages_artifact: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
 
 ###############################################################################
-# Job: Deploy to GitHub Pages  (runs only on main push)
+# Job: Deploy to GitHub Pages  (main push only; wait for lint + tox like GitLab)
 ###############################################################################
   deploy-pages:
     name: deploy pages
     environment:
       name: github-pages
-    needs: docs
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: [docs, pre-commit, fixme, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:

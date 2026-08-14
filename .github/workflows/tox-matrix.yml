@@ -1,9 +1,16 @@
 # Reusable tox matrix — called from CI and weekly maintenance.
 # Every cell writes coverage and uploads HTML/cobertura artifacts.
+# noop=true still runs each cell (green) so the four checks can be required;
+# GitHub treats a skipped required check as failing.
 name: Tox matrix
 
 on:
   workflow_call:
+    inputs:
+      noop:
+        description: Succeed without running tox (no relevant path changes)
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -22,12 +29,18 @@ jobs:
         - python: '3.14'
           tox-env: py314-neuron9
     steps:
+    - name: Skip tox (no relevant path changes)
+      if: inputs.noop
+      run: echo "No tox-related path changes; skipping ${{ matrix.tox-env }}."
     - uses: actions/checkout@v7
+      if: ${{ !inputs.noop }}
     - uses: actions/setup-python@v7
+      if: ${{ !inputs.noop }}
       with:
         python-version: ${{ matrix.python }}
         cache: pip
-    - run: |
+    - if: ${{ !inputs.noop }}
+      run: |
         pip install tox
         tox -l
         tox r -e ${{ matrix.tox-env }}
@@ -35,6 +48,7 @@ jobs:
         tox exec -e ${{ matrix.tox-env }} -- coverage xml
         tox exec -e ${{ matrix.tox-env }} -- coverage html
     - uses: actions/upload-artifact@v7
+      if: ${{ !inputs.noop }}
       with:
         name: coverage-py${{ matrix.python }}
         path: |
