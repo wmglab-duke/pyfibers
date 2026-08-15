@@ -1,5 +1,9 @@
 """Implementation of Rattay fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 As described in Rattay 1993: https://doi.org/10.1109/10.250575
 """
 

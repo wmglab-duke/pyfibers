@@ -1,5 +1,9 @@
 """Dynamically create an enum of all fiber models, including built-in and plugin models.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 This module imports fiber model classes from the local ``models`` package,
 discovers additional plugin models via Python entry points, and aggregates
 all submodels into a single ``FiberModel`` enum. This allows users to refer to

@@ -81,6 +81,18 @@ git checkout -b feat/your-new-feature
 - Make sure your code is well commented and documented.
 - Use Sphinx-compatible docstrings (reStructuredText format).
 - Code must pass automated formatting and linting checks from `.pre-commit-config.yaml`.
+- Every Python file must include this copyright notice in its module docstring (after a short description):
+
+```python
+"""Short description of this module.
+
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
+Optional longer documentation...
+"""
+```
 
 These checks will run automatically if you've installed `pre-commit`. PRs with failing checks will not be merged.
 

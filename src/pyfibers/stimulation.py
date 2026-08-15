@@ -1,5 +1,9 @@
 """Defines classes for running simulations using model fibers.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 This module provides classes and functionalities to manage stimulation
 of model fibers. It includes enumerations for different threshold,
 termination, and bounds search modes, as well as a base :class:`Stimulation`
@@ -11,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from enum import Enum, unique
+from enum import StrEnum, unique
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -28,12 +32,10 @@ h.load_file('stdrun.hoc')
 logger = logging.getLogger(__name__)
 
 ### Enumerators to define configuration options ### noqa: E266
-# In Python 3.11+, can instead directly use StrEnum instead of inheriting str
-# For compatibility with 3.10, using Enum and inheriting str
 
 
 @unique
-class ThresholdCondition(str, Enum):
+class ThresholdCondition(StrEnum):
     """Different threshold search conditions.
 
     - :attr:`ThresholdCondition.ACTIVATION`:
@@ -47,7 +49,7 @@ class ThresholdCondition(str, Enum):
 
 
 @unique
-class BoundsSearchMode(str, Enum):
+class BoundsSearchMode(StrEnum):
     """Modes for adjusting bounds in the bounds search phase of finding threshold.
 
     - :attr:`BoundsSearchMode.PERCENT_INCREMENT`: Adjust bounds by multiplying/dividing by a percentage factor.
@@ -59,7 +61,7 @@ class BoundsSearchMode(str, Enum):
 
 
 @unique
-class TerminationMode(str, Enum):
+class TerminationMode(StrEnum):
     """Modes for determining when to terminate bisection search phase of finding threshold.
 
     - :attr:`TerminationMode.PERCENT_DIFFERENCE`: Convergence is based on percentage difference between bounds.
@@ -71,7 +73,7 @@ class TerminationMode(str, Enum):
 
 
 @unique
-class BisectionMean(str, Enum):
+class BisectionMean(StrEnum):
     """Mean type used during bisection search phase of finding threshold.
 
     - :attr:`BisectionMean.GEOMETRIC`: Use geometric mean (sqrt(bottom * top)).

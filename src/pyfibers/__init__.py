@@ -1,5 +1,10 @@
 # isort: skip_file
-"""Initializer for core PyFibers code."""
+"""Initializer for core PyFibers code.
+
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+"""
 
 import logging
 import os

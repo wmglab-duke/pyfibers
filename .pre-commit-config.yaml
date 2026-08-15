@@ -23,9 +23,29 @@ repos:
 
   ### Check pre-commit hook versions
 - repo: https://github.com/pre-commit/sync-pre-commit-deps
-  rev: v0.0.4
+  rev: v0.0.5
   hooks:
   - id: sync-pre-commit-deps
+
+  ### Copyright headers (Python module docstrings)
+- repo: https://github.com/google/pre-commit-tool-hooks
+  rev: v1.2.5
+  hooks:
+  - id: check-copyright
+    files: \.py$
+    args:
+    - --copyright
+    - |
+      The copyrights of this software are owned by Duke University.
+      See LICENSE for licensing instructions.
+      Source code: https://github.com/wmglab-duke/pyfibers
+    # Built-in .py format expects __copyright__ = """..."""; override to match
+    # our module-docstring notice (plain lines, no wrapper).
+    - --custom_format
+    - \.py$
+    - ''
+    - ''
+    - ''
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
@@ -46,7 +66,7 @@ repos:
   rev: v3.21.2
   hooks:
   - id: pyupgrade                   # Upgrades Python syntax to specified version
-    args: [--py310-plus]
+    args: [--py311-plus]
 
 - repo: https://github.com/psf/black
   rev: 26.5.1
@@ -159,7 +179,7 @@ repos:
     args: [--disable, 'md013,md034,md033,md036']
 
 - repo: https://github.com/rstcheck/rstcheck
-  rev: v6.2.5
+  rev: v6.3.0
   hooks:
   - id: rstcheck                    # Checks reStructuredText files
     additional_dependencies:
@@ -172,6 +192,13 @@ repos:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
   - id: check-readthedocs           # Checks ReadTheDocs configuration
+  - id: check-jsonschema
+    name: Check .zenodo.json
+    files: ^\.zenodo\.json$
+    types: [json]
+    args:
+    - --schemafile
+    - https://raw.githubusercontent.com/zenodo/zenodo/master/zenodo/modules/deposit/jsonschemas/deposits/records/legacyrecord.json
 
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v2.3.0
@@ -180,7 +207,7 @@ repos:
     exclude: ^((?!src).)*$
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.16.5
+  rev: v4.17.0
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]

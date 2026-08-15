@@ -1,0 +1,31 @@
+# Weekly tox + docs linkcheck + PyPI install check (ecosystem drift).
+name: Weekly maintenance
+
+on:
+  schedule:
+    # Mondays 14:00 UTC
+  - cron: 0 14 * * 1
+  workflow_dispatch:
+
+jobs:
+  tox:
+    name: tox matrix
+    uses: ./.github/workflows/tox-matrix.yml
+
+  docs:
+    name: docs
+    uses: ./.github/workflows/docs.yml
+
+  pypi-check:
+    name: pip install pyfibers
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+    - name: Install from PyPI and check
+      run: |
+        pip install --upgrade pip
+        pip install pyfibers neuron
+        pyfibers_compile
+        python -c "import pyfibers; print(pyfibers.__version__ if hasattr(pyfibers, '__version__') else 'ok')"
