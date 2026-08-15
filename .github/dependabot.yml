@@ -20,6 +20,8 @@ updates:
   ignore:
   # newer versions of numpy break GitLab CI
   - dependency-name: numpy
+  # Sphinx 9 breaks enum-tools; stay on 8.x until fixed upstream
+  - dependency-name: sphinx
 
 - package-ecosystem: pre-commit
   directory: /
