@@ -32,8 +32,9 @@ jobs:
         cache: pip
     - run: |
         pip install pre-commit .
-        pre-commit run --all-files
-        pre-commit run --all-files --hook-stage pre-merge-commit
+        # no-commit-to-branch fails on push-to-main (attached checkout); keep it for local commits only
+        SKIP=no-commit-to-branch pre-commit run --all-files
+        SKIP=no-commit-to-branch pre-commit run --all-files --hook-stage pre-merge-commit
 
 ###############################################################################
 # Job: conventional commit messages (PRs only; mirrors GitLab commitizen)
