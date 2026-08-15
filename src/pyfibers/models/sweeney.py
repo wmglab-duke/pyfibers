@@ -1,5 +1,9 @@
 """Implementation of the Sweeney fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 Based on:
 Sweeney, J. D., Mortimer, J. T., & Durand, D. (1987).
 Modeling of mammalian myelinated nerve for functional neuromuscular stimulation.
@@ -19,21 +23,23 @@ class SweeneyFiber(Fiber):
 
     submodels = ["SWEENEY"]
 
+    myelinated = True
+    v_rest = -80  # millivolts
+
+    gating_variables = {
+        "h": "h_sweeney",
+        "m": "m_sweeney",
+    }
+
     def __init__(self: SweeneyFiber, diameter: float, **kwargs) -> None:
         """Initialize SweeneyFiber class.
 
-        :param diameter: fiber diameter [microns]
+        :param diameter: fiber diameter (µm)
         :param kwargs: keyword arguments to pass to the base class
         """
         assert "delta_z" not in kwargs, "Cannot specify delta_z for Sweeney Fiber"
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_sweeney",
-            "m": "m_sweeney",
-        }
-        self.myelinated = True
         self.delta_z = self.diameter * 100
-        self.v_rest = -80  # millivolts
 
     def generate(self: SweeneyFiber, **kwargs) -> Fiber:
         """Build fiber model sections with NEURON.

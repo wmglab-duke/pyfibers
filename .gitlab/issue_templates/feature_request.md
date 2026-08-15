@@ -7,8 +7,12 @@
 
 ## Effect on user experience
 
-<!--- How would this improve ASCENT? -->
+<!--- How would this improve PyFibers for users? -->
 
 ## Suggestion for implementation
 
 <!--- Optionally describe how you would implement the change -->
+
+## Alternatives considered
+
+<!--- Optional -->

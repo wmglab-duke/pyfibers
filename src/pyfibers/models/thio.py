@@ -1,5 +1,9 @@
 """Implementation of Thio fiber models.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 As described in Thio 2024: https://doi.org/10.1371/journal.pcbi.1012475
 """
 
@@ -19,6 +23,9 @@ class ThioFiber(Fiber):
     """Thio fiber model."""
 
     submodels = ['THIO_AUTONOMIC', 'THIO_CUTANEOUS']
+
+    myelinated = False
+    v_rest = -58.5  # mV
 
     # Parameters later assigned to NEURON machanisms
     thio_params = {
@@ -58,48 +65,45 @@ class ThioFiber(Fiber):
         ],
     }
 
+    gating_variables = {
+        "m1.7": "m_nav7",
+        "h1.7": "h_nav7",
+        "h1.8": "h_newnav8",
+        "m1.8": "m_newnav8",
+        "s1.8": "s_newnav8",
+        "h1.9": "h_nav9",
+        "m1.9": "m_nav9",
+        "s1.9": "s_nav9",
+        "m_bk": "m_bk",
+        "h_bk": "h_bk",
+        "m_cav12": "m_cav12",  # Titus - L-Type Voltage Dependent Calcium Channel
+        "h_cav12": "h_cav12",
+        "m_cav22": "m_cav22",  # Titus - N-Type Voltage Dependent Calcium Channel
+        "h_cav22": "h_cav22",
+        "s_cav22": "s_cav22",
+        "n_km": "n_km",
+        "m_km": "m_km",
+        "m_hcn": "m_hcn",
+        "n_hcn": "n_hcn",
+        "h_kv21": "h_kv21",
+        "m_kv21": "m_kv21",
+        "h_ka34": "h_ka34",
+        "m_ka34": "m_ka34",
+        "h_ka14": "h_ka14",
+        "s_ka14": "s_ka14",
+        "m_ka14": "m_ka14",
+        "n_sk": "n_sk",
+    }
+
     def __init__(self: ThioFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize fiber class.
 
-        :param diameter: fiber diameter [microns]
-        :param delta_z: node spacing [microns]
+        :param diameter: fiber diameter (µm)
+        :param delta_z: node spacing (µm)
         :param kwargs: keyword arguments to pass to the base class
         """
         super().__init__(diameter=diameter, **kwargs)
-        self.myelinated = False
         self.delta_z = delta_z  # microns
-        self.v_rest = -58.5  # mV
-
-        # pulled from state variable/name of mechanism
-        self.gating_variables = {
-            "m1.7": "m_nav7",
-            "h1.7": "h_nav7",
-            "h1.8": "h_newnav8",
-            "m1.8": "m_newnav8",
-            "s1.8": "s_newnav8",
-            "h1.9": "h_nav9",
-            "m1.9": "m_nav9",
-            "s1.9": "s_nav9",
-            "m_bk": "m_bk",
-            "h_bk": "h_bk",
-            "m_cav12": "m_cav12",  # Titus - L-Type Voltage Dependent Calcium Channel
-            "h_cav12": "h_cav12",
-            "m_cav22": "m_cav22",  # Titus - N-Type Voltage Dependent Calcium Channel
-            "h_cav22": "h_cav22",
-            "s_cav22": "s_cav22",
-            "n_km": "n_km",
-            "m_km": "m_km",
-            "m_hcn": "m_hcn",
-            "n_hcn": "n_hcn",
-            "h_kv21": "h_kv21",
-            "m_kv21": "m_kv21",
-            "h_ka34": "h_ka34",
-            "m_ka34": "m_ka34",
-            "h_ka14": "h_ka14",
-            "s_ka14": "s_ka14",
-            "m_ka14": "m_ka14",
-            "n_sk": "n_sk",
-        }
 
         if self.passive_end_nodes:
             warnings.warn("Ignoring passive_end_nodes for Thio fiber", UserWarning, stacklevel=2)

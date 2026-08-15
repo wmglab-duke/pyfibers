@@ -1,5 +1,9 @@
 """Implementation of Rattay fiber model.
 
+The copyrights of this software are owned by Duke University.
+See LICENSE for licensing instructions.
+Source code: https://github.com/wmglab-duke/pyfibers
+
 As described in Rattay 1993: https://doi.org/10.1109/10.250575
 """
 
@@ -17,21 +21,23 @@ class RattayFiber(Fiber):
 
     submodels = ['RATTAY']
 
+    myelinated = False
+    v_rest = -70  # millivolts
+
+    gating_variables = {
+        "h": "h_RattayAberham",
+        "m": "m_RattayAberham",
+        "n": "n_RattayAberham",
+    }
+
     def __init__(self: RattayFiber, diameter: float, delta_z: float = 8.333, **kwargs) -> None:
         """Initialize RattayFiber class.
 
-        :param diameter: Fiber diameter [microns].
-        :param delta_z: Node spacing [microns].
+        :param diameter: Fiber diameter (µm).
+        :param delta_z: Node spacing (µm).
         :param kwargs: Keyword arguments to pass to the base class.
         """
         super().__init__(diameter=diameter, **kwargs)
-        self.gating_variables = {
-            "h": "h_RattayAberham",
-            "m": "m_RattayAberham",
-            "n": "n_RattayAberham",
-        }
-        self.myelinated = False
-        self.v_rest = -70  # millivolts
         self.delta_z = delta_z
 
     def generate(self: RattayFiber, **kwargs) -> Fiber:  # noqa: D102

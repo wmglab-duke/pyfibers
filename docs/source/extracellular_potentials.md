@@ -57,9 +57,9 @@ It is usually easiest to use a 1D fiber (even if your fiber follows a 3D path) w
 
 When importing potentials from finite element models, follow these key steps:
 
-1. **Use unit stimulus**: Calculate potentials using a unit current (e.g., 1 mA) in your FEM simulation. PyFibers will scale these potentials to the desired stimulation amplitude.
+1. **Use unit stimulus**: Calculate potentials using a unit reference (e.g., 1 mA) in your FEM simulation. PyFibers scales these via ``stimamp`` in :class:`~pyfibers.stimulation.ScaledStim`.
 
-2. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 um along the fiber path) for smooth interpolation.
+2. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 µm along the fiber path) for smooth interpolation.
 
 3. **Resample to fiber coordinates**: Ensure your coordinates represent the distance along the fiber path, not 3D Cartesian coordinates. If your FEM output provides 3D coordinates, convert them to arc-length. Then use {py:meth}`~pyfibers.fiber.Fiber.resample_potentials` to interpolate the high-resolution potentials onto your fiber's coordinate system.
    ```python
@@ -107,7 +107,7 @@ fiber.potentials = np.loadtxt("fem_results.csv")
 ## Electrical Potentials from Multiple Stimulation Sources
 
 ```{note}
-Stimulation amplitudes passed to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim` for multiple sources can be a single float that is applied to all sources, or a list of floats for each source. At present, threshold searches using {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` only support passing a single "stimamp" input to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`. To scale potentials from multiple sources independently during a threshold search, you must either scale them in advance using superposition (see below), or create a custom threshold search function (see {doc}`Algorithms in PyFibers <algorithms>`).
+Stimulation amplitudes passed to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim` for multiple sources can be a single float that is applied to all sources, or a list of floats for each source. At present, threshold searches using {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` only support passing a single "stimamp" input to {py:meth}`~pyfibers.stimulation.ScaledStim.run_sim`. To scale potentials from multiple sources independently during a threshold search, you must either scale them in advance using superposition (see below), or create a custom threshold search function (see {doc}`algorithms`).
 ```
 
 ### Superposition
