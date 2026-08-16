@@ -7,13 +7,14 @@
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/wmglab-duke/pyfibers)
 [![Documentation](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue.svg)](https://wmglab-duke.github.io/pyfibers/)
 [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads/month)](https://pepy.tech/projects/pyfibers)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfibers)
 [![Stars](https://img.shields.io/github/stars/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/stargazers)
 [![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
+[![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads/month)](https://pepy.tech/projects/pyfibers)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfibers)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyfibers.svg)](https://pypi.org/project/pyfibers/)
 
-To add:
+<!-- To add: -->
 <!-- [![codecov](https://codecov.io/gh/wmglab-duke/pyfibers/graph/badge.svg)](https://codecov.io/gh/wmglab-duke/pyfibers) -->
 <!-- [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/wmglab-duke/pyfibers/main.svg)](https://results.pre-commit.ci/latest/github/wmglab-duke/pyfibers/main) -->
 
