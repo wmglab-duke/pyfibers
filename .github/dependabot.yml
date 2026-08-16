@@ -7,6 +7,9 @@ updates:
     interval: weekly
     day: monday
   open-pull-requests-limit: 5
+  ignore:
+  # newer versions of python-semantic-release don't respect allow_zero control
+  - dependency-name: python-semantic-release/python-semantic-release
 
 - package-ecosystem: pip
   directory: /
@@ -14,6 +17,11 @@ updates:
     interval: weekly
     day: monday
   open-pull-requests-limit: 5
+  ignore:
+  # newer versions of numpy break GitLab CI
+  - dependency-name: numpy
+  # Sphinx 9 breaks enum-tools; stay on 8.x until fixed upstream
+  - dependency-name: sphinx
 
 - package-ecosystem: pre-commit
   directory: /
