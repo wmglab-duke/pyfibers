@@ -2,6 +2,87 @@
 
 <!-- version list -->
 
+## v0.9.1 (2026-08-16)
+
+### Bug Fixes
+
+- Raise error if n_passive would leave entire fiber passive
+  ([#14](https://github.com/wmglab-duke/pyfibers/pull/14),
+  [`4e5bf20`](https://github.com/wmglab-duke/pyfibers/commit/4e5bf20bec65c24c7fa2b41cd9718d0860485051))
+
+### Build System
+
+- Configure semantic-release for GitHub remote
+  ([#4](https://github.com/wmglab-duke/pyfibers/pull/4),
+  [`9618eab`](https://github.com/wmglab-duke/pyfibers/commit/9618eab8db89bfb02faaf54c789299a67828153b))
+
+- **deps**: Bump dorny/paths-filter from 3 to 4
+  ([#5](https://github.com/wmglab-duke/pyfibers/pull/5),
+  [`307f396`](https://github.com/wmglab-duke/pyfibers/commit/307f3965707925f092ce0bdd28421ba573bf37d0))
+
+Bumps [dorny/paths-filter](https://github.com/dorny/paths-filter) from 3 to 4. - [Release
+  notes](https://github.com/dorny/paths-filter/releases) -
+  [Changelog](https://github.com/dorny/paths-filter/blob/master/CHANGELOG.md) -
+  [Commits](https://github.com/dorny/paths-filter/compare/v3...v4)
+
+--- updated-dependencies: - dependency-name: dorny/paths-filter dependency-version: '4'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b1 to 9.0.0b2
+  ([#10](https://github.com/wmglab-duke/pyfibers/pull/10),
+  [`a5e1d64`](https://github.com/wmglab-duke/pyfibers/commit/a5e1d64ece85c64e4ea4daefaa8ebe71cc0c7764))
+
+Bumps [https://github.com/pycqa/isort](https://github.com/pycqa/isort) from 9.0.0b1 to 9.0.0b2. -
+  [Release notes](https://github.com/pycqa/isort/releases) -
+  [Changelog](https://github.com/PyCQA/isort/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/pycqa/isort/compare/9.0.0b1...9.0.0b2)
+
+--- updated-dependencies: - dependency-name: https://github.com/pycqa/isort dependency-version:
+  9.0.0b2
+
+dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- **deps**: Bump https://github.com/python-jsonschema/check-jsonschema
+  ([#8](https://github.com/wmglab-duke/pyfibers/pull/8),
+  [`0947b52`](https://github.com/wmglab-duke/pyfibers/commit/0947b52f963b588b025a71f3f1ea9286109915e7))
+
+Bumps
+  [https://github.com/python-jsonschema/check-jsonschema](https://github.com/python-jsonschema/check-jsonschema)
+  from 0.37.4 to 0.38.0. - [Release
+  notes](https://github.com/python-jsonschema/check-jsonschema/releases) -
+  [Changelog](https://github.com/python-jsonschema/check-jsonschema/blob/main/CHANGELOG.rst) -
+  [Commits](https://github.com/python-jsonschema/check-jsonschema/compare/0.37.4...0.38.0)
+
+--- updated-dependencies: - dependency-name: https://github.com/python-jsonschema/check-jsonschema
+  dependency-version: 0.38.0
+
+dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+### Documentation
+
+- Point CHANGELOG commit links at GitHub ([#4](https://github.com/wmglab-duke/pyfibers/pull/4),
+  [`9618eab`](https://github.com/wmglab-duke/pyfibers/commit/9618eab8db89bfb02faaf54c789299a67828153b))
+
+
 ## v0.9.0 (2026-07-22)
 
 ### Build System

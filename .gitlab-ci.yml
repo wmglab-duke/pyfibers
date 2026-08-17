@@ -282,7 +282,10 @@ open_github_pr:
 # Create schedule: Build → Pipeline schedules → cron "0 0 * * *" (midnight UTC).
 sync_from_github:
   stage: sync
-  image: alpine/git:latest
+  # alpine/git ENTRYPOINT is `git`; clear it so the runner can invoke `sh`.
+  image:
+    name: alpine/git:latest
+    entrypoint: ['']
   before_script: []
   variables:
     GIT_STRATEGY: clone
