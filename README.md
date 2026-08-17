@@ -14,10 +14,6 @@
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfibers)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyfibers.svg)](https://pypi.org/project/pyfibers/)
 
-<!-- To add: -->
-<!-- [![codecov](https://codecov.io/gh/wmglab-duke/pyfibers/graph/badge.svg)](https://codecov.io/gh/wmglab-duke/pyfibers) -->
-<!-- [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/wmglab-duke/pyfibers/main.svg)](https://results.pre-commit.ci/latest/github/wmglab-duke/pyfibers/main) -->
-
 This package implements biophysical models of axons in the NEURON simulation environment using Python.
 With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential).
 You can add your own fiber models and simulations protocols.
