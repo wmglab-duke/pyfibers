@@ -75,7 +75,12 @@ def test_n_sections_must_match_pattern():
 
 def test_fewer_than_three_nodes_warns():
     with pytest.warns(UserWarning, match="fewer than 3 nodes"):
-        build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=1)
+        build_fiber(
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            diameter=10.0,
+            n_nodes=1,
+            passive_end_nodes=False,
+        )
 
 
 def test_unmyelinated_diameter_gt_3_warns():
