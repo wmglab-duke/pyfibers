@@ -442,7 +442,7 @@ class Stimulation:
                     "stimamp_bottom is supra-threshold while stimamp_top is subthreshold, which is unexpected."
                 )
             elif not supra_bot and not supra_top:
-                # Increase top bound magnitude (more anodic or more cathodic)
+                # Increase top-bound magnitude
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_top = stimamp_top + np.sign(stimamp_top) * bounds_search_step
@@ -457,7 +457,7 @@ class Stimulation:
                     **kwargs,
                 )
             elif supra_bot and supra_top:
-                # Decrease bottom bound magnitude (less anodic or less cathodic)
+                # Decrease bottom-bound magnitude
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
