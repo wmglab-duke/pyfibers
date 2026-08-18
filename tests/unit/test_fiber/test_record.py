@@ -171,5 +171,13 @@ def test_set_save_aliases(setup_fiber):
     assert Fiber.set_save_gating is Fiber.record_gating
 
 
+def test_record_values_recording_tvec(setup_fiber):
+    fiber = setup_fiber
+    tvec = h.Vector([0, 1, 2])
+    recorded = fiber.record_values("_ref_v", recording_tvec=tvec, indices=[0, 1])
+    assert len(recorded) == 2
+    assert all(record is not None for record in recorded)
+
+
 if __name__ == "__main__":
     pytest.main()

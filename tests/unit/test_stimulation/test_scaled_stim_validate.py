@@ -139,6 +139,13 @@ def test_scalar_stimamp_broadcast(mock_neuron, mock_fiber):
     np.testing.assert_array_equal(result, [2.0, 2.0])
 
 
+def test_stimamp_list_matching_length_returned(mock_neuron, mock_fiber):
+    stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 1])
+    mock_fiber.potentials = [np.array([0.1, 0.2, 0.3]), np.array([0.2, 0.3, 0.4])]
+    result = stim._validate_scaling_inputs(mock_fiber, np.array([1.5, 2.5]))
+    np.testing.assert_array_equal(result, [1.5, 2.5])
+
+
 def test_callable_raises_runtime_error(mock_neuron):
     def bad(_t):
         raise ValueError("bad time")

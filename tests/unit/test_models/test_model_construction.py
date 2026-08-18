@@ -98,3 +98,33 @@ def test_fibermodel_includes_pena():
     assert "PENA" in FiberModel.__members__
     assert "SMALL_MRG_INTERPOLATION" in FiberModel.__members__
     assert FiberModel.PENA.value is FiberModel.SMALL_MRG_INTERPOLATION.value
+
+
+def test_mrg_discrete_valid_diameter():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_DISCRETE, diameter=5.7, n_nodes=5)
+    assert fiber.nodecount == 5
+    assert fiber.delta_z == 500
+
+
+def test_mrg_interpolation_small_diameter_delta_z():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=2.0, n_nodes=5)
+    assert fiber.delta_z == pytest.approx(81.08 * 2.0 + 37.84)
+
+
+def test_thio_cutaneous_assigns_params():
+    fiber = build_fiber(fiber_model=FiberModel.THIO_CUTANEOUS, diameter=1.0, n_nodes=5)
+    node = fiber.nodes[2]
+    assert node.gbar_nav7 == pytest.approx(0.035663)
+    assert node.gbar_newnav8 == pytest.approx(0.115643)
+    assert node.Ra == pytest.approx(27.513088)
+
+
+def test_rattay_sundt_build():
+    rattay = build_fiber(fiber_model=FiberModel.RATTAY, diameter=1.0, n_nodes=5)
+    sundt = build_fiber(fiber_model=FiberModel.SUNDT, diameter=1.0, n_nodes=5)
+    assert rattay.v_rest == -70
+    assert sundt.v_rest == -60
+    assert len(rattay) == 5
+    assert len(sundt) == 5
+    assert rattay.gating_variables["m"] == "m_RattayAberham"
+    assert sundt.gating_variables["m"] == "m_nahh"

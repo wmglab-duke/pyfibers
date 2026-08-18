@@ -326,6 +326,18 @@ def test_invalid_enum_strings(fiber):
         stim.find_threshold(fiber, bisection_mean="nope", stimamp_top=-1, stimamp_bottom=-0.01)
 
 
+def test_exit_t_shift_none_allowed(fiber):
+    stim = StubStim(magnitude_supra(0.5), dt=0.001, tstop=1)
+    stim.find_threshold(
+        fiber,
+        stimamp_top=-1,
+        stimamp_bottom=-0.01,
+        exit_t_shift=None,
+        termination_tolerance=100,
+    )
+    assert math.isinf(stim._exit_t)
+
+
 def test_silent_kwarg_future_warning(fiber):
     stim = StubStim(magnitude_supra(0.5), dt=0.001, tstop=1)
     with pytest.warns(FutureWarning, match="silent"):

@@ -124,3 +124,113 @@ def test_add_intrinsic_sets_nc_syn_stim(fiber):
     fiber.nc = None
     fiber.syn = None
     fiber.stim = None
+
+
+def test_add_intrinsic_loc_selects_node():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.add_intrinsic_activity(loc=0.5, loc_index=None)
+    assert fiber.syn.get_segment().sec is fiber(0.5)
+
+
+def test_add_intrinsic_applies_stim_syn_nc_params():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.add_intrinsic_activity(
+        loc=None,
+        loc_index=2,
+        avg_interval=2,
+        num_stims=3,
+        start_time=4,
+        noise=0.5,
+        synapse_tau=0.2,
+        synapse_reversal_potential=-10,
+        netcon_weight=0.3,
+    )
+    assert fiber.stim.interval == 2
+    assert fiber.stim.number == 3
+    assert fiber.stim.start == 4
+    assert fiber.stim.noise == 0.5
+    assert fiber.syn.tau == 0.2
+    assert fiber.syn.e == -10
+    assert fiber.nc.weight[0] == pytest.approx(0.3)
+
+
+def test_generate_requires_n_sections_if_others_none():
+    fiber_class = FiberModel.MRG_INTERPOLATION.value
+    fiber = fiber_class(diameter=10.0, fiber_model=FiberModel.MRG_INTERPOLATION)
+    with pytest.raises(ValueError, match="n_sections must be specified"):
+        fiber.generate()
+
+
+def test_passive_end_nodes_false_all_active():
+    fiber = build_fiber(
+        fiber_model=FiberModel.MRG_INTERPOLATION,
+        diameter=10.0,
+        n_nodes=5,
+        passive_end_nodes=False,
+    )
+    assert all("passive" not in node.name() for node in fiber.nodes)
+
+
+def test_passive_end_nodes_int_marks_n_each_end():
+    fiber = build_fiber(
+        fiber_model=FiberModel.MRG_INTERPOLATION,
+        diameter=10.0,
+        n_nodes=7,
+        passive_end_nodes=2,
+    )
+    names = [node.name() for node in fiber.nodes]
+    assert "passive" in names[0]
+    assert "passive" in names[1]
+    assert "passive" not in names[3]
+    assert "passive" in names[5]
+    assert "passive" in names[6]
+
+
+def test_nodebuilder_sets_geometry_and_extracellular():
+    fiber = build_fiber(fiber_model=FiberModel.SUNDT, diameter=1.0, n_nodes=5)
+    node = fiber.nodebuilder(0, "active")
+    assert "active node 0" in node.name()
+    assert node.L == pytest.approx(fiber.delta_z)
+    assert node.diam == pytest.approx(fiber.diameter)
+    assert node.nseg == 1
+    assert node.xc[0] == 0
+    assert node.xg[0] == pytest.approx(1e10)
+    assert node.v == pytest.approx(fiber.v_rest)
+
+
+def test_make_passive_rejects_nonpassive_name():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    with pytest.raises(ValueError, match="must contain 'passive'"):
+        fiber._make_passive(fiber.nodes[2])
+
+
+def test_make_passive_sets_pas_params():
+    fiber = build_fiber(fiber_model=FiberModel.SUNDT, diameter=1.0, n_nodes=5)
+    node = fiber.nodebuilder(0, "passive")
+    fiber._make_passive(node)
+    assert node.g_pas == pytest.approx(0.0001)
+    assert node.e_pas == pytest.approx(fiber.v_rest)
+    assert node.Ra == pytest.approx(1e10)
+    assert node.cm == pytest.approx(1)
+
+
+def test_len_nodecount_mismatch():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.nodecount = 99
+    with pytest.raises(RuntimeError, match="Node count does not match"):
+        len(fiber)
+
+
+def test_fiber_str_repr(fiber):
+    text = str(fiber)
+    assert "MRG_INTERPOLATION" in text
+    assert "10.0" in text
+    assert "not 3d" in text
+    assert "MRGFiber" in repr(fiber)
+
+
+def test_set_xyz_warns_when_xy_vary():
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.coordinates[0, 0] = 1.0
+    with pytest.warns(UserWarning, match="3D fiber path"):
+        fiber.set_xyz(0, 0, 0)

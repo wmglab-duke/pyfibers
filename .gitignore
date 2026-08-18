@@ -10,12 +10,14 @@ data/*
 MOD_Files/x86_64
 src/MOD_Files/x86_64/
 src/MOD_Files/*.c
+src/MOD_Files/*.cpp
 src/MOD_Files/*.o
 src/MOD_Files/nrnmech.dll
 
 *.o
 *.mod
 *.c
+*.cpp
 nrnmech.dll
 
 .DS_Store

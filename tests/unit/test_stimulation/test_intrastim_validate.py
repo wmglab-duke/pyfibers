@@ -78,3 +78,27 @@ def test_run_sim_calls_cleanup(fiber):
     istim.run_sim(0.01, fiber, fail_on_end_excitation=None)
     assert istim.istim is None
     assert istim.istim_record is None
+
+
+def test_add_istim_loc_maps_to_node(fiber):
+    istim = IntraStim(istim_loc=0.5, dt=0.001, tstop=0.01)
+    istim._add_istim(fiber)
+    expected = fiber.loc_index(0.5)
+    assert istim.istim.get_segment().sec is fiber[expected]
+    istim._cleanup_istim()
+
+
+def test_add_istim_interior_ind_applies_clamp_kws(fiber):
+    istim = IntraStim(
+        istim_ind=2,
+        dt=0.001,
+        tstop=0.01,
+        clamp_kws={"delay": 3, "pw": 0.4, "dur": 12, "freq": 50, "amp": 2},
+    )
+    istim._add_istim(fiber)
+    assert istim.istim.delay == 3
+    assert istim.istim.PW == 0.4
+    assert istim.istim.train == 12
+    assert istim.istim.freq == 50
+    assert istim.istim.amp == 2
+    istim._cleanup_istim()

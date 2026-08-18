@@ -69,3 +69,18 @@ def test_enable_logging_docs_build_stdout(monkeypatch):
         assert stream_handlers[0].stream is sys.stdout
     finally:
         _restore_logger(logger, original_handlers, original_level)
+
+
+def test_enable_logging_custom_format_and_level():
+    logger = logging.getLogger("pyfibers")
+    original_handlers = list(logger.handlers)
+    original_level = logger.level
+    buf = io.StringIO()
+    try:
+        pyfibers.enable_logging(level=logging.WARNING, format_string="%(levelname)s-%(message)s", stream=buf)
+        logger.warning("fmt-check")
+        logger.info("should-not-appear")
+        assert "WARNING-fmt-check" in buf.getvalue()
+        assert "should-not-appear" not in buf.getvalue()
+    finally:
+        _restore_logger(logger, original_handlers, original_level)

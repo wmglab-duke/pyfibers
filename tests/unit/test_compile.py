@@ -7,9 +7,13 @@ Source code: https://github.com/wmglab-duke/pyfibers
 
 from __future__ import annotations
 
+import subprocess
 import sys
+from unittest.mock import Mock
 
-from pyfibers.compile import _clean_mod_dir, _has_generated_c_files, running_compile
+import pytest
+
+from pyfibers.compile import _clean_mod_dir, _has_generated_c_files, main, running_compile
 
 
 def test_running_compile_true_for_argv0(monkeypatch):
@@ -40,3 +44,56 @@ def test_has_generated_c_files(tmp_path):
     assert _has_generated_c_files(str(tmp_path)) is False
     (tmp_path / "foo.c").write_text("c")
     assert _has_generated_c_files(str(tmp_path)) is True
+
+
+def test_main_nrnivmodl_missing(monkeypatch):
+    import pyfibers.compile as compile_mod
+
+    monkeypatch.setattr(compile_mod.os, "chdir", lambda _path: None)
+    monkeypatch.setattr(compile_mod, "_has_generated_c_files", lambda _path: False)
+    monkeypatch.setattr(compile_mod.shutil, "which", lambda _name: None)
+    with pytest.raises(RuntimeError, match="nrnivmodl not found"):
+        main([])
+
+
+def test_main_nrnivmodl_fails(monkeypatch):
+    import pyfibers.compile as compile_mod
+
+    monkeypatch.setattr(compile_mod.os, "chdir", lambda _path: None)
+    monkeypatch.setattr(compile_mod, "_has_generated_c_files", lambda _path: False)
+    monkeypatch.setattr(compile_mod.shutil, "which", lambda _name: "nrnivmodl")
+    monkeypatch.setattr(
+        compile_mod.subprocess,
+        "check_call",
+        Mock(side_effect=subprocess.CalledProcessError(1, "nrnivmodl")),
+    )
+    with pytest.raises(RuntimeError, match="nrnivmodl\\) failed"):
+        main([])
+
+
+def test_main_missing_output_file(monkeypatch):
+    import pyfibers.compile as compile_mod
+
+    monkeypatch.setattr(compile_mod.os, "chdir", lambda _path: None)
+    monkeypatch.setattr(compile_mod, "_has_generated_c_files", lambda _path: False)
+    monkeypatch.setattr(compile_mod.shutil, "which", lambda _name: "nrnivmodl")
+    monkeypatch.setattr(compile_mod.subprocess, "check_call", lambda _cmd: 0)
+    monkeypatch.setattr(compile_mod.os.path, "exists", lambda _path: False)
+    monkeypatch.setattr(compile_mod.os, "name", "nt")
+    with pytest.raises(RuntimeError, match="nrnmech.dll not found"):
+        main([])
+
+
+def test_main_clean_flag_calls_clean(monkeypatch):
+    import pyfibers.compile as compile_mod
+
+    cleaned = {}
+    monkeypatch.setattr(compile_mod, "_clean_mod_dir", lambda path: cleaned.setdefault("path", path))
+    monkeypatch.setattr(compile_mod, "_has_generated_c_files", lambda _path: False)
+    monkeypatch.setattr(compile_mod.os, "chdir", lambda _path: None)
+    monkeypatch.setattr(compile_mod.shutil, "which", lambda _name: "nrnivmodl")
+    monkeypatch.setattr(compile_mod.subprocess, "check_call", lambda _cmd: 0)
+    monkeypatch.setattr(compile_mod.os.path, "exists", lambda _path: True)
+    monkeypatch.setattr(compile_mod.os, "name", "nt")
+    main(["--clean"])
+    assert "path" in cleaned
