@@ -36,7 +36,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = "0.9.0"
+release = "0.9.1"
 
 html_short_title = "PyFibers documentation"
 # html_logo = './static/logo.png' noqa: E800
@@ -180,6 +180,8 @@ linkcheck_ignore = [
     # Self-references to hosted docs can 404/redirect during CI preview builds.
     r'^https://wmglab-duke\.github\.io/pyfibers/?',
     r'^https://wmglab-duke\.github\.io/pyfibers/.*',
+    # GitHub stargazers page 404s for automated checkers.
+    r'^https://github\.com/wmglab-duke/pyfibers/stargazers$',
     # AIP publishing
     r"https://doi\.org/10\.1063/.*",
 ]
