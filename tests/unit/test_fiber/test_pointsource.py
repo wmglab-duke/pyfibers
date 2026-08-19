@@ -16,6 +16,27 @@ from pyfibers.fiber import Fiber
 
 # Mock class to test Fiber without dependencies
 class MockFiber(Fiber):
+    # Override properties to allow setting for testing
+    @property
+    def length(self: Fiber) -> float:
+        if hasattr(self, '_mock_length'):
+            return self._mock_length
+        return super().length
+
+    @length.setter
+    def length(self: Fiber, value: float) -> None:
+        self._mock_length = value
+
+    @property
+    def longitudinal_coordinates(self: Fiber) -> np.ndarray:
+        if hasattr(self, '_mock_longitudinal_coordinates'):
+            return self._mock_longitudinal_coordinates
+        return super().longitudinal_coordinates
+
+    @longitudinal_coordinates.setter
+    def longitudinal_coordinates(self: Fiber, value: np.ndarray) -> None:
+        self._mock_longitudinal_coordinates = value
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.sections = [h.Section(name=f"section{i}") for i in range(5)]
