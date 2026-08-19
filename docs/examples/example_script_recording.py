@@ -14,6 +14,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from neuron import h
+from scipy.interpolate import interp1d
 
 from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
@@ -35,12 +36,13 @@ plt.plot(fiber.potentials)
 # Arbitrarily set point_source_potentials arguments to generate some sort of mock potentials for recording.
 
 
-# create biphasic square wave to use as a stimulation waveform
-waveform = np.concatenate((np.zeros(20), np.ones(20), np.zeros(1)))
-
 # parameters
 time_step = 0.005  # timestep
 time_stop = 10  # duration of simulation
+# Create callable waveform: 0.1 ms delay, 0.1 ms positive, then zeros
+time_points = np.array([0, 0.1, 0.2, time_stop])
+waveform_values = np.array([0, 1, 0, 0])
+waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
 
 # Create instance of ScaledStim class
 stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
