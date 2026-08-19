@@ -84,7 +84,7 @@ def test_pre_run_setup_sets_temp_apc_extra(fiber):
     assert len(fiber.apc) == len(fiber.nodes)
     assert fiber.apc[0].thresh == -40
     assert all(section(0.5).e_extracellular == 0 for section in fiber.sections)
-    assert stim._n_timesteps == 1000
+    assert stim.n_timesteps == 1000
     assert fiber.time is stim.time
 
 

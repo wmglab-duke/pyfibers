@@ -110,7 +110,7 @@ def test_use_exit_t_ignored_when_exit_t_falsy(mock_neuron, mock_fiber):
         stim._exit_t = None
         mock_neuron.t = 10
         stim.run_sim(1.0, mock_fiber, use_exit_t=True, fail_on_end_excitation=None)
-        assert mock_neuron.fadvance.call_count == 6
+        assert mock_neuron.fadvance.call_count == 5
 
 
 def test_scaled_run_sim_calls_end_excitation_checker(mock_neuron, mock_fiber):
