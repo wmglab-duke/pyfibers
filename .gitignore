@@ -16,6 +16,7 @@ src/MOD_Files/nrnmech.dll
 *.o
 *.mod
 *.c
+*.cpp
 nrnmech.dll
 
 .DS_Store
