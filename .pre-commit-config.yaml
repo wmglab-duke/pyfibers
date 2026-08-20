@@ -49,7 +49,7 @@ repos:
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
-  rev: 9.0.0b2
+  rev: 9.0.0b5
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
