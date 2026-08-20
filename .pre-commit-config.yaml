@@ -207,7 +207,7 @@ repos:
     exclude: ^((?!src).)*$
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.17.0
+  rev: v4.17.1
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
