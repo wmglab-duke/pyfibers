@@ -7,9 +7,6 @@ updates:
     interval: weekly
     day: monday
   open-pull-requests-limit: 5
-  ignore:
-  # newer versions of python-semantic-release don't respect allow_zero control
-  - dependency-name: python-semantic-release/python-semantic-release
 
 - package-ecosystem: pip
   directory: /

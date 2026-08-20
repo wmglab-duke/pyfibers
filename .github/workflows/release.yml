@@ -45,10 +45,10 @@ jobs:
 
     - name: Python Semantic Release
       id: release
-      uses: python-semantic-release/python-semantic-release@v9.21.1
+      uses: python-semantic-release/python-semantic-release@v10.6.1
       with:
         github_token: ${{ secrets.GH_TOKEN }}
-        root_options: -vv
+        verbosity: 2
 
     # PSR Docker action writes dist/ as root; fix ownership for the host runner.
     - name: Fix dist permissions
