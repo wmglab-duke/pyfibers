@@ -40,7 +40,7 @@ license = {file = "LICENSE"}
 name = "pyfibers"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.9.1"  # This is the only place version should be hard coded
+version = "0.9.2"  # This is the only place version should be hard coded
 
 [project.optional-dependencies]
 dev = [
