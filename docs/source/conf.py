@@ -36,7 +36,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = "0.9.1"
+release = "0.9.2"
 
 html_short_title = "PyFibers documentation"
 # html_logo = './static/logo.png' noqa: E800

@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.9.2 (2026-08-20)
+
+### Bug Fixes
+
+- Absolute increment now moves in correct direction with negative stimamp
+  ([#21](https://github.com/wmglab-duke/pyfibers/pull/21),
+  [`71965c0`](https://github.com/wmglab-duke/pyfibers/commit/71965c0085f2d5c89238cd5259d753306f00d784))
+
+
 ## v0.9.1 (2026-08-16)
 
 ### Bug Fixes
