@@ -2,19 +2,17 @@
 
 **PyFibers Paper**: Marshall DP, Farah ES, Musselman ED, Pelot NA, Grill WM (2025) PyFibers: An open-source NEURON-Python package to simulate responses of model nerve fibers to electrical stimulation. PLoS Comput Biol 21(12): e1013764. [https://doi.org/10.1371/journal.pcbi.1013764](https://doi.org/10.1371/journal.pcbi.1013764)
 
+[![Publication](https://img.shields.io/badge/Publication-PLoS%20Comput%20Biol-9cf)](https://doi.org/10.1371/journal.pcbi.1013764)
+[![Citations](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1371%2Fjournal.pcbi.1013764%3Ffields%3DcitationCount&query=%24.citationCount&label=citations)](https://badge.dimensions.ai/details/doi/10.1371/journal.pcbi.1013764)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/wmglab-duke/pyfibers)
 [![Documentation](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue.svg)](https://wmglab-duke.github.io/pyfibers/)
 [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760)
-[![Contributors](https://img.shields.io/github/contributors/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/graphs/contributors)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/downloads/)
-[![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/pyfibers.svg)](https://pypi.org/project/pyfibers/)
-[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
-[![Issues](https://img.shields.io/github/issues/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/pulls)
+[![Stars](https://img.shields.io/github/stars/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/stargazers)
 [![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
-<!-- [![PyPI - License](https://img.shields.io/pypi/l/pyfibers.svg)](https://pypi.org/project/pyfibers/) -->
+[![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads/month)](https://pepy.tech/projects/pyfibers)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfibers)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyfibers.svg)](https://pypi.org/project/pyfibers/)
 
 This package implements biophysical models of axons in the NEURON simulation environment using Python.
 With our package, you can model the responses of axons to electrical stimulation (e.g., find the minimum current amplitude required to activate or block an action potential).

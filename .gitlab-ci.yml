@@ -282,7 +282,10 @@ open_github_pr:
 # Create schedule: Build → Pipeline schedules → cron "0 0 * * *" (midnight UTC).
 sync_from_github:
   stage: sync
-  image: alpine/git:latest
+  # alpine/git ENTRYPOINT is `git`; clear it so the runner can invoke `sh`.
+  image:
+    name: alpine/git:latest
+    entrypoint: ['']
   before_script: []
   variables:
     GIT_STRATEGY: clone
@@ -309,23 +312,29 @@ sync_from_github:
     git remote add github "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPO}.git"
     git fetch github main --tags
 
-    LOCAL_SHA="$(git rev-parse refs/heads/${CI_DEFAULT_BRANCH} 2>/dev/null || git rev-parse HEAD)"
-    REMOTE_SHA="$(git rev-parse refs/remotes/github/main)"
+    # Runner checks out CI_COMMIT_SHA as a detached HEAD (GIT_CHECKOUT=true),
+    # so refs/heads/${CI_DEFAULT_BRANCH} is usually absent. Prefer the live
+    # origin tip when present; fall back to the pipeline commit.
+    # https://docs.gitlab.com/ci/runners/configure_runners/#git-checkout
+    git fetch origin "${CI_DEFAULT_BRANCH}"
+    LOCAL_SHA="$(git rev-parse --verify "refs/remotes/origin/${CI_DEFAULT_BRANCH}" 2>/dev/null \
+      || git rev-parse --verify "${CI_COMMIT_SHA}")"
+    REMOTE_SHA="$(git rev-parse --verify refs/remotes/github/main)"
     echo "GitLab ${CI_DEFAULT_BRANCH}=${LOCAL_SHA}"
     echo "GitHub main=${REMOTE_SHA}"
 
-    if [ "${LOCAL_SHA}" = "${REMOTE_SHA}" ]; then
-      echo "Already up to date."
-      exit 0
-    fi
-
-    if ! git merge-base --is-ancestor "${LOCAL_SHA}" "${REMOTE_SHA}"; then
-      echo "Refusing non-fast-forward update. Reset GitLab main manually if intentional." >&2
-      exit 1
-    fi
-
     PUSH_URL="https://oauth2:${GITLAB_API_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-    git push "${PUSH_URL}" "refs/remotes/github/main:refs/heads/${CI_DEFAULT_BRANCH}"
+
+    if [ "${LOCAL_SHA}" = "${REMOTE_SHA}" ]; then
+      echo "Branch already up to date; pushing any missing tags."
+    else
+      if ! git merge-base --is-ancestor "${LOCAL_SHA}" "${REMOTE_SHA}"; then
+        echo "Refusing non-fast-forward update. Reset GitLab main manually if intentional." >&2
+        exit 1
+      fi
+      git push "${PUSH_URL}" "refs/remotes/github/main:refs/heads/${CI_DEFAULT_BRANCH}"
+    fi
+
     git push "${PUSH_URL}" --tags
     echo "Synced GitHub main → GitLab ${CI_DEFAULT_BRANCH} and tags."
 

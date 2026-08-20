@@ -326,6 +326,7 @@ class Fiber:
             Can also be an integer specifying how many passive end nodes to include at each end.
         :param is_3d: If ``True``, fiber coordinates are treated as 3D.
             Usually set automatically by :func:`build_fiber_3d`.
+        :raises ValueError: If ``diameter`` or ``temperature`` is not positive.
 
         .. Intrinsic to the fiber model
 
@@ -383,9 +384,13 @@ class Fiber:
         :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
             For more info, see :doc:`/extracellular_potentials`.
         """
-        self.diameter = diameter
+        if diameter <= 0:
+            raise ValueError("Diameter must be positive")
+        if temperature <= 0:
+            raise ValueError("Temperature must be positive")
+        self._diameter = diameter
         self.fiber_model = fiber_model
-        self.temperature = temperature
+        self._temperature = temperature
         self.passive_end_nodes = passive_end_nodes
         self.__is_3d = is_3d
 
@@ -408,10 +413,8 @@ class Fiber:
         self.delta_z: float = None
         self.sections: list = []
         self.nodes: list = []
-        self.length: float = None
         self.coordinates: np.ndarray = np.array([])
         self.potentials: np.ndarray = np.array([])
-        self.longitudinal_coordinates: np.ndarray = np.array([])
         self.path: nd_line = None
 
     # MAGIC METHODS #
@@ -525,24 +528,23 @@ class Fiber:
         for i in range(len(self.sections) - 1):
             self.sections[i + 1].connect(self.sections[i])
 
-    def _calculate_coordinates(self: Fiber) -> None:
-        """Generate the internal 1D coordinates for each section and compute fiber length.
+    def _validate_coordinates(self: Fiber) -> None:
+        """Validate that longitudinal (1D arc-length) coordinates match expected fiber geometry.
 
-        Uses the length (L) of each section to calculate cumulative
-        longitudinal coordinates, then sets ``Fiber.longitudinal_coordinates`` and ``Fiber.length``.
+        Checks that the computed longitudinal coordinates (from section lengths)
+        match the expected fiber geometry based on ``Fiber.delta_z`` and ``Fiber.nodecount``.
 
         :raises RuntimeError: If the computed center-to-center distance
             does not match the expected length (based on ``Fiber.delta_z``).
         """
-        start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
-        end_coords = np.array([section.L for section in self.sections])  # end of each section
-        self.longitudinal_coordinates: np.ndarray = np.cumsum((start_coords + end_coords) / 2)  # type: ignore
-        self.length = np.sum([section.L for section in self.sections])
-        if not np.isclose(
-            self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0],
-            self.delta_z * (self.nodecount - 1),
-        ):
-            raise RuntimeError("Fiber length is not correct.")
+        computed_length = self.longitudinal_coordinates[-1] - self.longitudinal_coordinates[0]
+        expected_length = self.delta_z * (self.nodecount - 1)
+        if not np.isclose(computed_length, expected_length):
+            raise RuntimeError(
+                f"Fiber length mismatch: computed length from sections is {computed_length:.2f} µm, "
+                f"but expected length based on delta_z ({self.delta_z:.2f} µm) and nodecount "
+                f"({self.nodecount}) is {expected_length:.2f} µm. "
+            )
 
     def loc_index(self: Fiber, loc: float, target: str = 'nodes') -> int:
         """Convert a normalized location [0, 1] into an integer index for nodes or sections.
@@ -586,6 +588,40 @@ class Fiber:
         :return: 1D array of shifted longitudinal coordinates in micrometers (µm).
         """
         return self.longitudinal_coordinates + self.last_shift_amount
+
+    @property
+    def diameter(self: Fiber) -> float:
+        """The diameter of the fiber in micrometers (µm).
+
+        Set at fiber construction.
+        """  # noqa: DAR201
+        return self._diameter
+
+    @property
+    def temperature(self: Fiber) -> float:
+        """The temperature at which the fiber will be simulated [C].
+
+        Set at fiber construction.
+        """  # noqa: DAR201
+        return self._temperature
+
+    @property
+    def length(self: Fiber) -> float:
+        """The total length of the fiber in micrometers (end-to-end).
+
+        Computed from the sum of all section lengths.
+        """  # noqa: DAR201
+        return float(np.sum([section.L for section in self.sections]))
+
+    @property
+    def longitudinal_coordinates(self: Fiber) -> np.ndarray:
+        """A numpy array of 1D (arc-length) coordinates of the center of each section along the fiber.
+
+        Computed from the cumulative sum of section lengths.
+        """  # noqa: DAR201
+        start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
+        end_coords = np.array([section.L for section in self.sections])  # end of each section
+        return np.cumsum((start_coords + end_coords) / 2)
 
     def _set_3d(self: Fiber) -> None:
         """Mark the fiber as 3D.
@@ -1236,6 +1272,8 @@ class Fiber:
         :return: The updated :class:`Fiber` instance after generation.
         :raises ValueError: If the computed number of sections does not align with the
             function_list-based pattern.
+        :raises ValueError: If the fiber has too few nodes for the requested
+            ``passive_end_nodes`` (left and right passive regions would leave no active nodes).
         """
         if n_nodes is not None:
             n_sections = (n_nodes - 1) * len(function_list) + 1
@@ -1257,8 +1295,17 @@ class Fiber:
         if self.nodecount < 3:
             warnings.warn("Fiber has fewer than 3 nodes. Consider increasing the fiber length.", stacklevel=2)
 
+        n_passive = int(self.passive_end_nodes)
+        if n_passive and 2 * n_passive >= self.nodecount:
+            raise ValueError(
+                f"Fiber is too short for the requested number of passive end nodes: "
+                f"nodecount={self.nodecount}, passive_end_nodes={self.passive_end_nodes}. "
+                f"Need at least {2 * n_passive + 1} nodes so that "
+                f"{n_passive} passive node(s) at each end leave at least one active node."
+            )
+
         self._create_sections(function_list)
-        self._calculate_coordinates()
+        self._validate_coordinates()
 
         return self
 
@@ -1282,9 +1329,8 @@ class Fiber:
                 # passive or active node
                 node_type = 'active'
                 # If within the range of passive end nodes
-                if (
-                    self.passive_end_nodes
-                    and ind / len(function_list) < self.passive_end_nodes
+                if self.passive_end_nodes and (
+                    ind / len(function_list) < self.passive_end_nodes
                     or self.nodecount - 1 - ind / len(function_list) < self.passive_end_nodes
                 ):
                     node_type = 'passive'
