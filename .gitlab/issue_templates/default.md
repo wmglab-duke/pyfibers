@@ -1,4 +1,5 @@
 <!--- This is a comment, it will not be visible on your feature request -->
+<!--- If you are reporting a bug, please switch to the Bug Report template instead -->
 <!--- Provide a general summary of the change in the Title above -->
 
 ## Desired Change
