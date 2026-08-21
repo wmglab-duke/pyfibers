@@ -11,8 +11,9 @@ import os
 import sys
 from typing import TextIO
 
-import neuron
 import importlib.metadata
+import numpy  # noqa: F401  # import before NEURON; a second C-level init raises RuntimeError
+import neuron
 
 from .compile import running_compile
 
