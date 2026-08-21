@@ -10,10 +10,18 @@ on:
 jobs:
   tox:
     name: tox matrix
+    permissions:
+      contents: read
+      actions: write
     uses: ./.github/workflows/tox-matrix.yml
 
   docs:
     name: docs
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: write
     uses: ./.github/workflows/docs.yml
 
   pypi-check:
