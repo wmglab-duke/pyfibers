@@ -95,5 +95,66 @@ def test_record_sfap():
     assert np.allclose(result, expected_result), f"Expected {expected_result}, but got {result}"
 
 
+def test_sfap_length_mismatch():
+    with pytest.raises(ValueError, match="same length"):
+        Fiber.sfap(np.array([[1, 2], [3, 4]]), np.array([0.5]))
+
+
+def test_membrane_currents_requires_im():
+    from pyfibers import FiberModel, build_fiber
+
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    with pytest.raises(RuntimeError, match="Membrane currents not saved"):
+        fiber.membrane_currents()
+
+
+def test_membrane_currents_requires_vext():
+    from pyfibers import FiberModel, build_fiber
+
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.record_im(allsec=True)
+    with pytest.raises(RuntimeError, match="Extracellular potentials not saved"):
+        fiber.membrane_currents()
+
+
+def test_membrane_currents_requires_allsec():
+    from pyfibers import FiberModel, build_fiber
+
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.record_im()
+    fiber.record_vext()
+    with pytest.raises(RuntimeError, match="all sections"):
+        fiber.membrane_currents()
+
+
+def test_membrane_currents_empty_time():
+    from pyfibers import FiberModel, build_fiber
+
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
+    fiber.record_im(allsec=True)
+    fiber.record_vext()
+    fiber.time = h.Vector()
+    with pytest.raises(RuntimeError, match="No record of simulation"):
+        fiber.membrane_currents()
+
+
+def test_membrane_currents_unmyelinated_and_downsample():
+    class MockFiber(Fiber):
+        def __init__(self):
+            self.im = [[0.01, 0.02, 0.03], [0.04, 0.05, 0.06]]
+            self.vext = [[5.0, 5.0, 5.0], [0.0, 0.0, 0.0]]
+            self.time = h.Vector([0, 1, 2])
+            self.sections = [
+                create_mock_section(vext_value=5.0, length=100, xraxial_value=1.0),
+                create_mock_section(vext_value=0.0, length=200, xraxial_value=1.0),
+            ]
+            self.myelinated = False
+
+    fiber = MockFiber()
+    currents, times = fiber.membrane_currents(downsample=2)
+    assert currents.shape == (2, 2)
+    assert len(times) == 2
+
+
 if __name__ == "__main__":
     pytest.main()

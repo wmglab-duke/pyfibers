@@ -79,6 +79,18 @@ def test_potentials_at_time(mock_fiber, mock_neuron):
         assert np.allclose(potentials, np.array([0.11, 0.17, 0.23]))
         potentials = stim._potentials_at_time(0, mock_fiber, [1, 2])
         assert np.allclose(potentials, [0.21, 0.32, 0.43])
+        potentials = stim._potentials_at_time(1, mock_fiber, [1, 1])
+        assert np.allclose(potentials, [0.10, 0.16, 0.22])
+
+
+def test_potentials_at_time_strict_zip(mock_fiber, mock_neuron):
+    with patch('pyfibers.stimulation.h', mock_neuron):
+        waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
+        stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
+        stim._prep_waveform()
+        stim._prep_potentials(mock_fiber)
+        with pytest.raises(ValueError, match="zip\\(\\)"):
+            stim._potentials_at_time(0, mock_fiber, [1])
 
 
 if __name__ == '__main__':
