@@ -12,7 +12,7 @@ Journal articles
 Preprints
 ---------
 
-- Pelot NA, Baumgart I, Blitz A, Brunsman BAS, et al. (2025) *The human vagal complex: from gross anatomy to single neurons, from brainstem to abdomen.* Research Square. https://doi.org/10.21203/rs.3.rs-7707775/v1
+- Pelot NA, Baumgart I, Blitz A, Brunsman B, et al. (2025) *The human vagal complex: from gross anatomy to single neurons, from brainstem to abdomen.* Research Square. https://doi.org/10.21203/rs.3.rs-7707775/v1
 
 - Lung D, Jia Y, Blumer R, Reissig L, Zopf LM, Heimel P, Kraus C, Moro A, Fachino M, Haberbusch M (2026) *golgi: an open-source graphical platform for image-to-recruitment modeling of peripheral nerve stimulation.* bioRxiv 2026.07.10.737529. https://doi.org/10.64898/2026.07.10.737529
 
