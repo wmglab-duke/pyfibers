@@ -49,7 +49,7 @@ repos:
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
-  rev: 9.0.0b2
+  rev: 9.0.0b5
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
@@ -201,13 +201,13 @@ repos:
     - https://raw.githubusercontent.com/zenodo/zenodo/master/zenodo/modules/deposit/jsonschemas/deposits/records/legacyrecord.json
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v2.3.0
+  rev: v2.3.1
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.17.0
+  rev: v4.17.1
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
