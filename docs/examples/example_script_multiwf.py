@@ -13,6 +13,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
 
 from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
 
@@ -35,12 +36,14 @@ fiber.potentials = np.vstack(pots)
 plt.plot(fiber.potentials[0, :])
 plt.plot(fiber.potentials[1, :])
 
-# create biphasic square wave to use as a stimulation waveform
-waveform = np.vstack([np.concatenate((np.ones(50), np.zeros(49750))), np.concatenate((np.ones(200), np.zeros(49600)))])
-
 # parameters
-time_step = 0.001  # timestep|
+time_step = 0.001  # timestep
 time_stop = 15  # duration of simulation
+# Create callable waveforms: waveform1 is 0.05 ms positive then zeros, waveform2 is 0.2 ms positive then zeros
+waveform = [
+    interp1d(np.array([0, 0.05, time_stop]), np.array([1, 0, 0]), kind='previous', bounds_error=False, fill_value=0.0),
+    interp1d(np.array([0, 0.2, time_stop]), np.array([1, 0, 0]), kind='previous', bounds_error=False, fill_value=0.0),
+]
 
 # Create instance of ScaledStim class
 stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
