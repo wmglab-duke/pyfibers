@@ -490,10 +490,10 @@ class Stimulation:
                     "stimamp_bottom is supra-threshold while stimamp_top is subthreshold, which is unexpected."
                 )
             elif not supra_bot and not supra_top:
-                # Increase top bound
+                # Increase top-bound magnitude
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
-                    stimamp_top = stimamp_top + bounds_search_step
+                    stimamp_top = stimamp_top + np.sign(stimamp_top) * bounds_search_step
                 else:
                     stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
                 supra_top, (_, t) = self.threshsim(
@@ -505,10 +505,10 @@ class Stimulation:
                     **kwargs,
                 )
             elif supra_bot and supra_top:
-                # Decrease bottom bound
+                # Decrease bottom-bound magnitude
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
-                    stimamp_bottom = stimamp_bottom - bounds_search_step
+                    stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
                 supra_bot, _ = self.threshsim(
@@ -923,10 +923,10 @@ class IntraStim(Stimulation):
             raise ValueError('Fiber potentials must be zero for IntracellularStim')
         if self.istim is None:
             raise RuntimeError('Intracellular stimulation is not enabled.')
-        if stimamp < 0:
-            warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
         if not isinstance(stimamp, (int, float)):
             raise TypeError('stimamp must be a single float or int')
+        if stimamp < 0:
+            warnings.warn('Negative intracellular stimulation amplitude.', stacklevel=2)
 
 
 class ScaledStim(Stimulation):
