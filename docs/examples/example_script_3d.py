@@ -13,6 +13,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import interp1d
 
 from pyfibers import FiberModel, ScaledStim, build_fiber_3d  # noqa: E402
 
@@ -102,9 +103,12 @@ plt.plot(fiber.longitudinal_coordinates, fiber.potentials, label='Point Source P
 plt.legend()
 
 # Additional setup for simulation using ScaledStim class
-waveform = np.concatenate((np.ones(100), -np.ones(100), np.zeros(1000000)))
 time_step = 0.005
 time_stop = 15
+# Create callable waveform: 0.5 ms positive, 0.5 ms negative, then zeros
+time_points = np.array([0, 0.5, 1.0, time_stop])
+waveform_values = np.array([1, -1, 0, 0])
+waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
 
 # Create instance of ScaledStim
 stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)

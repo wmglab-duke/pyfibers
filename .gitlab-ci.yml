@@ -1,5 +1,7 @@
 default:
   image: python:3.13
+  tags:
+  - oit-research-apptainer
 
 # Variables (Settings → CI/CD → Variables; Masked=on, Protected=off for MR visibility):
 #   GH_TOKEN         — GitHub PAT: contents, pull_requests, workflows (read/write)
