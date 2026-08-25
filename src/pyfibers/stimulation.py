@@ -448,12 +448,6 @@ class Stimulation:
             # Remove it from kwargs to avoid passing it to run_sim
             kwargs.pop('silent')
 
-        if stimamp_top * stimamp_bottom < 0:
-            raise ValueError(
-                f"stimamp_top={stimamp_top} and stimamp_bottom={stimamp_bottom} have opposite signs. "
-                "Both bounds must have the same sign."
-            )
-
         self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
         # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
         if condition not in [mem.value for mem in ThresholdCondition]:
@@ -466,6 +460,14 @@ class Stimulation:
             raise ValueError("Invalid bisection mean.")
 
         logger.info("Beginning bounds search. Checking initial bounds...")
+        iteration = 0
+
+        logger.info(
+            "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+            iteration,
+            stimamp_bottom,
+            stimamp_top,
+        )
 
         # First test the initial top and bottom amplitudes
         supra_top, (_, t) = self.threshsim(
@@ -484,16 +486,9 @@ class Stimulation:
             bounds_search_step,
             max_iterations,
         )
-        iterations = 0
-        while iterations < max_iterations:
-            iterations += 1
-            logger.info(
-                "Bounds iter. %3d: [%+10.4f, %+10.4f]",
-                iterations,
-                stimamp_bottom,
-                stimamp_top,
-            )
-
+        # Count bound iteration; each loop entry either succeeds or performs one adjustment.
+        while iteration < max_iterations:
+            iteration += 1
             # If top is supra-threshold, set an early exit time for activation searches
             if supra_top and exit_t_shift and condition == ThresholdCondition.ACTIVATION:
                 self._exit_t = t + exit_t_shift
@@ -504,25 +499,42 @@ class Stimulation:
                 )
 
             if not supra_bot and supra_top:  # noqa: R508
-                logger.info(
-                    "Bounds located after %d iter.: [%+10.4f, %+10.4f]",
-                    iterations,
-                    stimamp_bottom,
-                    stimamp_top,
-                )
+                if iteration == 0:
+                    logger.info(
+                        "Bounds located (initial bounds valid): [%+10.4f, %+10.4f]",
+                        stimamp_bottom,
+                        stimamp_top,
+                    )
+                else:
+                    logger.info(
+                        "Bounds located after %d iter.: [%+10.4f, %+10.4f]",
+                        iteration - 1,
+                        stimamp_bottom,
+                        stimamp_top,
+                    )
                 break
-            elif supra_bot and not supra_top:
+
+            if supra_bot and not supra_top:
                 # Contradictory bounds
                 raise RuntimeError(
                     "stimamp_bottom is supra-threshold while stimamp_top is subthreshold, which is unexpected."
                 )
-            elif not supra_bot and not supra_top:
+
+            if not supra_bot and not supra_top:
                 # Increase top-bound magnitude
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_top = stimamp_top + np.sign(stimamp_top) * bounds_search_step
                 else:
                     stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
+
+                logger.info(
+                    "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
+
                 supra_top, (_, t) = self.threshsim(
                     stimamp_top,
                     fiber,
@@ -538,6 +550,14 @@ class Stimulation:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
+
+                logger.info(
+                    "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
+
                 supra_bot, _ = self.threshsim(
                     stimamp_bottom,
                     fiber,
@@ -546,6 +566,7 @@ class Stimulation:
                     thresh_num_aps=thresh_num_aps,
                     **kwargs,
                 )
+
         else:
             # If we exit the while loop normally, we've hit max_iterations
             raise RuntimeError(
@@ -561,15 +582,14 @@ class Stimulation:
         # Begin the bisection search phase
         logger.info("Beginning bisection search...")
         logger.debug(
-            "Bisection search details: mean=%s, termination=%s (tol=%s), max_iter=%d, bounds=[%+.4f, %+.4f]",
+            "Bisection search details: mean=%s, termination=%s (tol=%s), bounds=[%+.4f, %+.4f]",
             bisection_mean,
             termination_mode,
             termination_tolerance,
-            max_iterations,
             stimamp_bottom,
             stimamp_top,
         )
-        bisection_iter = 1
+        bisection_iter = 0
         while True:
             stimamp_prev = stimamp_top
 
@@ -604,7 +624,7 @@ class Stimulation:
             if tolerance < thresh_resoln:
                 if not suprathreshold:
                     stimamp = stimamp_prev
-                logger.info("Threshold found at stimamp = %s", round(stimamp, 6))
+                logger.info("Threshold found at stimamp = %s", round(stimamp, 4))
                 logger.info("Validating threshold...")
 
                 # Confirm the final run at the chosen amplitude
@@ -621,7 +641,8 @@ class Stimulation:
                         "Threshold stimulation did not generate the expected action potential condition."
                     )
                 break
-            elif suprathreshold:
+
+            if suprathreshold:
                 stimamp_top = stimamp
             else:
                 stimamp_bottom = stimamp
@@ -652,7 +673,10 @@ class Stimulation:
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater in magnitude than stimamp_bottom.")
         if stimamp_top * stimamp_bottom < 0:
-            raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
+            raise ValueError(
+                f"stimamp_top={stimamp_top} and stimamp_bottom={stimamp_bottom} have opposite signs. "
+                "Both bounds must have the same sign."
+            )
         if fiber.stim is not None and condition == ThresholdCondition.ACTIVATION:
             warnings.warn(
                 "This fiber has intrinsic activity; check if you truly want an activation threshold search.",
