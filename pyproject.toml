@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
   # "neuron", # NEURON cannot be installed from PyPI on Windows
-  "numpy>=2.2,<2.4",  # constrain minor version to avoid CI errors
+  "numpy>=2.2,<3",  # 2.5+ needs Python >=3.12
   "scipy>=1.16,<2",  # 1.18+ needs Python >=3.12
   "nd_line>=0.2,<0.3",
   "aenum>=3.1,<4",

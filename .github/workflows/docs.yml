@@ -17,12 +17,20 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      actions: write
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
+        cache-dependency-path: pyproject.toml
+    - uses: actions/cache@v6
+      with:
+        path: .jupyter_cache
+        # No restore-keys: Myst-NB skips re-execution if a stale cache is restored
+        # after src/ or dependency changes (it only hashes notebook contents).
+        key: jupyter-${{ hashFiles('docs/**/*.ipynb', 'docs/source/conf.py', 'pyproject.toml', 'src/pyfibers/**') }}
     - name: System packages
       run: |
         sudo apt-get update

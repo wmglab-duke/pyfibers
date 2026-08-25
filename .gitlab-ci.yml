@@ -1,5 +1,7 @@
 default:
   image: python:3.13
+  tags:
+  - oit-research-apptainer
 
 # Variables (Settings → CI/CD → Variables; Masked=on, Protected=off for MR visibility):
 #   GH_TOKEN         — GitHub PAT: contents, pull_requests, workflows (read/write)
@@ -45,7 +47,7 @@ cache:
   - ${PIP_CACHE_DIR}
   - ${PRE_COMMIT_HOME}
   - venv/
-  - docs/.jupyter_cache
+  - .jupyter_cache
 
 ### LINTING STAGE
 

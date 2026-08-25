@@ -152,6 +152,7 @@ class Stimulation:
         if value <= 0:
             raise ValueError("dt must be positive")
         self._dt = value
+        self._on_time_params_changed()
 
     @property
     def tstop(self: Stimulation) -> float:
@@ -171,6 +172,7 @@ class Stimulation:
         if value <= 0:
             raise ValueError("tstop must be positive")
         self._tstop = value
+        self._on_time_params_changed()
 
     @property
     def n_timesteps(self: Stimulation) -> int:
@@ -179,6 +181,9 @@ class Stimulation:
         :return: The number of timesteps (tstop / dt).
         """
         return int(self._tstop / self._dt)
+
+    def _on_time_params_changed(self: Stimulation) -> None:
+        """Notify subclasses when ``dt`` or ``tstop`` changes."""
 
     def __str__(self: Stimulation) -> str:
         """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
@@ -1055,10 +1060,51 @@ class ScaledStim(Stimulation):
         :ivar truncate: If ``True``, truncate the waveform if it exceeds the simulation time.
         """
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
-        self.pad = pad_waveform
-        self.truncate = truncate_waveform
+        self._pad = pad_waveform
+        self._truncate = truncate_waveform
         self.waveform = waveform
         self._prep_waveform()
+
+    def _on_time_params_changed(self: ScaledStim) -> None:
+        """Re-process the waveform when ``dt`` or ``tstop`` changes."""
+        if getattr(self, 'waveform', None) is not None:
+            self._prep_waveform()
+
+    @property
+    def pad(self: ScaledStim) -> bool:
+        """If ``True``, extend a sampled waveform with zeros to match simulation time.
+
+        :return: Whether sampled waveforms are padded to ``tstop``.
+        """  # noqa: DAR201
+        return self._pad
+
+    @pad.setter
+    def pad(self: ScaledStim, value: bool) -> None:
+        """Set waveform padding and re-process the current waveform.
+
+        :param value: If ``True``, extend a sampled waveform with zeros to match simulation time.
+        """
+        self._pad = value
+        if getattr(self, 'waveform', None) is not None:
+            self._prep_waveform()
+
+    @property
+    def truncate(self: ScaledStim) -> bool:
+        """If ``True``, truncate a sampled waveform if it exceeds the simulation time.
+
+        :return: Whether sampled waveforms are truncated to ``tstop``.
+        """  # noqa: DAR201
+        return self._truncate
+
+    @truncate.setter
+    def truncate(self: ScaledStim, value: bool) -> None:
+        """Set waveform truncation and re-process the current waveform.
+
+        :param value: If ``True``, truncate a sampled waveform if it exceeds the simulation time.
+        """
+        self._truncate = value
+        if getattr(self, 'waveform', None) is not None:
+            self._prep_waveform()
 
     def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
         """Prepare the fiber's potentials for scaled stimulation.
