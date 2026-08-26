@@ -3,7 +3,7 @@ TITLE Motor Axon Node channels
 : 2/02
 : Cameron C. McIntyre
 :
-: Fast Na+, Persistant Na+, Slow K+, and Leakage currents
+: Fast Na+, Persistent Na+, Slow K+, and Leakage currents
 : responsible for nodal action potential
 : Iterative equations H-H notation rest = -80 mV
 :

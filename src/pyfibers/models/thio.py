@@ -27,7 +27,7 @@ class ThioFiber(Fiber):
     myelinated = False
     v_rest = -58.5  # mV
 
-    # Parameters later assigned to NEURON machanisms
+    # Parameters later assigned to NEURON mechanisms
     thio_params = {
         'THIO_AUTONOMIC': [
             0.036813,

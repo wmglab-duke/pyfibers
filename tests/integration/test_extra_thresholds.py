@@ -8,7 +8,7 @@ Source code: https://github.com/wmglab-duke/pyfibers
 from __future__ import annotations
 
 import numpy as np
-import pytest  # noqa: I900
+import pytest
 import scipy.signal as sg
 from scipy.stats import norm
 

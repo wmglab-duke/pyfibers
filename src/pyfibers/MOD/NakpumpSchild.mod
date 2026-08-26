@@ -53,7 +53,7 @@
 
 		fnk = ((v) + 150)/((v) + 200)
 
-		ink = INaKmax*fnk*((nai/(nai+Kmnai))^3)*((ko/(ko+Kmko))^2) : Changed this line to reflect the exponents given in Schild 1994, instead of the orginal exponents in Leo's model.
+		ink = INaKmax*fnk*((nai/(nai+Kmnai))^3)*((ko/(ko+Kmko))^2) : Changed this line to reflect the exponents given in Schild 1994, instead of the original exponents in Leo's model.
 
 		ina = 3*ink
 		ik = -2*ink

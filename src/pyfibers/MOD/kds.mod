@@ -78,7 +78,7 @@ PARAMETER {
 		   ik = g * (v-ek)
 	}
 
-: Intializes State Variables
+: Initializes State Variables
 	INITIAL {
 		rates(v) : set tau_x, yinf, xinf
 		: assume that equilibrium has been reached

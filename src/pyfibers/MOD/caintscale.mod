@@ -57,7 +57,7 @@
 : This block iterates the state variable calculations and uses those calculations to calculate currents
 	BREAKPOINT { SOLVE state METHOD derivimplicit }
 
-: Intializes State Variables
+: Initializes State Variables
 	INITIAL {
 
 	Oc=.05

@@ -92,7 +92,7 @@
 		   ica = g * (v-ecat)
 	}
 
-: Intializes State Variables
+: Initializes State Variables
 	INITIAL {
 		rates(v) : set tau_m, tau_h, hinf, minf
 		: assume that equilibrium has been reached

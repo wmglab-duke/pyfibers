@@ -8,7 +8,7 @@ Source code: https://github.com/wmglab-duke/pyfibers
 from __future__ import annotations
 
 import numpy as np
-import pytest  # noqa: I900
+import pytest
 from scipy.interpolate import interp1d
 
 from pyfibers import FiberModel, ScaledStim, build_fiber

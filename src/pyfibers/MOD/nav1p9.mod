@@ -1,7 +1,7 @@
 : nav1p9.mod is the NaV1.9 Na+ current from
 : Herzog, Cummins, and Waxman 2001 p1353
 : This current is also called the ttx-rp current
-: (the tetrodotoxin resistent persistant current)
+: (the tetrodotoxin resistant persistent current)
 : implemented by Tom Morse version 2/25/07
 : to plot the model run file NaV19_herzog.m
 NEURON {
