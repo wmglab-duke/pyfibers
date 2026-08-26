@@ -97,9 +97,6 @@ pre-commit:
   - pip install pre-commit .
   - pre-commit run --all-files
   - pre-commit run --all-files --hook-stage pre-merge-commit
-  cache:
-    paths:
-    - .cache/pre-commit
   rules: *ci_rules
 
 commitizen:
