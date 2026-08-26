@@ -14,12 +14,13 @@ repos:
   - id: end-of-file-fixer           # Ensures files end with a newline
   - id: trailing-whitespace         # Removes trailing whitespace
   - id: check-merge-conflict        # Checks for unresolved merge conflicts
-  - id: check-json                  # Checks JSON syntax
   - id: check-added-large-files     # Prevents large files from being added
   - id: check-case-conflict         # Checks for case conflicts in filenames
   - id: check-illegal-windows-names     # Checks for illegal Windows filenames
   - id: no-commit-to-branch         # Prevents direct commits to main
   - id: check-executables-have-shebangs     # Checks for shebangs in executable files
+  - id: debug-statements            # Blocks leftover pdb / breakpoint()
+  - id: detect-private-key          # Blocks committed private keys
 
   ### Check pre-commit hook versions
 - repo: https://github.com/pre-commit/sync-pre-commit-deps
@@ -107,10 +108,32 @@ repos:
   - id: pretty-format-yaml          # Formats YAML files
     args: [--autofix]
 
-# - repo: https://github.com/asottile/yesqa
-#   rev: v1.5.0
-#   hooks:
-#   - id: yesqa
+- repo: https://github.com/asottile/yesqa
+  rev: v1.5.0
+  hooks:
+  - id: yesqa                       # Removes unused noqa comments
+    additional_dependencies:
+    - flake8==7.3.0
+    - flake8-eradicate
+    - flake8-bugbear
+    - flake8-simplify
+    - flake8-builtins
+    - flake8-comprehensions
+    - flake8-use-fstring
+    - flake8-docstrings
+    - flake8-rst-docstrings
+    - flake8-blind-except
+    - flake8-requirements
+    - flake8-deprecated
+    - pep8-naming
+    - darglint
+    - flake8-warnings
+    - flake8-pie
+    - flake8-annotations
+    - flake8-annotations-complexity
+    - flake8-return
+    - flake8-pytest-style
+    - Flake8-pyproject
 
   ### Linting Hooks
 - repo: https://github.com/pycqa/flake8
@@ -191,6 +214,8 @@ repos:
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
+  - id: check-github-workflows      # Validates GitHub Actions workflows
+  - id: check-dependabot            # Validates Dependabot config
   - id: check-readthedocs           # Checks ReadTheDocs configuration
   - id: check-jsonschema
     name: Check .zenodo.json
@@ -205,6 +230,13 @@ repos:
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
+
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.3
+  hooks:
+  - id: codespell                   # Spelling in source and docs
+    additional_dependencies:
+    - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v4.18.0

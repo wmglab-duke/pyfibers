@@ -12,7 +12,7 @@ UNITS {
 	(mV) = (millivolt)  (mA) = (milliamp)
 	(um) = (micron)
 	PI		= (pi) (1)
-	FARADAY		= 96485.309 (coul)
+	FARADAY		= 96485.309 (C/mol)
 }
 
 PARAMETER {

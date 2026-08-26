@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 
-from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
+from pyfibers import FiberModel, ScaledStim, build_fiber
 
-sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
+sys.path.append(r'C:\nrn\lib\python')
 
 
 length = 2500

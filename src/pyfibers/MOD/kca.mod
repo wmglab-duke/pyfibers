@@ -70,7 +70,7 @@
 		   ik = g * (v-ek)
 	}
 
-: Intializes State Variables
+: Initializes State Variables
 	INITIAL {
 		rates(v) : set tau_c, cinf
 		: assume that equilibrium has been reached

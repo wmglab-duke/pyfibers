@@ -13,10 +13,10 @@ import sys
 
 import matplotlib.pyplot as plt
 
-from pyfibers import FiberModel, build_fiber  # noqa: E402
-from pyfibers.stimulation import IntraStim  # noqa: E402
+from pyfibers import FiberModel, build_fiber
+from pyfibers.stimulation import IntraStim
 
-sys.path.append(r'C:\nrn\lib\python')  # noqa: E800
+sys.path.append(r'C:\nrn\lib\python')
 
 
 n_nodes = 21
@@ -44,7 +44,7 @@ amp, ap = stimulation.find_threshold(fiber, stimamp_top=1, stimamp_bottom=0)
 print(f'Threshold for 5.7 micron {model}: {amp} (mA)')
 
 # run a finite amp (i.e., one amplitude, not in a bisection search as was done above)
-# ap, time = stimulation.run_sim(-1, fiber) # noqa: E800
+# ap, time = stimulation.run_sim(-1, fiber)
 
 plt.figure()
 for key, value in fiber.gating.items():

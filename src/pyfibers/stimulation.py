@@ -1028,7 +1028,7 @@ class ScaledStim(Stimulation):
         """If ``True``, extend a sampled waveform with zeros to match simulation time.
 
         :return: Whether sampled waveforms are padded to ``tstop``.
-        """  # noqa: DAR201
+        """
         return self._pad
 
     @pad.setter
@@ -1046,7 +1046,7 @@ class ScaledStim(Stimulation):
         """If ``True``, truncate a sampled waveform if it exceeds the simulation time.
 
         :return: Whether sampled waveforms are truncated to ``tstop``.
-        """  # noqa: DAR201
+        """
         return self._truncate
 
     @truncate.setter
