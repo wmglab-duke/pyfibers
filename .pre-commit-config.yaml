@@ -1,4 +1,5 @@
 ci:
+  # Skips apply only to pre-commit.ci; GitHub Actions still runs these hooks.
   autofix_commit_msg: 'style: auto-fixes from pre-commit.ci'
   autofix_prs: true
   autoupdate_commit_msg: 'ci: pre-commit autoupdate'
