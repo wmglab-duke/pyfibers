@@ -12,7 +12,7 @@ import sys
 from typing import TextIO
 
 import importlib.metadata
-import numpy  # import before NEURON; a second C-level init raises RuntimeError
+import numpy  # noqa: F401  # import before NEURON; a second C-level init raises RuntimeError
 import neuron
 
 from .compile import running_compile
@@ -76,9 +76,9 @@ if not running_compile():
     neuron.load_mechanisms(MOD_dir)
 
 # load all python files
-from .fiber import Fiber, build_fiber, build_fiber_3d
-from .model_enum import FiberModel, register_custom_fiber
-from .stimulation import (
+from .fiber import Fiber, build_fiber, build_fiber_3d  # noqa: E402
+from .model_enum import FiberModel, register_custom_fiber  # noqa: E402
+from .stimulation import (  # noqa: E402
     ScaledStim,
     IntraStim,
     Stimulation,
