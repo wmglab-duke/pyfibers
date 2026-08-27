@@ -3,7 +3,7 @@ ci:
   autofix_commit_msg: 'style: auto-fixes from pre-commit.ci'
   autofix_prs: true
   autoupdate_commit_msg: 'ci: pre-commit autoupdate'
-  autoupdate_schedule: monthly
+  autoupdate_schedule: weekly
   skip:
   - no-commit-to-branch
   - flake8
