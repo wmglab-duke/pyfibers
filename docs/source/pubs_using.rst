@@ -9,6 +9,11 @@ Journal articles
 
 - Marshall DP, Upadhye AR, Buyukcelik ON, Shoffstall AJ, Grill WM, Pelot NA (2026) *Computational modeling of human vagus nerve stimulation with three-dimensional fascicular morphology.* APL Bioeng 10(1): 016112. https://doi.org/10.1063/5.0308450
 
+Conference papers
+-----------------
+
+- Atchuthan NA, Grill WM, Meijs S (2025) *Exploring Tonic and Burst Stimulation in Neural Fibers: A Computational Modeling Approach.* Annu Int Conf IEEE Eng Med Biol Soc 2025:1-6. https://doi.org/10.1109/EMBC58623.2025.11253067
+
 Preprints
 ---------
 
