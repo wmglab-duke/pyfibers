@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 # Classes to enable type hinting for dictionaries
-class MRGDiscreteParameters(TypedDict):  # noqa: D101
+class MRGDiscreteParameters(TypedDict):
     node_length: list[float]
     paranodal_length_1: list[float]
     diameters: list[float]
@@ -45,7 +45,7 @@ class MRGDiscreteParameters(TypedDict):  # noqa: D101
     mygm: list[float]
 
 
-class MRGInterpolationParameters(TypedDict):  # noqa: D101
+class MRGInterpolationParameters(TypedDict):
     node_length: Callable[[float], float]
     paranodal_length_1: Callable[[float], float]
     paranodal_length_2: Callable[[float], float]
@@ -58,7 +58,7 @@ class MRGInterpolationParameters(TypedDict):  # noqa: D101
     mygm: Callable[[float], float]
 
 
-class FiberParameters(TypedDict):  # noqa: D101
+class FiberParameters(TypedDict):
     MRG_DISCRETE: MRGDiscreteParameters
     MRG_INTERPOLATION: MRGInterpolationParameters
     PENA: MRGInterpolationParameters
