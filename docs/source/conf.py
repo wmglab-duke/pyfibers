@@ -98,7 +98,7 @@ intersphinx_mapping = {
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 # uncomment the line below to exclude all tutorials from the documentation build
-# exclude_patterns = ['tutorials/**.ipynb']  # noqa: E800
+# exclude_patterns = ['tutorials/**.ipynb']
 
 # -- Options for HTML output -------------------------------------------------
 

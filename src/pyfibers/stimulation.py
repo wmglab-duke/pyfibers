@@ -31,7 +31,7 @@ h.load_file('stdrun.hoc')
 # Set up module-level logger
 logger = logging.getLogger(__name__)
 
-### Enumerators to define configuration options ### noqa: E266
+### Enumerators to define configuration options ##
 
 
 @unique
@@ -186,18 +186,18 @@ class Stimulation:
         """Notify subclasses when ``dt`` or ``tstop`` changes."""
 
     def __str__(self: Stimulation) -> str:
-        """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
+        """Return a brief string representation of the Stimulation instance."""
         return (
             f'{type(self).__name__}: {self.tstop} ms (dt={self.dt} ms)'
             f' (t_init_ss={self.t_init_ss} ms, dt_init_ss={self.dt_init_ss} ms)'
         )
 
     def __repr__(self: Stimulation) -> str:
-        """Return a string representation of the Stimulation instance."""  # noqa: DAR201
+        """Return a string representation of the Stimulation instance."""
         return self.__str__()
 
     def _steady_state(self: Stimulation, fiber: Fiber) -> None:
-        """Run from t_init_ss to 0 ms using a large dt to reach steady-state."""  # noqa: DAR101, DAR401
+        """Run from t_init_ss to 0 ms using a large dt to reach steady-state."""
         # Begin simulation at t=t_init_ss
         h.t = -np.abs(self.t_init_ss)
         # Use large dt during steady-state period
@@ -251,7 +251,7 @@ class Stimulation:
             section(0.5).e_extracellular = e_stims[x]
 
     def run_sim(self: Stimulation, *args, **kwargs) -> tuple[int, float | None]:
-        """Run a simulation using either a custom_run_sim method or a subclass override."""  # noqa: DAR
+        """Run a simulation using either a custom_run_sim method or a subclass override."""  # : DAR
         if self.custom_run_sim:
             return self.custom_run_sim(self, *args, **kwargs)
         raise NotImplementedError(
@@ -374,7 +374,7 @@ class Stimulation:
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
         return detect_n >= thresh_num_aps
 
-    def find_threshold(  # noqa: C901
+    def find_threshold(
         self: Stimulation,
         fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
@@ -482,7 +482,7 @@ class Stimulation:
                     self._exit_t,
                 )
 
-            if not supra_bot and supra_top:  # noqa: R508
+            if not supra_bot and supra_top:
                 break  # Bounds are found
             elif supra_bot and not supra_top:
                 # Contradictory bounds
@@ -712,7 +712,7 @@ class Stimulation:
                 fiber, ap_detect_location=kwargs.get("ap_detect_location", 0.9), thresh_num_aps=thresh_num_aps
             )
             return is_supra, (n_aps, aptime)
-        if condition == ThresholdCondition.BLOCK:  # noqa: R503
+        if condition == ThresholdCondition.BLOCK:
             # BLOCK condition
             n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
             is_block = self.threshold_checker(
@@ -1113,7 +1113,7 @@ class ScaledStim(Stimulation):
                     np.vectorize(lambda i, j: prepped_waveform[int(i)](j * self.dt)),
                     (len(prepped_waveform), self.n_timesteps),
                 )
-            except Exception as e:  # noqa: B902
+            except Exception as e:
                 # provide some information on where the error happened to the user
                 raise RuntimeError(
                     'Error encountered while processing callable into array.'
