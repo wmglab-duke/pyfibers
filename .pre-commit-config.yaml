@@ -1,20 +1,3 @@
-ci:
-  # Hosted pre-commit.ci still reports a check (Python 3.14). Autofix is lite on GHA 3.13.
-  autofix_commit_msg: 'style: auto-fixes from pre-commit.ci'
-  autofix_prs: false
-  autoupdate_schedule: quarterly
-  skip:
-  - no-commit-to-branch
-  - flake8
-  - nbqa-flake8
-  - mypy
-  - rstcheck
-  - commitizen
-  - commitizen-branch
-  - sync-pre-commit-deps
-  - yesqa
-  - check-jsonschema
-
 default_install_hook_types: [pre-commit, pre-push, commit-msg]
 default_stages: [pre-commit]
 
