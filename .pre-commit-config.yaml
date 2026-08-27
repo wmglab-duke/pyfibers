@@ -1,9 +1,8 @@
 ci:
-  # Skips apply only to pre-commit.ci; GitHub Actions still runs these hooks.
+  # Hosted pre-commit.ci still reports a check (Python 3.14). Autofix is lite on GHA 3.13.
   autofix_commit_msg: 'style: auto-fixes from pre-commit.ci'
-  autofix_prs: true
-  autoupdate_commit_msg: 'ci: pre-commit autoupdate'
-  autoupdate_schedule: weekly
+  autofix_prs: false
+  autoupdate_schedule: quarterly
   skip:
   - no-commit-to-branch
   - flake8
