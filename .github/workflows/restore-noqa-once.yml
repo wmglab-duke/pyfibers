@@ -1,0 +1,25 @@
+name: restore-noqa-once
+on:
+  push:
+    branches: [ci/pre-commit-ci]
+    paths:
+      - .github/workflows/restore-noqa-once.yml
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore noqas from main and remove this workflow
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- src/pyfibers/fiber.py src/pyfibers/stimulation.py
+          git rm -f .github/workflows/restore-noqa-once.yml
+          git config user.name "Daniel Marshall"
+          git config user.email "68913874+thedannymarsh@users.noreply.github.com"
+          git commit -m "revert: restore noqas stripped by pre-commit.ci yesqa"
+          git push
