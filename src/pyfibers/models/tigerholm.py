@@ -61,7 +61,7 @@ class TigerholmFiber(Fiber):
             warnings.warn('Ignoring passive_end_nodes for Tigerholm fiber', UserWarning, stacklevel=2)
             self.passive_end_nodes: bool = False
 
-    def generate(self: TigerholmFiber, **kwargs) -> Fiber:
+    def generate(self: TigerholmFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_tigerholm], **kwargs)
 
     def create_tigerholm(self: TigerholmFiber, ind: int, node_type: str) -> h.Section:
