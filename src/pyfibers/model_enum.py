@@ -73,12 +73,12 @@ def _discover_plugins() -> dict[str, type]:
                 _add_fiber_to_members(plugins, plugin_class)
             else:
                 raise ValueError(f"Plugin {plugin_class} does not have a submodels attribute")
-        except Exception as e:
+        except Exception as e:  # noqa: B902, PIE786
             logger.error("Error loading plugin %s: %s", entry_point.name, e)
     return plugins
 
 
-def _update_all_module_references(new_enum: Any) -> None:
+def _update_all_module_references(new_enum: Any) -> None:  # noqa: ANN401
     """Update all modules that have imported FiberModel with the new enum.
 
     This function is called by register_custom_fiber whenever a new enum is created.
@@ -102,7 +102,7 @@ def _update_all_module_references(new_enum: Any) -> None:
             module.FiberModel = new_enum  # type: ignore[attr-defined]
 
 
-def _create_fiber_model_enum(members_dict: dict[str, type]) -> Any:
+def _create_fiber_model_enum(members_dict: dict[str, type]) -> Any:  # noqa: ANN401
     """Create the FiberModel enum with the given members dictionary.
 
     :param members_dict: Dictionary mapping submodel names to fiber classes.

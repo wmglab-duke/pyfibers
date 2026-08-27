@@ -15,7 +15,7 @@ import sys
 
 
 def _clean_mod_dir(mod_dir: str) -> None:
-    """Remove generated C/C++ build intermediates from ``mod_dir``."""
+    """Remove generated C/C++ build intermediates from ``mod_dir``."""  # noqa: DAR101
     removable_extensions = (".c", ".cpp", ".o")
     for name in os.listdir(mod_dir):
         path = os.path.join(mod_dir, name)
@@ -28,13 +28,13 @@ def _clean_mod_dir(mod_dir: str) -> None:
 
 
 def running_compile() -> bool:
-    """Return whether current process was launched via ``pyfibers_compile``."""
+    """Return whether current process was launched via ``pyfibers_compile``."""  # noqa: DAR201
     argv0 = os.path.basename(sys.argv[0]).lower()
     return "pyfibers_compile" in argv0
 
 
 def _has_generated_c_files(mod_dir: str) -> bool:
-    """Return whether generated ``.c`` files are present in ``mod_dir``."""
+    """Return whether generated ``.c`` files are present in ``mod_dir``."""  # noqa: DAR101, DAR201
     return any(os.path.splitext(name)[1].lower() == ".c" for name in os.listdir(mod_dir))
 
 
@@ -42,7 +42,7 @@ def main(argv: list[str] | None = None) -> None:
     """Compile NEURON MOD files.
 
     :raises RuntimeError: If nrnivmodl is not found or fails.
-    """
+    """  # noqa: DAR101
     parser = argparse.ArgumentParser(description="Compile PyFibers NEURON mechanism (.mod) files.")
     parser.add_argument(
         "--clean",

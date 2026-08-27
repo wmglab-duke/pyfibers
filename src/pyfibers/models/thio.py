@@ -109,7 +109,7 @@ class ThioFiber(Fiber):
             warnings.warn("Ignoring passive_end_nodes for Thio fiber", UserWarning, stacklevel=2)
             self.passive_end_nodes: bool = False
 
-    def generate(self: ThioFiber, **kwargs) -> Fiber:
+    def generate(self: ThioFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_thio], **kwargs)
 
     def create_thio(self: ThioFiber, ind: int, node_type: str) -> None:
@@ -121,8 +121,8 @@ class ThioFiber(Fiber):
         """
         node = self.nodebuilder(ind, node_type)
 
-        R = 8314  # molar gas constant
-        F = 96485.3329  # faraday's constant
+        R = 8314  # noqa: N806 # molar gas constant
+        F = 96485.3329  # noqa: N806 # faraday's constant
         node.insert("nav7")
         node.insert("newnav8")
         node.insert("nav9")

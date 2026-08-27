@@ -70,7 +70,7 @@ class SchildFiber(Fiber):
             self.gating_variables_schild97 if self.fiber_model.name == "SCHILD97" else self.gating_variables_schild94
         )
 
-    def generate(self: SchildFiber, **kwargs) -> Fiber:
+    def generate(self: SchildFiber, **kwargs) -> Fiber:  # noqa: D102
         return super().generate([self.create_schild], **kwargs)
 
     def create_schild(self: SchildFiber, ind: int, node_type: str) -> h.Section:
@@ -80,8 +80,8 @@ class SchildFiber(Fiber):
         :param node_type: node type (``'active'`` or ``'passive'``)
         :return: created node with SCHILD mechanisms
         """
-        R = 8314  # molar gas constant
-        F = 96500  # faraday's constant
+        R = 8314  # noqa: N806 # molar gas constant
+        F = 96500  # noqa: N806 # faraday's constant
         node = self.nodebuilder(ind, node_type)
         node.insert('leakSchild')  # All mechanisms from Schild 1994 inserted into model
         node.insert('kd')
