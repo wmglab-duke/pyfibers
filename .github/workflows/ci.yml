@@ -5,46 +5,19 @@ name: CI
 # Triggers
 ###############################################################################
 on:
-  pull_request:            # PRs: lint, tox (+coverage artifacts per Python), docs
+  pull_request:            # PRs: tox (+coverage artifacts per Python), docs
 
   push:
     branches: [main]       # main: same checks + deploy docs
 
 ###############################################################################
-# Job: Lint with pre-commit hooks
+# pre-commit lives in .github/workflows/pre-commit.yml (pre-commit.ci lite).
 ###############################################################################
-jobs:
-  pre-commit:
-    name: pre-commit
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
-      with:
-        python-version: '3.13'
-        cache: pip
-        cache-dependency-path: pyproject.toml
-    # Official pre-commit CI cache: default ~/.cache/pre-commit (do not set PRE_COMMIT_HOME;
-    # GitHub env does not expand ~). Include python -VV so hook venvs match this interpreter.
-    - name: pre-commit cache fingerprint
-      run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
-    - uses: actions/cache@v6
-      with:
-        path: ~/.cache/pre-commit
-        key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
-        restore-keys: pre-commit|${{ env.PY }}|
-    - run: |
-        pip install pre-commit .
-        # no-commit-to-branch fails on push-to-main (attached checkout); keep it for local commits only
-        SKIP=no-commit-to-branch pre-commit run --all-files
-        SKIP=no-commit-to-branch pre-commit run --all-files --hook-stage pre-merge-commit
 
 ###############################################################################
 # Job: conventional commit messages (PRs only; mirrors GitLab commitizen)
 ###############################################################################
+jobs:
   commitizen:
     name: commitizen
     if: github.event_name == 'pull_request'
@@ -114,7 +87,7 @@ jobs:
 ###############################################################################
   test:
     name: tox matrix
-    needs: [pre-commit, fixme, tox-paths]
+    needs: [fixme, tox-paths]
     permissions:
       contents: read
       actions: write
@@ -127,7 +100,7 @@ jobs:
 ###############################################################################
   docs:
     name: build docs
-    needs: [pre-commit, fixme]
+    needs: [fixme]
     permissions:
       contents: read
       pages: write
@@ -145,7 +118,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: [docs, pre-commit, fixme, test]
+    needs: [docs, fixme, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -160,7 +133,7 @@ jobs:
 ###############################################################################
   release:
     name: semantic-release
-    needs: [docs, pre-commit, fixme, test, deploy-pages]
+    needs: [docs, fixme, test, deploy-pages]
     if: >
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&

@@ -1,5 +1,4 @@
-# Keep Actions and Python deps current via weekly PRs.
-# pre-commit hook revs are updated weekly by pre-commit.ci.
+# Keep Actions, Python deps, and pre-commit hooks current via weekly PRs.
 version: 2
 updates:
 - package-ecosystem: github-actions
@@ -18,3 +17,10 @@ updates:
   ignore:
   # Sphinx 9 breaks enum-tools; stay on 8.x until fixed upstream
   - dependency-name: sphinx
+
+- package-ecosystem: pre-commit
+  directory: /
+  schedule:
+    interval: weekly
+    day: monday
+  open-pull-requests-limit: 5
