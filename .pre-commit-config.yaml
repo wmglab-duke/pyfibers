@@ -245,3 +245,4 @@ repos:
     stages: [commit-msg]
   - id: commitizen-branch           # Checks branch commit messages
     stages: [pre-push]
+    args: [--rev-range, origin/main..HEAD]
