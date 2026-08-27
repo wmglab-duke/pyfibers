@@ -594,7 +594,7 @@ class Fiber:
         """The diameter of the fiber in micrometers (µm).
 
         Set at fiber construction.
-        """
+        """  # noqa: DAR201
         return self._diameter
 
     @property
@@ -602,7 +602,7 @@ class Fiber:
         """The temperature at which the fiber will be simulated [C].
 
         Set at fiber construction.
-        """
+        """  # noqa: DAR201
         return self._temperature
 
     @property
@@ -610,7 +610,7 @@ class Fiber:
         """The total length of the fiber in micrometers (end-to-end).
 
         Computed from the sum of all section lengths.
-        """
+        """  # noqa: DAR201
         return float(np.sum([section.L for section in self.sections]))
 
     @property
@@ -618,7 +618,7 @@ class Fiber:
         """A numpy array of 1D (arc-length) coordinates of the center of each section along the fiber.
 
         Computed from the cumulative sum of section lengths.
-        """
+        """  # noqa: DAR201
         start_coords = np.array([0] + [section.L for section in self.sections[:-1]])  # start of each section
         end_coords = np.array([section.L for section in self.sections])  # end of each section
         return np.cumsum((start_coords + end_coords) / 2)
