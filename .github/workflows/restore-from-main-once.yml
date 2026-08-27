@@ -1,0 +1,38 @@
+name: restore-from-main-once
+on:
+  push:
+    branches: [docs/codecov-badge]
+    paths:
+      - .github/workflows/restore-from-main-once.yml
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore unrelated files from main and remove this workflow
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- \
+            docs/source/conf.py \
+            src/pyfibers/__init__.py \
+            src/pyfibers/compile.py \
+            src/pyfibers/fiber.py \
+            src/pyfibers/model_enum.py \
+            src/pyfibers/models/mrg.py \
+            src/pyfibers/models/rattay.py \
+            src/pyfibers/models/schild.py \
+            src/pyfibers/models/sundt.py \
+            src/pyfibers/models/thio.py \
+            src/pyfibers/models/tigerholm.py \
+            src/pyfibers/stimulation.py \
+            tests/unit/test_fiber/test_basic_fiber.py
+          git rm -f .github/workflows/restore-from-main-once.yml
+          git config user.name "Daniel Marshall"
+          git config user.email "68913874+thedannymarsh@users.noreply.github.com"
+          git commit -m "revert: restore files unrelated to Codecov from main"
+          git push
