@@ -9,6 +9,7 @@
 [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760)
 [![Stars](https://img.shields.io/github/stars/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/stargazers)
 [![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/wmglab-duke/pyfibers/main.svg)](https://results.pre-commit.ci/latest/github/wmglab-duke/pyfibers)
 [![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads/month)](https://pepy.tech/projects/pyfibers)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/pyfibers)
@@ -49,7 +50,7 @@ It is recommended (But not required) you create a new virtual environment for Py
 Some notes for `pyfibers_compile`:
 - Check the NEURON output that follows for a message that the mechanisms were compiled successfully (e.g., for Windows: `nrnmech.dll was built successfully.`) While using PyFibers, if you see the `NEURON mechanisms not found in <path>.` message, this is cause for concern, as this means PyFibers cannot find the compiled mechanisms. Failed compiles will commonly cause the error message `Argument not a density mechanism name` to appear when trying to create fibers.
 - Careful! Make sure that the correct NEURON installation is in your path, as the first found installation will be used for compilation. The version used for compilation must be the same version used to run PyFibers code.
-- If you receive a message that the `pyfibers_compile` command is not found, find the executable for this command in the `Scripts` path of your python directory (e.g. `C:\Users\<username>\Anaconda3\envs\pyfibers\Scripts`) and run the executable (e.g., `pyfibers_compile.exe`).
+- If you receive a message that the `pyfibers_compile` command is not found, find the executable for this command in the `Scripts` path of your python directory (e.g. `C:\\Users\\<username>\\Anaconda3\\envs\\pyfibers\\Scripts`) and run the executable (e.g., `pyfibers_compile.exe`).
 
 
 ## Usage
