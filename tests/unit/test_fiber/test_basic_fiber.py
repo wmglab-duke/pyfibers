@@ -89,7 +89,7 @@ def test_pointsource():
 
 
 def test_waveform_pad_truncate():
-    fiber = get_fiber()
+    fiber = get_fiber()  # noqa: F841
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
     assert stimulation._prepped_waveform.shape[1] == 5000
@@ -100,7 +100,7 @@ def test_waveform_pad_truncate():
 
 
 def test_waveform_callable():
-    fiber = get_fiber()  # TODO figure out why this is needed and then delete
+    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
     dt = 0.005  # ms
     start = 0  # ms
     up = 1  # ms
@@ -123,7 +123,7 @@ def test_waveform_callable():
 
 
 def test_multiple_waveforms():
-    fiber = get_fiber()  # TODO figure out why this is needed and then delete
+    fiber = get_fiber()  # TODO figure out why this is needed and then delete # noqa: F841
     dt = 0.005  # ms
     start = 0  # ms
     up_list = np.arange(1, 10)  # ms
