@@ -101,7 +101,7 @@ def build_fiber(
         axis=1,
     )
     fiber_instance.potentials = np.zeros(len(fiber_instance.longitudinal_coordinates))
-    fiber_instance.time = h.Vector().record(h._ref_t)
+    fiber_instance.record_time()
 
     if len(fiber_instance) != fiber_instance.nodecount:
         raise RuntimeError("Node count does not match number of nodes")
@@ -776,6 +776,19 @@ class Fiber:
         times = node_times.copy()
         times[(times == 0) | np.isinf(times)] = np.nan
         return init_nodes, len(troughs), times
+
+    def record_time(self: Fiber) -> h.Vector:
+        """Record simulation time (ms) associated with this fiber's first node.
+
+        ``Vector.record(h._ref_t)`` binds to the currently accessed section unless
+        ``sec`` is given. If that section is later destroyed (for example when a
+        fiber is replaced), the time recorder is dropped. See
+        https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+
+        :return: The NEURON :class:`Vector <neuron:Vector>` recording ``h.t``.
+        """
+        self.time = h.Vector().record(h._ref_t, sec=self.nodes[0])
+        return self.time
 
     def record_values(
         self: Fiber,
