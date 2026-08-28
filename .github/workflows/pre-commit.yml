@@ -1,0 +1,39 @@
+# Lint on GHA (Python 3.13) and autofix PRs with pre-commit.ci lite.
+# Single-job workflow: lite requires this job to be alone or last to finish.
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: pyproject.toml
+    # Official pre-commit CI cache: default ~/.cache/pre-commit (do not set PRE_COMMIT_HOME;
+    # GitHub env does not expand ~). Include python -VV so hook venvs match this interpreter.
+    - name: pre-commit cache fingerprint
+      run: echo "PY=$(python -VV | sha256sum | cut -d' ' -f1)" >> "$GITHUB_ENV"
+    - uses: actions/cache@v6
+      with:
+        path: ~/.cache/pre-commit
+        key: pre-commit|${{ env.PY }}|${{ hashFiles('.pre-commit-config.yaml') }}
+        restore-keys: pre-commit|${{ env.PY }}|
+    - run: |
+        pip install pre-commit .
+        # no-commit-to-branch fails on push-to-main (attached checkout); keep it for local commits only
+        SKIP=no-commit-to-branch pre-commit run --all-files
+        SKIP=no-commit-to-branch pre-commit run --all-files --hook-stage pre-merge-commit
+    - uses: pre-commit-ci/lite-action@v1.1.0
+      if: always() && github.event_name == 'pull_request'
