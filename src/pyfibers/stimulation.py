@@ -269,9 +269,9 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object for which the simulation will be configured.
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV).
         """
-        # reassign time recorder
-        # without this, time recording can get messed up for unclear reasons
-        fiber.time = self.time = h.Vector().record(h._ref_t)
+        # Bind time to this fiber's section so replacing a fiber does not drop the recorder
+        # https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+        self.time = fiber.record_time()
         # Set simulation temperature based on the fiber's temperature
         h.celsius = fiber.temperature
         # Initialize the simulation to the fiber's rest potential

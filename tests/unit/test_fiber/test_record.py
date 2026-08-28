@@ -16,13 +16,7 @@ from pyfibers import FiberModel, build_fiber
 @pytest.fixture
 def setup_fiber():
     """Set up an actual MRG Fiber instance for testing."""
-    # Create the fiber instance
-    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=10)
-
-    # Mock NEURON vector record to avoid hocobj_call error
-    fiber.time = h.Vector().record(h._ref_t)
-
-    return fiber
+    return build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=10)
 
 
 def test_apcounts(setup_fiber):
@@ -177,6 +171,27 @@ def test_record_values_recording_tvec(setup_fiber):
     recorded = fiber.record_values("_ref_v", recording_tvec=tvec, indices=[0, 1])
     assert len(recorded) == 2
     assert all(record is not None for record in recorded)
+
+
+def test_time_recorder_survives_fiber_replacement():
+    """Replacing a fiber must not drop time recording.
+
+    See https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+    """
+    h.dt = 0.025
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=5)
+    h.finitialize(fiber.v_rest)
+    h.frecord_init()
+    for _ in range(5):
+        h.fadvance()
+    assert len(fiber.time) > 1
+
+    fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=5)
+    h.finitialize(fiber.v_rest)
+    h.frecord_init()
+    for _ in range(5):
+        h.fadvance()
+    assert len(fiber.time) > 1
 
 
 if __name__ == "__main__":
