@@ -69,7 +69,7 @@ jobs:
           coverage.xml
     - name: Upload coverage to Codecov
       if: ${{ !inputs.noop }}
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         files: coverage.xml
         disable_search: true
