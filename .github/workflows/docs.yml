@@ -27,7 +27,8 @@ jobs:
         cache-dependency-path: pyproject.toml
     - uses: actions/cache@v6
       with:
-        path: .jupyter_cache
+        # Must match nb_execution_cache_path in docs/source/conf.py.
+        path: docs/.jupyter_cache
         # No restore-keys: Myst-NB skips re-execution if a stale cache is restored
         # after src/ or dependency changes (it only hashes notebook contents).
         key: jupyter-${{ hashFiles('docs/**/*.ipynb', 'docs/source/conf.py', 'pyproject.toml', 'src/pyfibers/**') }}
