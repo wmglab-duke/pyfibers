@@ -47,7 +47,7 @@ cache:
   - ${PIP_CACHE_DIR}
   - ${PRE_COMMIT_HOME}
   - venv/
-  - .jupyter_cache
+  - docs/.jupyter_cache
 
 ### LINTING STAGE
 
