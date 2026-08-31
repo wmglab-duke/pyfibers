@@ -100,6 +100,14 @@ repos:
     - black==26.5.1
     args: [--line-length, '88']
 
+- repo: https://github.com/hukkin/mdformat
+  rev: 1.0.0
+  hooks:
+  - id: mdformat                    # Formats Markdown (GFM + YAML frontmatter)
+    additional_dependencies:
+    - mdformat-gfm
+    - mdformat-frontmatter
+
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.16.0
   hooks:
@@ -185,6 +193,8 @@ repos:
     - flake8-return
     - Flake8-pyproject
   - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
+  - id: nbqa-isort                  # Sorts imports in Jupyter notebooks
+    args: [--dont-float-to-top]     # Within-cell only; pyproject float_to_top would hoist to first cell
 
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.10.0    # Use the ref you want to point at
