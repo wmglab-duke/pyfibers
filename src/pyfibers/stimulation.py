@@ -498,7 +498,7 @@ class Stimulation:
                     self._exit_t,
                 )
 
-            if not supra_bot and supra_top:  # noqa: R508
+            if not supra_bot and supra_top:
                 if iteration == 0:
                     logger.info(
                         "Bounds located (initial bounds valid): [%+10.4f, %+10.4f]",
