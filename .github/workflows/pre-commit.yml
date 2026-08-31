@@ -27,3 +27,5 @@ jobs:
         extra_args: --all-files
     - uses: pre-commit-ci/lite-action@v1.1.0
       if: always() && github.event_name == 'pull_request'
+      with:
+        msg: 'style: apply automatic fixes'
