@@ -10,7 +10,6 @@
   ([#21](https://github.com/wmglab-duke/pyfibers/pull/21),
   [`71965c0`](https://github.com/wmglab-duke/pyfibers/commit/71965c0085f2d5c89238cd5259d753306f00d784))
 
-
 ## v0.9.1 (2026-08-16)
 
 ### Bug Fixes
@@ -30,9 +29,9 @@
   [`307f396`](https://github.com/wmglab-duke/pyfibers/commit/307f3965707925f092ce0bdd28421ba573bf37d0))
 
 Bumps [dorny/paths-filter](https://github.com/dorny/paths-filter) from 3 to 4. - [Release
-  notes](https://github.com/dorny/paths-filter/releases) -
-  [Changelog](https://github.com/dorny/paths-filter/blob/master/CHANGELOG.md) -
-  [Commits](https://github.com/dorny/paths-filter/compare/v3...v4)
+notes](https://github.com/dorny/paths-filter/releases) -
+[Changelog](https://github.com/dorny/paths-filter/blob/master/CHANGELOG.md) -
+[Commits](https://github.com/dorny/paths-filter/compare/v3...v4)
 
 --- updated-dependencies: - dependency-name: dorny/paths-filter dependency-version: '4'
 
@@ -42,19 +41,19 @@ update-type: version-update:semver-major ...
 
 Signed-off-by: dependabot[bot] <support@github.com>
 
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Co-authored-by: dependabot[bot] \<49699333+dependabot[bot]@users.noreply.github.com>
 
 - **deps**: Bump https://github.com/pycqa/isort from 9.0.0b1 to 9.0.0b2
   ([#10](https://github.com/wmglab-duke/pyfibers/pull/10),
   [`a5e1d64`](https://github.com/wmglab-duke/pyfibers/commit/a5e1d64ece85c64e4ea4daefaa8ebe71cc0c7764))
 
 Bumps [https://github.com/pycqa/isort](https://github.com/pycqa/isort) from 9.0.0b1 to 9.0.0b2. -
-  [Release notes](https://github.com/pycqa/isort/releases) -
-  [Changelog](https://github.com/PyCQA/isort/blob/main/CHANGELOG.md) -
-  [Commits](https://github.com/pycqa/isort/compare/9.0.0b1...9.0.0b2)
+[Release notes](https://github.com/pycqa/isort/releases) -
+[Changelog](https://github.com/PyCQA/isort/blob/main/CHANGELOG.md) -
+[Commits](https://github.com/pycqa/isort/compare/9.0.0b1...9.0.0b2)
 
 --- updated-dependencies: - dependency-name: https://github.com/pycqa/isort dependency-version:
-  9.0.0b2
+9.0.0b2
 
 dependency-type: direct:production
 
@@ -62,21 +61,21 @@ update-type: version-update:semver-patch ...
 
 Signed-off-by: dependabot[bot] <support@github.com>
 
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Co-authored-by: dependabot[bot] \<49699333+dependabot[bot]@users.noreply.github.com>
 
 - **deps**: Bump https://github.com/python-jsonschema/check-jsonschema
   ([#8](https://github.com/wmglab-duke/pyfibers/pull/8),
   [`0947b52`](https://github.com/wmglab-duke/pyfibers/commit/0947b52f963b588b025a71f3f1ea9286109915e7))
 
 Bumps
-  [https://github.com/python-jsonschema/check-jsonschema](https://github.com/python-jsonschema/check-jsonschema)
-  from 0.37.4 to 0.38.0. - [Release
-  notes](https://github.com/python-jsonschema/check-jsonschema/releases) -
-  [Changelog](https://github.com/python-jsonschema/check-jsonschema/blob/main/CHANGELOG.rst) -
-  [Commits](https://github.com/python-jsonschema/check-jsonschema/compare/0.37.4...0.38.0)
+[https://github.com/python-jsonschema/check-jsonschema](https://github.com/python-jsonschema/check-jsonschema)
+from 0.37.4 to 0.38.0. - [Release
+notes](https://github.com/python-jsonschema/check-jsonschema/releases) -
+[Changelog](https://github.com/python-jsonschema/check-jsonschema/blob/main/CHANGELOG.rst) -
+[Commits](https://github.com/python-jsonschema/check-jsonschema/compare/0.37.4...0.38.0)
 
 --- updated-dependencies: - dependency-name: https://github.com/python-jsonschema/check-jsonschema
-  dependency-version: 0.38.0
+dependency-version: 0.38.0
 
 dependency-type: direct:production
 
@@ -84,13 +83,12 @@ update-type: version-update:semver-minor ...
 
 Signed-off-by: dependabot[bot] <support@github.com>
 
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Co-authored-by: dependabot[bot] \<49699333+dependabot[bot]@users.noreply.github.com>
 
 ### Documentation
 
 - Point CHANGELOG commit links at GitHub ([#4](https://github.com/wmglab-duke/pyfibers/pull/4),
   [`9618eab`](https://github.com/wmglab-duke/pyfibers/commit/9618eab8db89bfb02faaf54c789299a67828153b))
-
 
 ## v0.9.0 (2026-07-22)
 
@@ -169,7 +167,6 @@ Co-authored-by: Daniel Marshall <dpm42@duke.edu>
 - Add fiber function to check initiation nodes
   ([`314daab`](https://github.com/wmglab-duke/pyfibers/commit/314daaba03c7827f92db11c51496d1f4dd6f83f2))
 
-
 ## v0.8.5 (2026-04-15)
 
 ### Bug Fixes
@@ -181,8 +178,8 @@ Co-authored-by: Daniel Marshall <dpm42@duke.edu>
   ([`68f7555`](https://github.com/wmglab-duke/pyfibers/commit/68f7555e2245c257b871e0089c2479973a1bbce4))
 
 Fixes error where old NEURON 8 .c/.o files would cause an error when compiling on NEURON 9+. Adds
-  --clean option when compiling to perform removal regardless. Skips mechanism loading if compiling
-  to avoid erroneous error message from nrnivmodl.
+--clean option when compiling to perform removal regardless. Skips mechanism loading if compiling
+to avoid erroneous error message from nrnivmodl.
 
 ### Documentation
 
@@ -192,14 +189,12 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 - Update fiber model documentation
   ([`54715ee`](https://github.com/wmglab-duke/pyfibers/commit/54715eeeae06ab4ea65ac43a756c1e4824a05439))
 
-
 ## v0.8.4 (2026-02-25)
 
 ### Bug Fixes
 
 - Disallow negative cai vals for thio fiber mechanisms
   ([`b50a750`](https://github.com/wmglab-duke/pyfibers/commit/b50a7500b6337254f474352c8c7ea38adf07723b))
-
 
 ## v0.8.3 (2025-12-17)
 
@@ -221,14 +216,12 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 - Add citation to pyfibers publication
   ([`558e3bd`](https://github.com/wmglab-duke/pyfibers/commit/558e3bd8344bdeadcb2ed3adb43b4dd8c4bb3228))
 
-
 ## v0.8.2 (2025-11-08)
 
 ### Build System
 
 - Update pyproject.toml so docs version variable is auto updated
   ([`5a5a1a7`](https://github.com/wmglab-duke/pyfibers/commit/5a5a1a79a682969ac251500bd5fc2765cca6c650))
-
 
 ## v0.8.1 (2025-10-23)
 
@@ -241,7 +234,6 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 
 - Fix twine upload to be conditional upon new release
   ([`443a913`](https://github.com/wmglab-duke/pyfibers/commit/443a913606ab8b586b3b760249dd47fcd5d15fd9))
-
 
 ## v0.8.0 (2025-10-16)
 
@@ -269,7 +261,6 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 - Replace print statements with logging and expose user control of logging
   ([`b464ca4`](https://github.com/wmglab-duke/pyfibers/commit/b464ca47e3fe675f6e091799b4bfe9294db9b175))
 
-
 ## v0.7.0 (2025-09-26)
 
 ### Documentation
@@ -282,14 +273,12 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 - Add sweeney model to library
   ([`556a486`](https://github.com/wmglab-duke/pyfibers/commit/556a4868ac050a2e9ad47a35148cc7dee5fe91ba))
 
-
 ## v0.6.2 (2025-09-22)
 
 ### Bug Fixes
 
 - Fix bug where intrastim could error from steady state simulation encroaching on t>0
   ([`adc8a3c`](https://github.com/wmglab-duke/pyfibers/commit/adc8a3c1079cec0d9f71148b26d6f3d5a7ea2a62))
-
 
 ## v0.6.1 (2025-09-12)
 
@@ -303,7 +292,6 @@ Fixes error where old NEURON 8 .c/.o files would cause an error when compiling o
 
 - Add twine to ci/cd
   ([`807d784`](https://github.com/wmglab-duke/pyfibers/commit/807d78463a40ef6a0196b7ffa6a352106ac84e2e))
-
 
 ## v0.6.0 (2025-09-12)
 
@@ -341,7 +329,6 @@ Closes #420
 - Add the ability to shift coordinates for resample potentials
   ([`ec6c49b`](https://github.com/wmglab-duke/pyfibers/commit/ec6c49b8480315e2ba322bcae972ef9d2ba39d4c))
 
-
 ## v0.5.0 (2025-09-06)
 
 ### Build System
@@ -368,14 +355,12 @@ Closes #420
 - Update API for adding a custom fiber model
   ([`a64aff6`](https://github.com/wmglab-duke/pyfibers/commit/a64aff609b7740d22c945b923ccd1d8bdaf64e96))
 
-
 ## v0.4.2 (2025-06-29)
 
 ### Bug Fixes
 
 - Move twine upload after github push
   ([`e7db12a`](https://github.com/wmglab-duke/pyfibers/commit/e7db12ae3f46c4f6c4c9c51b729c9a81908a20e1))
-
 
 ## v0.4.1 (2025-06-29)
 
@@ -394,7 +379,6 @@ Closes #420
 
 - Update version for semantic release in docs version
   ([`d2f70dd`](https://github.com/wmglab-duke/pyfibers/commit/d2f70dde3d9a3ef88fe35e261aa2b2c00d1e4560))
-
 
 ## v0.4.0 (2025-03-24)
 
@@ -415,14 +399,12 @@ Closes #420
 - Added fiber models from Thio 2024 publication
   ([`a6dcf88`](https://github.com/wmglab-duke/pyfibers/commit/a6dcf883aaf7e497c0b2d2e120cee45350c108d4))
 
-
 ## v0.3.3 (2025-03-21)
 
 ### Bug Fixes
 
 - Change SCHILD model resting potential to correct value
   ([`a760b91`](https://github.com/wmglab-duke/pyfibers/commit/a760b911c0e8c98e453695c3bf5d4ca2bab71d2d))
-
 
 ## v0.3.2 (2025-03-21)
 
@@ -432,7 +414,7 @@ Closes #420
   ([`048de88`](https://github.com/wmglab-duke/pyfibers/commit/048de889fe3049aa53c0b6cd4278a3baf18d0ea2))
 
 Also fixed a bug in stimulation where intracellular stimulation of passive nodes was only detected
-  if passive_end_nodes = 1
+if passive_end_nodes = 1
 
 Closes #377 Closes #349
 
@@ -440,7 +422,6 @@ Closes #377 Closes #349
 
 - Update line length for all docs to 88
   ([`2078dce`](https://github.com/wmglab-duke/pyfibers/commit/2078dce85548a9e19c31371932ca7b6541795c3c))
-
 
 ## v0.3.1 (2025-03-07)
 
@@ -454,32 +435,22 @@ Closes #377 Closes #349
 - Add empty changelog
   ([`13e7278`](https://github.com/wmglab-duke/pyfibers/commit/13e72784bb2a17fb6349bc77d350f949b56324ef))
 
-
 ## v0.3.0 (2025-03-05)
-
 
 ## v0.2.1 (2025-02-17)
 
-
 ## v0.1.4 (2024-12-26)
-
 
 ## v0.1.1 (2024-07-18)
 
-
 ## v0.1.0 (2024-07-08)
-
 
 ## v0.0.5 (2024-06-10)
 
-
 ## v0.0.4 (2024-05-14)
-
 
 ## v0.0.3 (2024-04-25)
 
-
 ## v0.0.2 (2023-08-02)
-
 
 ## v0.0.1 (2023-05-23)
