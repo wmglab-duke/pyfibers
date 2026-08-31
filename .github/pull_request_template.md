@@ -14,7 +14,6 @@
 - [ ] I have made all relevant changes to the documentation
 - [ ] I have tested the code and it works as expected (if n/a remove this line)
 
-
 ## Notes for reviewers
 
 <!-- Optional -->
