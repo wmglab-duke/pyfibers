@@ -1,6 +1,6 @@
 # Lint on GHA (Python 3.13) and autofix PRs with pre-commit.ci lite.
 # Single-job workflow: lite requires this job to be alone or last to finish.
-name: pre-commit      
+name: pre-commit
 
 on:
   pull_request:
