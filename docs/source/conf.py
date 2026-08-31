@@ -155,8 +155,6 @@ nb_execution_show_tb = True
 nb_output_stderr = 'remove-warn'
 nb_execution_timeout = 600
 nb_execution_mode = "cache"
-# Pin so html (outdir public/) and linkcheck (outdir docs/build/linkcheck)
-# share the same cache. Myst-NB default is parent-of-outdir/.jupyter_cache.
 nb_execution_cache_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.jupyter_cache'))
 nb_merge_streams = True
 suppress_warnings = ["mystnb.stderr"]
