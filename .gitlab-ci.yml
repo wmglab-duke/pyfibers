@@ -167,7 +167,9 @@ tox:
 - apt-get install -y pandoc
 - ipython kernel install --name "python3" --user
 - sphinx-build -W -b html docs/source public
-- sphinx-build -b linkcheck docs/source docs/build/linkcheck
+# Outdir sibling of public/ so Myst-NB uses the same .jupyter_cache
+# (default is parent-of-outdir; docs/build/linkcheck would not share it).
+- sphinx-build -b linkcheck docs/source linkcheck
 
 # Docs + linkcheck on MRs (and non-default branches). Pages deploy is separate.
 test_docs:

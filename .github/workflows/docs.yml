@@ -43,7 +43,9 @@ jobs:
         pyfibers_compile
         python -m ipykernel install --name "python3" --user
         sphinx-build -W -b html docs/source public
-        sphinx-build -b linkcheck docs/source docs/build/linkcheck
+        # Outdir sibling of public/ so Myst-NB uses the same .jupyter_cache
+        # (default is parent-of-outdir; docs/build/linkcheck would not share it).
+        sphinx-build -b linkcheck docs/source linkcheck
     - uses: actions/upload-pages-artifact@v5
       if: inputs.upload_pages_artifact
       with:
