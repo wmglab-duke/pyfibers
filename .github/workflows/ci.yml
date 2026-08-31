@@ -1,4 +1,5 @@
 # .github/workflows/ci.yml
+# Note: lint/autofix lives in .github/workflows/pre-commit.yml (pre-commit.ci lite).
 name: CI
 
 ###############################################################################
@@ -10,10 +11,11 @@ on:
   push:
     branches: [main]       # main: same checks + deploy docs
 
-###############################################################################
-# Lint/autofix lives in .github/workflows/pre-commit.yml (pre-commit.ci lite).
-###############################################################################
+
 jobs:
+###############################################################################
+# Job: check commits for conventional format
+###############################################################################
   commitizen:
     name: commitizen
     if: github.event_name == 'pull_request'
