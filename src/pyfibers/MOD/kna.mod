@@ -1,5 +1,5 @@
 : Sodium-dependent potassium current
-: Paramaters according to Wang et al. 2003 (based on Bischoff et al. 1998)
+: Parameters according to Wang et al. 2003 (based on Bischoff et al. 1998)
 
 NEURON {
 	SUFFIX kna

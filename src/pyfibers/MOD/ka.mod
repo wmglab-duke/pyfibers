@@ -81,7 +81,7 @@ UNITS {
 		   ik = g * (v-ek)
 	}
 
-: Intializes State Variables
+: Initializes State Variables
 	INITIAL {
 		rates(v) : set tau_m, tau_h, hinf, minf
 		: assume that equilibrium has been reached

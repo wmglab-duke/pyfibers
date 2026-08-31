@@ -73,7 +73,7 @@ def _discover_plugins() -> dict[str, type]:
                 _add_fiber_to_members(plugins, plugin_class)
             else:
                 raise ValueError(f"Plugin {plugin_class} does not have a submodels attribute")
-        except Exception as e:  # noqa: PIE786, B902
+        except Exception as e:  # noqa: B902, PIE786
             logger.error("Error loading plugin %s: %s", entry_point.name, e)
     return plugins
 

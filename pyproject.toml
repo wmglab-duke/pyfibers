@@ -80,6 +80,9 @@ line-length = 120
 skip-string-normalization = true
 target-version = ["py311"]  # increment as older versions are dropped
 
+[tool.codespell]
+skip = "*.pdf,*.png,*.svg,coverage.xml,coverage_html_report"
+
 [tool.coverage.html]
 directory = "coverage_html_report"
 

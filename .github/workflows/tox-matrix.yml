@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: read
       actions: write
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -66,3 +67,13 @@ jobs:
         path: |
           coverage_html_report
           coverage.xml
+    - name: Upload coverage to Codecov
+      if: ${{ !inputs.noop }}
+      uses: codecov/codecov-action@v7
+      with:
+        files: coverage.xml
+        disable_search: true
+        flags: ${{ matrix.tox-env }}
+        name: ${{ matrix.tox-env }}
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true

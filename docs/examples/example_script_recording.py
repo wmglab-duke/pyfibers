@@ -16,7 +16,7 @@ import numpy as np
 from neuron import h
 from scipy.interpolate import interp1d
 
-from pyfibers import FiberModel, ScaledStim, build_fiber  # noqa: E402
+from pyfibers import FiberModel, ScaledStim, build_fiber
 
 # sys.path.append(r'C:\nrn\lib\python') #noqa: E800
 sys.path.append(r'/Applications/NEURON-7.8/lib/python')

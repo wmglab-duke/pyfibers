@@ -47,7 +47,7 @@
 		nao (mM)
 		nai (mM)
 
-		:Model Specific Variabl
+		:Model Specific Variable
 		inca (mA/cm2)
 		S
 		DFin (mM4)

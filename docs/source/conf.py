@@ -48,7 +48,7 @@ html_short_title = "PyFibers documentation"
 # -- General configuration ---------------------------------------------------
 nitpicky = True  # raise warnings for missing references #noqa: E800
 nitpick_ignore = [
-    # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classe
+    # Because neuron's objects.inv does not build properly, and intersphinx cannot find these classes
     (
         'py:class',
         'h.Vector',
