@@ -9,3 +9,6 @@ comment:
 coverage:
   status:
     project: off
+    patch:
+      default:
+        informational: true
