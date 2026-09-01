@@ -24,3 +24,5 @@ Preprints
 - Lung D, Jia Y, Moro A, Fachino M, Haberbusch M (2026) *golgi: open-source software for automated nerve model generation and recruitment simulation.* bioRxiv 2026.07.10.737846. https://doi.org/10.64898/2026.07.10.737846
 
 - Lung D, Haberbusch M (2026) *jaxon: a differentiable, GPU-native simulator for peripheral-nerve fiber models.* bioRxiv 2026.07.30.741846. https://doi.org/10.64898/2026.07.30.741846
+
+- Haberbusch M, Lung D (2026) *A GPU-native, differentiable fiber simulator reveals a species-dependent selectivity penalty in reduced-order peripheral-nerve models.* Research Square. https://doi.org/10.21203/rs.3.rs-10543706/v1
