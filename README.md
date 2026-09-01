@@ -8,7 +8,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue.svg)](https://wmglab-duke.github.io/pyfibers/)
 [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760)
 [![Stars](https://img.shields.io/github/stars/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/stargazers)
-[![CI](https://github.com/wmglab-duke/pyfibers/workflows/CI/badge.svg)](https://github.com/wmglab-duke/pyfibers/actions)
+[![CI](https://github.com/wmglab-duke/pyfibers/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wmglab-duke/pyfibers/actions/workflows/ci.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/wmglab-duke/pyfibers/graph/badge.svg)](https://codecov.io/gh/wmglab-duke/pyfibers)
 [![PyPI](https://img.shields.io/pypi/v/pyfibers.svg)](https://pypi.org/project/pyfibers/)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/pyfibers?period=month&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads/month)](https://pepy.tech/projects/pyfibers)
