@@ -5,11 +5,12 @@
 > **Merging into GitLab `main` is disabled.** GitHub `main` is the only merge target.
 >
 > When this MR is ready:
+>
 > 1. Ensure pipeline checks are green.
-> 2. In the MR **Pipelines** view, click the **play** button on the **`open_github_pr`** job.
-> 3. That job opens/updates a matching GitHub PR (same `gitlab/mr-<iid>` branch) and closes this GitLab MR (without merging).
-> 4. Merge the **GitHub** pull request.
-> 5. GitLab `main` is updated from GitHub with a daily sync.
+> 1. In the MR **Pipelines** view, click the **play** button on the **`open_github_pr`** job.
+> 1. That job opens/updates a matching GitHub PR (same `gitlab/mr-<iid>` branch) and closes this GitLab MR (without merging).
+> 1. Merge the **GitHub** pull request.
+> 1. GitLab `main` is updated from GitHub with a daily sync.
 >
 > If you push more commits after promoting: **reopen** this MR (or leave it open if close failed), wait for a green pipeline, then click **play** again — it will push the new commits and update the existing GitHub PR.
 
