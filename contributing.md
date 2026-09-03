@@ -131,7 +131,7 @@ Ensure your contributions update relevant documentation when changing or adding 
 
 New fiber models can be published as plugins to PyFibers:
 
-- Follow the \[plugin documentation\](\<<link>>) to create a new fiber model.
+- Follow the [plugin documentation](https://pyfibers.readthedocs.io/en/latest/custom_fiber.html) to create a new fiber model.
 - Upload the fiber model plugin as a separate repository.
 - The plugin will automatically become available in PyFibers upon installation.
 

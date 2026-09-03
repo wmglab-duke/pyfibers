@@ -104,6 +104,7 @@ repos:
   rev: 1.0.0
   hooks:
   - id: mdformat                    # Formats Markdown (GFM + YAML frontmatter)
+    exclude: ^(CHANGELOG\.md|docs/source/custom_stim\.md)$
     additional_dependencies:
     - mdformat-gfm
     - mdformat-frontmatter
@@ -195,6 +196,7 @@ repos:
   - id: nbqa-pyupgrade              # Runs pyupgrade on notebooks
   - id: nbqa-isort                  # Sorts imports in Jupyter notebooks
     args: [--dont-float-to-top]     # Within-cell only; pyproject float_to_top would hoist to first cell
+    exclude: ^docs/
 
 - repo: https://github.com/pre-commit/pygrep-hooks
   rev: v1.10.0    # Use the ref you want to point at
