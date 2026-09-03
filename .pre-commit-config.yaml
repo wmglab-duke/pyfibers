@@ -104,10 +104,11 @@ repos:
   rev: 1.0.0
   hooks:
   - id: mdformat                    # Formats Markdown (GFM + YAML frontmatter)
-    exclude: ^(CHANGELOG\.md|docs/source/custom_stim\.md)$
+    exclude: ^CHANGELOG\.md$
     additional_dependencies:
     - mdformat-gfm
     - mdformat-frontmatter
+    - mdformat-simple-breaks
 
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
   rev: v2.16.0
