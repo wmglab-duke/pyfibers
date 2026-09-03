@@ -157,6 +157,6 @@ Feel free to propose new features, ask questions, and share insights!
 
 PyFibers is open-source and distributed under the (PLACEHOLDER) License. Contributions implicitly agree to release their work under this license.
 
-______________________________________________________________________
+---
 
 **Thank you** for contributing to PyFibers. Your contributions help advance computational modeling in neural engineering and ensure rigorous and reproducible scientific research.
