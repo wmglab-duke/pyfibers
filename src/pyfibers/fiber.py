@@ -783,7 +783,7 @@ class Fiber:
         ``Vector.record(h._ref_t)`` binds to the currently accessed section unless
         ``sec`` is given. If that section is later destroyed (for example when a
         fiber is replaced), the time recorder is dropped. See
-        https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+        https://github.com/neuronsimulator/nrn/issues/3603
 
         :return: The NEURON :class:`Vector <neuron:Vector>` recording ``h.t``.
         """

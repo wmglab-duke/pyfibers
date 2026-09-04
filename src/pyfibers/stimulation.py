@@ -270,7 +270,7 @@ class Stimulation:
         :param ap_detect_threshold: Threshold for detecting action potentials (default: -30 mV).
         """
         # Bind time to this fiber's section so replacing a fiber does not drop the recorder
-        # https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+        # https://github.com/neuronsimulator/nrn/issues/3603
         self.time = fiber.record_time()
         # Set simulation temperature based on the fiber's temperature
         h.celsius = fiber.temperature

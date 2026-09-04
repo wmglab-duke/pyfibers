@@ -176,7 +176,7 @@ def test_record_values_recording_tvec(setup_fiber):
 def test_time_recorder_survives_fiber_replacement():
     """Replacing a fiber must not drop time recording.
 
-    See https://github.com/neuronsimulator/nrn/issues/3603#issuecomment-3299874561
+    See https://github.com/neuronsimulator/nrn/issues/3603
     """
     h.dt = 0.025
     fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10, n_nodes=5)
