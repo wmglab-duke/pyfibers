@@ -45,12 +45,6 @@ def test_pena_warns_above_5_7(caplog):
     assert "not recommended for fiber diameters above 5.7" in caplog.text
 
 
-def test_small_mrg_deprecated():
-    with pytest.warns(FutureWarning, match="SMALL_MRG_INTERPOLATION is deprecated"):
-        fiber = build_fiber(fiber_model=FiberModel.SMALL_MRG_INTERPOLATION, diameter=2.0, n_nodes=5)
-    assert fiber.nodecount == 5
-
-
 def test_pena_sets_gnabar():
     fiber = build_fiber(fiber_model=FiberModel.PENA, diameter=2.0, n_nodes=5)
     active = fiber.nodes[2]
@@ -96,8 +90,8 @@ def test_balance_sets_balanced_true():
 
 def test_fibermodel_includes_pena():
     assert "PENA" in FiberModel.__members__
-    assert "SMALL_MRG_INTERPOLATION" in FiberModel.__members__
-    assert FiberModel.PENA.value is FiberModel.SMALL_MRG_INTERPOLATION.value
+    assert "SMALL_MRG_INTERPOLATION" not in FiberModel.__members__
+    assert FiberModel.PENA.name == "PENA"
 
 
 def test_mrg_discrete_valid_diameter():
