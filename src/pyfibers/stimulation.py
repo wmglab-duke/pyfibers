@@ -488,7 +488,6 @@ class Stimulation:
         )
         # Count bound iteration; each loop entry either succeeds or performs one adjustment.
         while iteration < max_iterations:
-            iteration += 1
             # If top is supra-threshold, set an early exit time for activation searches
             if supra_top and exit_t_shift and condition == ThresholdCondition.ACTIVATION:
                 self._exit_t = t + exit_t_shift
@@ -498,30 +497,26 @@ class Stimulation:
                     self._exit_t,
                 )
 
+            # Valid bounds: bottom subthreshold, top suprathreshold
             if not supra_bot and supra_top:
-                if iteration == 0:
-                    logger.info(
-                        "Bounds located (initial bounds valid): [%+10.4f, %+10.4f]",
-                        stimamp_bottom,
-                        stimamp_top,
-                    )
-                else:
-                    logger.info(
-                        "Bounds located after %d iter.: [%+10.4f, %+10.4f]",
-                        iteration - 1,
-                        stimamp_bottom,
-                        stimamp_top,
-                    )
+                logger.info(
+                    "Bounds located after %d iter.: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
                 break
 
+            iteration += 1
+
+            # Contradictory bounds: bottom supra, top sub
             if supra_bot and not supra_top:
-                # Contradictory bounds
                 raise RuntimeError(
                     "stimamp_bottom is supra-threshold while stimamp_top is subthreshold, which is unexpected."
                 )
 
+            # Both subthreshold: raise the top bound and old top -> new bottom
             if not supra_bot and not supra_top:
-                # Increase top-bound magnitude
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_top = stimamp_top + np.sign(stimamp_top) * bounds_search_step
@@ -543,8 +538,9 @@ class Stimulation:
                     thresh_num_aps=thresh_num_aps,
                     **kwargs,
                 )
+
+            # Both suprathreshold: lower the bottom bound and old bottom -> new top
             elif supra_bot and supra_top:
-                # Decrease bottom-bound magnitude
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
@@ -589,22 +585,50 @@ class Stimulation:
             stimamp_bottom,
             stimamp_top,
         )
+
         bisection_iter = 0
+        suprathreshold = True  # Required by bounds search
         while True:
-            stimamp_prev = stimamp_top
 
-            # Compute the midpoint based on the chosen mean
-            if bisection_mean == BisectionMean.ARITHMETIC:
-                stimamp = (stimamp_bottom + stimamp_top) / 2
-            else:  # GEOMETRIC
-                stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** 0.5
-
+            # Compute the tolerance based on the chosen termination mode
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(termination_tolerance / 100)
                 tolerance = abs((stimamp_bottom - stimamp_top) / stimamp_top)
             else:  # ABSOLUTE_DIFFERENCE
                 thresh_resoln = abs(termination_tolerance)
                 tolerance = abs(stimamp_bottom - stimamp_top)
+
+            # Convergence check
+            if tolerance < thresh_resoln:
+                logger.info(
+                    "Threshold found at stimamp = %s after %d bisection iterations",
+                    round(stimamp_top, 4),
+                    bisection_iter,
+                )
+                logger.info("Validating threshold...")
+
+                # Confirm the final run at the chosen amplitude
+                n_aps, aptime = self.run_sim(stimamp_top, fiber, **kwargs)  # type: ignore
+                # Check that it indeed triggers or blocks (i.e., is suprathreshold)
+                if not self.threshold_checker(
+                    fiber,
+                    condition == ThresholdCondition.BLOCK,
+                    kwargs.get("ap_detect_location", 0.9),
+                    block_delay=block_delay,
+                    thresh_num_aps=thresh_num_aps,
+                ):
+                    raise RuntimeError(
+                        "Threshold stimulation did not generate the expected action potential condition."
+                    )
+                break
+
+            bisection_iter += 1
+
+            # Compute the midpoint based on the chosen mean
+            if bisection_mean == BisectionMean.ARITHMETIC:
+                stimamp = (stimamp_bottom + stimamp_top) / 2
+            else:  # GEOMETRIC
+                stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** 0.5
 
             logger.info(
                 "Bisect. iter. %3d: [%+10.4f, %+10.4f]  tol=%6.4f/%6.4f  next=%+10.4f",
@@ -620,36 +644,12 @@ class Stimulation:
                 stimamp, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
             )
 
-            # Convergence check
-            if tolerance < thresh_resoln:
-                if not suprathreshold:
-                    stimamp = stimamp_prev
-                logger.info("Threshold found at stimamp = %s", round(stimamp, 4))
-                logger.info("Validating threshold...")
-
-                # Confirm the final run at the chosen amplitude
-                n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)  # type: ignore
-                # Check that it indeed triggers or blocks (i.e., is suprathreshold)
-                if not self.threshold_checker(
-                    fiber,
-                    condition == ThresholdCondition.BLOCK,
-                    kwargs.get("ap_detect_location", 0.9),
-                    block_delay=block_delay,
-                    thresh_num_aps=thresh_num_aps,
-                ):
-                    raise RuntimeError(
-                        "Threshold stimulation did not generate the expected action potential condition."
-                    )
-                break
-
             if suprathreshold:
                 stimamp_top = stimamp
             else:
                 stimamp_bottom = stimamp
 
-            bisection_iter += 1
-
-        return stimamp, (n_aps, aptime)
+        return stimamp_top, (n_aps, aptime)
 
     def _validate_threshold_args(
         self: Stimulation,
