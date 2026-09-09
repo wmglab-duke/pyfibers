@@ -11,13 +11,14 @@ PyFibers is integrated as the **fiber backend** of **ASCENT** (Automated Simulat
 PyFibers supports two primary approaches for extracellular potentials:
 
 1. **Analytical calculations**: built-in point source calculations.
-2. **Numerical simulations**: use potentials from external FEM or other field solvers for complex geometries.
+1. **Numerical simulations**: use potentials from external FEM or other field solvers for complex geometries.
 
 ## Analytical calculations
 
 Each fiber class instance has a method {py:meth}`~pyfibers.fiber.Fiber.point_source_potentials` that calculates extracellular potentials due to a point source in an infinite homogeneous volume conductor.
 
 ### Isotropic case
+
 ```python
 pt_x = 0  # μm
 pt_y = 0  # μm
@@ -28,6 +29,7 @@ fiber.point_source_potentials(pt_x, pt_y, pt_z, I, sigma, inplace=True)
 ```
 
 ### Anisotropic case
+
 ```python
 sigma_x = 0.3  # S/m
 sigma_y = 0.3  # S/m
@@ -43,7 +45,7 @@ Extracellular potentials can be calculated using numerical methods such as the f
 
 1. **Resampling (recommended)**: From your solver, generate high-resolution (small spacing) potentials along the length of your fiber. PyFibers can then interpolate these high-resolution potentials onto the fiber's coordinate system. This is the recommended approach for most use cases, as it allows for flexible fiber discretization (testing new longitudinal alignments or fiber diameters on the same path).
 
-2. **Direct assignment**: assign the FEM-computed potentials directly to the fiber if the potentials are already sampled at the same locations as the center the fiber's sections.
+1. **Direct assignment**: assign the FEM-computed potentials directly to the fiber if the potentials are already sampled at the same locations as the center the fiber's sections.
 
 ### Resampling
 
@@ -57,11 +59,12 @@ It is usually easiest to use a 1D fiber (even if your fiber follows a 3D path) w
 
 When importing potentials from finite element models, follow these key steps:
 
-1. **Use unit stimulus**: Calculate potentials using a unit reference (e.g., 1 mA) in your FEM simulation. PyFibers scales these via ``stimamp`` in :class:`~pyfibers.stimulation.ScaledStim`.
+1. **Use unit stimulus**: Calculate potentials using a unit reference (e.g., 1 mA) in your FEM simulation. PyFibers scales these via `stimamp` in :class:`~pyfibers.stimulation.ScaledStim`.
 
-2. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 µm along the fiber path) for smooth interpolation.
+1. **Obtain potentials at high resolution**: Your FEM simulation should output potentials at many points along the fiber path (e.g., every 10 µm along the fiber path) for smooth interpolation.
 
-3. **Resample to fiber coordinates**: Ensure your coordinates represent the distance along the fiber path, not 3D Cartesian coordinates. If your FEM output provides 3D coordinates, convert them to arc-length. Then use {py:meth}`~pyfibers.fiber.Fiber.resample_potentials` to interpolate the high-resolution potentials onto your fiber's coordinate system.
+1. **Resample to fiber coordinates**: Ensure your coordinates represent the distance along the fiber path, not 3D Cartesian coordinates. If your FEM output provides 3D coordinates, convert them to arc-length. Then use {py:meth}`~pyfibers.fiber.Fiber.resample_potentials` to interpolate the high-resolution potentials onto your fiber's coordinate system.
+
    ```python
    # Example: Convert 3D coordinates to arc-length
    from scipy.spatial.distance import euclidean
@@ -96,6 +99,7 @@ The length of `fiber.sections` and the potentials array must match for direct as
 ```
 
 OR, if your FEM potentials are already at the correct spacing:
+
 ```python
 fiber.potentials = np.loadtxt("fem_results.csv")
 ```
