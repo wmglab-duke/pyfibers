@@ -587,7 +587,6 @@ class Stimulation:
         )
 
         bisection_iter = 0
-        suprathreshold = True  # Required by bounds search
         while True:
 
             # Compute the tolerance based on the chosen termination mode
@@ -598,7 +597,7 @@ class Stimulation:
                 thresh_resoln = abs(termination_tolerance)
                 tolerance = abs(stimamp_bottom - stimamp_top)
 
-            # Convergence check
+            # Convergence check (exit condition)
             if tolerance < thresh_resoln:
                 logger.info(
                     "Threshold found at stimamp = %s after %d bisection iterations",
