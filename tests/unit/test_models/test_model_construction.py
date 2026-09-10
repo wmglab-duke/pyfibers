@@ -11,6 +11,7 @@ import logging
 
 import numpy as np
 import pytest
+from neuron import h
 
 from pyfibers import FiberModel, build_fiber
 
@@ -92,6 +93,13 @@ def test_balance_sets_balanced_true():
     thio = build_fiber(fiber_model=FiberModel.THIO_AUTONOMIC, diameter=1.0, n_nodes=5)
     assert tiger.balanced is True
     assert thio.balanced is True
+
+
+def test_build_fiber_sets_celsius_before_balance():
+    h.celsius = 6.3  # NEURON default; must not be used for THIO balancing
+    fiber = build_fiber(fiber_model=FiberModel.THIO_AUTONOMIC, diameter=1.0, n_nodes=5, temperature=37)
+    assert h.celsius == pytest.approx(fiber.temperature)
+    assert fiber.balanced is True
 
 
 def test_fibermodel_includes_pena():
