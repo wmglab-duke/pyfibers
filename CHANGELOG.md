@@ -2,6 +2,82 @@
 
 <!-- version list -->
 
+## v0.10.0 (2026-09-10)
+
+### Bug Fixes
+
+- Remove extra bisection step after bounds tolerance satisfied
+  ([#54](https://github.com/wmglab-duke/pyfibers/pull/54),
+  [`82f651c`](https://github.com/wmglab-duke/pyfibers/commit/82f651c2ac86f579de85218f0c3f8a789f73898c))
+
+### Build System
+
+- Update some dependencies to optional ([#54](https://github.com/wmglab-duke/pyfibers/pull/54),
+  [`82f651c`](https://github.com/wmglab-duke/pyfibers/commit/82f651c2ac86f579de85218f0c3f8a789f73898c))
+
+- **deps**: Bump actions/cache from 5 to 6 ([#34](https://github.com/wmglab-duke/pyfibers/pull/34),
+  [`9c52ece`](https://github.com/wmglab-duke/pyfibers/commit/9c52ececc6f670b95bb23e4fd091454b63110ce5))
+
+- **deps**: Bump actions/checkout from 2 to 7
+  ([#25](https://github.com/wmglab-duke/pyfibers/pull/25),
+  [`ae8dd19`](https://github.com/wmglab-duke/pyfibers/commit/ae8dd199d454be34c22c0d3c5456f89fee47d448))
+
+- **deps**: Bump https://github.com/commitizen-tools/commitizen
+  ([#32](https://github.com/wmglab-duke/pyfibers/pull/32),
+  [`749b6a8`](https://github.com/wmglab-duke/pyfibers/commit/749b6a82a100a3dd00a8ed869f3eba79a9486c85))
+
+- **deps**: Bump https://github.com/commitizen-tools/commitizen
+  ([#28](https://github.com/wmglab-duke/pyfibers/pull/28),
+  [`e41c7d1`](https://github.com/wmglab-duke/pyfibers/commit/e41c7d1fc8a3faf980d474089e0ced1aa29e4270))
+
+- **deps**: Bump https://github.com/pre-commit/mirrors-mypy
+  ([#27](https://github.com/wmglab-duke/pyfibers/pull/27),
+  [`6a58727`](https://github.com/wmglab-duke/pyfibers/commit/6a5872782c6d711346b052e0b7b347a9a56573f7))
+
+- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b2 to 9.0.0b5
+  ([#26](https://github.com/wmglab-duke/pyfibers/pull/26),
+  [`59ef4b9`](https://github.com/wmglab-duke/pyfibers/commit/59ef4b97e9104c30210a7307bc62c2302bd1c912))
+
+- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b5 to 9.0.1
+  ([#45](https://github.com/wmglab-duke/pyfibers/pull/45),
+  [`d486604`](https://github.com/wmglab-duke/pyfibers/commit/d4866049321e3a800bbccbfd5d4b3a2ee38dbf13))
+
+- **deps**: Bump python-semantic-release/python-semantic-release
+  ([#46](https://github.com/wmglab-duke/pyfibers/pull/46),
+  [`a93983d`](https://github.com/wmglab-duke/pyfibers/commit/a93983d43a3ac78ef567d7d76474e26d15da9fd2))
+
+### Documentation
+
+- Add Atchuthan EMBC 2025 to pubs using PyFibers
+  ([#38](https://github.com/wmglab-duke/pyfibers/pull/38),
+  [`7e5764a`](https://github.com/wmglab-duke/pyfibers/commit/7e5764a5be49debf2be76e80b14aa3df2a743698))
+
+- Add Codecov coverage badge to README ([#39](https://github.com/wmglab-duke/pyfibers/pull/39),
+  [`8303e3c`](https://github.com/wmglab-duke/pyfibers/commit/8303e3ce7bece5e55afcbde5542a6e5e102570d7))
+
+- Add Haberbusch Research Square preprint to pubs using PyFibers
+  ([#51](https://github.com/wmglab-duke/pyfibers/pull/51),
+  [`07f6b17`](https://github.com/wmglab-duke/pyfibers/commit/07f6b17f3ad4a4c9cb9562ee75d70374ca8704be))
+
+- Add more pubs using PyFibers ([#30](https://github.com/wmglab-duke/pyfibers/pull/30),
+  [`1a702b7`](https://github.com/wmglab-duke/pyfibers/commit/1a702b7de9af6e63643682672c01f23de880fe08))
+
+- Update CI badge to reflect main branch ([#50](https://github.com/wmglab-duke/pyfibers/pull/50),
+  [`5d33767`](https://github.com/wmglab-duke/pyfibers/commit/5d33767da86f825fa7e95f6cd87258b19f7453ad))
+
+- Update pubs using PyFibers list ([#30](https://github.com/wmglab-duke/pyfibers/pull/30),
+  [`1a702b7`](https://github.com/wmglab-duke/pyfibers/commit/1a702b7de9af6e63643682672c01f23de880fe08))
+
+### Features
+
+- More informative printing for threshold search
+  ([#54](https://github.com/wmglab-duke/pyfibers/pull/54),
+  [`82f651c`](https://github.com/wmglab-duke/pyfibers/commit/82f651c2ac86f579de85218f0c3f8a789f73898c))
+
+- Threshold algorithm updates ([#54](https://github.com/wmglab-duke/pyfibers/pull/54),
+  [`82f651c`](https://github.com/wmglab-duke/pyfibers/commit/82f651c2ac86f579de85218f0c3f8a789f73898c))
+
+
 ## v0.9.2 (2026-08-20)
 
 ### Bug Fixes
