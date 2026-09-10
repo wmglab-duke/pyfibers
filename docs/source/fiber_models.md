@@ -1,6 +1,6 @@
 # Implementations of fiber models
 
-In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications.  Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`Marshall2025`.
+In PyFibers, we have implemented a number of models describing the ultrastructure and membrane properties of both myelinated and unmyelinated peripheral nerve fibers. Herein we list the available fiber models, and note any changes from the original publications. Validation of the included models and more details on their implementation was documented in the PyFibers paper {cite:p}`Marshall2025`.
 
 :::{seealso}
 {doc}`custom_fiber` shows how to add your own fiber models via subclassing, MOD files, and registration.
@@ -11,21 +11,24 @@ In PyFibers, we have implemented a number of models describing the ultrastructur
 We provide four variants of myelinated fiber models:
 
 **MRG models**: Three variants of the McIntyre–Richardson–Grill (MRG) model {cite:p}`McIntyre2002` for myelinated fibers. The MRG model is a biophysically detailed model of a myelinated nerve fiber, and is widely used in the field of computational neuroscience. The three variants are:
+
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_DISCRETE`: The original MRG model, as described in {cite:p}`McIntyre2002`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.MRG_INTERPOLATION`: An interpolation of the MRG model, which allows for modeling of any fiber diameter between 2 and 16 µm, as described in {cite:p}`musselman_ascent_2021`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.PENA`: A modification of MRG parameters to better replicate the behavior of thinly myelinated fibers, as described in {cite:p}`pena_cap_2024`.
 
 **Sweeney model**:
+
 - {py:attr}`~pyfibers.model_enum.FiberModel.SWEENEY`: A myelinated fiber model based on the Sweeney model, as described in {cite:p}`sweeney_modeling_1987`.
 
 ## Unmyelinated fiber models
 
 We provide several variants of unmyelinated C‑fiber models.
+
 - {py:attr}`~pyfibers.model_enum.FiberModel.THIO_AUTONOMIC`: An unmyelinated fiber model for autonomic fibers, as described in {cite:p}`Thio2024`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.THIO_CUTANEOUS`: An unmyelinated fiber model for cutaneous fibers, as described in {cite:p}`Thio2024`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.TIGERHOLM`: A model of cutaneous afferent c-fibers, as described in {cite:p}`Tigerholm2014`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SUNDT`: A model of cutaneous afferent c-fibers, as described in {cite:p}`Sundt2015`.
-- {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD94`: A  model of a vagal afferent C‑fiber, as described in {cite:p}`Schild1994`.
+- {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD94`: A model of a vagal afferent C‑fiber, as described in {cite:p}`Schild1994`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.SCHILD97`: A modification of the Schild 1994 model, as described in {cite:p}`Schild1997`.
 - {py:attr}`~pyfibers.model_enum.FiberModel.RATTAY`: A model of the squid giant fiber, adjusted to 37°C, as described in {cite:p}`Rattay1993`.
 
@@ -36,6 +39,7 @@ All MRG model implementations are based on the ASCENT implementation {cite:p}`as
 ## Construction of model fibers
 
 Fibers in `PyFibers` are composed of serially connected NEURON section objects. Sections may or may not be designated as nodes:
+
 - Section: A NEURON object which represents a discrete geometric length of a model fiber
 - Node: A special section that typically represents an excitable portion of a fiber’s geometry (i.e., nodes of Ranvier). Active nodes have nonlinear conductance mechanisms and are thus excitable. Passive nodes have the same ultrastructure parameters, but the nonlinear mechanisms have been removed and are not excitable. For unmyelinated fibers in PyFibers, nodes and sections are synonymous. See the figure below for an example.
 
@@ -50,8 +54,9 @@ Construction of a model fiber. **A\)** For unmyelinated fibers and myelinated fi
 ## Passive end nodes
 
 When constructing a fiber, users can specify the number of passive end nodes at each end of the fiber. In this case, the fiber is constructed as normal. For end nodes designated as passive, all mechanisms other than extracellular (i.e. the mechanism named "extracellular") are removed from the node. Then, the following properties are set as described in {cite:p}`Pelot2021`:
-- The passive (``pas``) mechanism is added to the node.
+
+- The passive (`pas`) mechanism is added to the node.
 - The passive reversal potential is set to the resting potential of the fiber.
 - The membrane capacitance is set to 1 [uF/cm^2] (a typical value for membranes).
 - The membrane resistance is set to 0.0001 [S/cm^2] (slightly lower than the typical value, which dulls current entry into the node).
-- The axial resistivity is set to 1e10 [Ohm*cm] (effectively infinite so that no current flows axially, thereby avoiding the creation of action potentials by restricting current flow to adjacent nodes).
+- The axial resistivity is set to 1e10 [Ohm\*cm] (effectively infinite so that no current flows axially, thereby avoiding the creation of action potentials by restricting current flow to adjacent nodes).

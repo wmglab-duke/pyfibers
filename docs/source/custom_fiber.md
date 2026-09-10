@@ -42,7 +42,7 @@ class HHFiber(Fiber):
 
 ### Step 2: specify the submodels
 
-Define the ``submodels`` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:enum}`~pyfibers.model_enum.FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as the internal ``MRGFiber`` implementation), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the ``self.fiber_model`` attribute. Check the name by accessing ``self.fiber_model.name``.
+Define the `submodels` attribute as a list of the submodels that your fiber model uses. Often, this list will contain only a single item. Each item in the list should be capitalized and contain only letters and underscores; these strings are used to define the name of each fiber model as accessed from the {py:enum}`~pyfibers.model_enum.FiberModel` enum (for example, one would access the fiber model by calling `FiberModel.MY_HOMOGENEOUS_FIBER_MODEL`). If your class has multiple subtypes (such as the internal `MRGFiber` implementation), you can define multiple submodels. When you create an instance of your fiber model, it will gain the enum as the `self.fiber_model` attribute. Check the name by accessing `self.fiber_model.name`.
 
 ```python
 class HHFiber(Fiber):
@@ -53,11 +53,11 @@ class HHFiber(Fiber):
 
 ### Step 3: initialize the subclass
 
-Define ``myelinated`` (whether the fiber is myelinated), ``v_rest`` (resting membrane potential), and ``gating_variables`` (specified in the .mod files describing the node mechanisms) as class attributes. Setting ``gating_variables`` is optional, but important if you want to be able to record these values during simulations.
+Define `myelinated` (whether the fiber is myelinated), `v_rest` (resting membrane potential), and `gating_variables` (specified in the .mod files describing the node mechanisms) as class attributes. Setting `gating_variables` is optional, but important if you want to be able to record these values during simulations.
 
-Next, define the ``__init__`` method, call the superclass initializer, set the ``delta_z`` instance variable (the distance from the center of one node to the next node), and, if needed, set other instance variables within ``__init__``.
+Next, define the `__init__` method, call the superclass initializer, set the `delta_z` instance variable (the distance from the center of one node to the next node), and, if needed, set other instance variables within `__init__`.
 
-**For homogeneous fiber models**, ``delta_z`` can be added as an argument to ``__init__`` and assigned therein.
+**For homogeneous fiber models**, `delta_z` can be added as an argument to `__init__` and assigned therein.
 
 ```python
 class HHFiber(Fiber):
@@ -81,10 +81,10 @@ class HHFiber(Fiber):
         self.delta_z = delta_z
 ```
 
-**For heterogeneous fiber models** (e.g., myelinated fibers with multiple section types), ``delta_z`` must be calculated by you (the model implementer) in your ``__init__`` method based on the fiber diameter. It should **not** be accepted as an argument from users. You must:
+**For heterogeneous fiber models** (e.g., myelinated fibers with multiple section types), `delta_z` must be calculated by you (the model implementer) in your `__init__` method based on the fiber diameter. It should **not** be accepted as an argument from users. You must:
 
-1. Check that ``delta_z`` is not in ``kwargs`` and raise an error if it is
-2. Calculate and set ``self.delta_z`` in your ``__init__`` method based on the diameter (or from model-specific parameters)
+1. Check that `delta_z` is not in `kwargs` and raise an error if it is
+1. Calculate and set `self.delta_z` in your `__init__` method based on the diameter (or from model-specific parameters)
 
 ```python
 def __init__(self, diameter: float, **kwargs):
@@ -251,6 +251,7 @@ For sharing your fiber model with others or creating a permanent, distributable 
 Other research groups may wish to create their own fiber models in the `PyFibers` environment and publish them as a separate public repository. Such fiber models can be made discoverable as plugins which will become automatically available in `PyFibers` after installation. To make your fiber model discoverable as a plugin, follow these steps:
 
 1. **Create a Python package for your fiber model**: Create a Python package for your fiber model and include the necessary files and classes. We recommend following Python's [packaging tutorial](https://packaging.python.org/en/latest/tutorials/packaging-projects/). An example directory structure for a fiber model package is shown below:
+
 ```{image} images/source2.png
 :alt: Directory structure for a fiber model package
 :align: center
@@ -266,4 +267,4 @@ my_fiber_model = "my_plugin_folder.custom_model_class:MyFiberModelClass"
 
 3. Install your package and verify that it works with `PyFibers`. Upon installation, your fiber model should be automatically discovered and available for use in `PyFibers`. The necessary MOD files should be compiled automatically when `PyFibers` is imported.
 
-4. **Publish Your Fiber Model Package**: Publish your fiber model package to a repository such as PyPI. Once published, other users can install your fiber model package using pip. After installation, your fiber model will be automatically discovered and available for use in `PyFibers`. The name of the fiber model will be given by the ``submodels`` attribute of your class (see the instructions for creating fiber models above).
+1. **Publish Your Fiber Model Package**: Publish your fiber model package to a repository such as PyPI. Once published, other users can install your fiber model package using pip. After installation, your fiber model will be automatically discovered and available for use in `PyFibers`. The name of the fiber model will be given by the `submodels` attribute of your class (see the instructions for creating fiber models above).
