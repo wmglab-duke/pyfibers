@@ -459,6 +459,16 @@ class Stimulation:
         if bisection_mean not in [mem.value for mem in BisectionMean]:
             raise ValueError("Invalid bisection mean.")
 
+        logger.info("Beginning bounds search. Checking initial bounds...")
+        iteration = 0
+
+        logger.info(
+            "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+            iteration,
+            stimamp_bottom,
+            stimamp_top,
+        )
+
         # First test the initial top and bottom amplitudes
         supra_top, (_, t) = self.threshsim(
             stimamp_top, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
@@ -468,11 +478,16 @@ class Stimulation:
         )
 
         # Begin the bounds search phase
-        iterations = 0
-        while iterations < max_iterations:
-            logger.info("Search bounds: top=%s, bottom=%s", round(stimamp_top, 6), round(stimamp_bottom, 6))
-            iterations += 1
-
+        logger.debug(
+            "Bounds search details: top=%+.4f, bottom=%+.4f, mode=%s, step=%s, max_iter=%d",
+            stimamp_top,
+            stimamp_bottom,
+            bounds_search_mode,
+            bounds_search_step,
+            max_iterations,
+        )
+        # Count bound iteration; each loop entry either succeeds or performs one adjustment.
+        while iteration < max_iterations:
             # If top is supra-threshold, set an early exit time for activation searches
             if supra_top and exit_t_shift and condition == ThresholdCondition.ACTIVATION:
                 self._exit_t = t + exit_t_shift
@@ -482,20 +497,39 @@ class Stimulation:
                     self._exit_t,
                 )
 
-            if not supra_bot and supra_top:  # noqa: R508
-                break  # Bounds are found
-            elif supra_bot and not supra_top:
-                # Contradictory bounds
+            # Valid bounds: bottom subthreshold, top suprathreshold
+            if not supra_bot and supra_top:
+                logger.info(
+                    "Bounds located after %d iter.: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
+                break
+
+            iteration += 1
+
+            # Contradictory bounds: bottom supra, top sub
+            if supra_bot and not supra_top:
                 raise RuntimeError(
                     "stimamp_bottom is supra-threshold while stimamp_top is subthreshold, which is unexpected."
                 )
-            elif not supra_bot and not supra_top:
-                # Increase top-bound magnitude
+
+            # Both subthreshold: raise the top bound and old top -> new bottom
+            if not supra_bot and not supra_top:
                 stimamp_bottom = stimamp_top
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_top = stimamp_top + np.sign(stimamp_top) * bounds_search_step
                 else:
                     stimamp_top = stimamp_top * (1 + bounds_search_step / 100)
+
+                logger.info(
+                    "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
+
                 supra_top, (_, t) = self.threshsim(
                     stimamp_top,
                     fiber,
@@ -504,13 +538,22 @@ class Stimulation:
                     thresh_num_aps=thresh_num_aps,
                     **kwargs,
                 )
+
+            # Both suprathreshold: lower the bottom bound and old bottom -> new top
             elif supra_bot and supra_top:
-                # Decrease bottom-bound magnitude
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
+
+                logger.info(
+                    "Bounds iter. %3d: [%+10.4f, %+10.4f]",
+                    iteration,
+                    stimamp_bottom,
+                    stimamp_top,
+                )
+
                 supra_bot, _ = self.threshsim(
                     stimamp_bottom,
                     fiber,
@@ -519,6 +562,7 @@ class Stimulation:
                     thresh_num_aps=thresh_num_aps,
                     **kwargs,
                 )
+
         else:
             # If we exit the while loop normally, we've hit max_iterations
             raise RuntimeError(
@@ -532,22 +576,20 @@ class Stimulation:
             )
 
         # Begin the bisection search phase
-        logger.info("Beginning bisection search")
+        logger.info("Beginning bisection search...")
+        logger.debug(
+            "Bisection search details: mean=%s, termination=%s (tol=%s), bounds=[%+.4f, %+.4f]",
+            bisection_mean,
+            termination_mode,
+            termination_tolerance,
+            stimamp_bottom,
+            stimamp_top,
+        )
 
+        bisection_iter = 0
         while True:
-            logger.info("Search bounds: top=%s, bottom=%s", round(stimamp_top, 6), round(stimamp_bottom, 6))
-            stimamp_prev = stimamp_top
 
-            # Compute the midpoint based on the chosen mean
-            if bisection_mean == BisectionMean.ARITHMETIC:
-                stimamp = (stimamp_bottom + stimamp_top) / 2
-            else:  # GEOMETRIC
-                stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** 0.5
-
-            suprathreshold, _ = self.threshsim(
-                stimamp, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
-            )
-
+            # Compute the tolerance based on the chosen termination mode
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(termination_tolerance / 100)
                 tolerance = abs((stimamp_bottom - stimamp_top) / stimamp_top)
@@ -555,15 +597,17 @@ class Stimulation:
                 thresh_resoln = abs(termination_tolerance)
                 tolerance = abs(stimamp_bottom - stimamp_top)
 
-            # Convergence check
+            # Convergence check (exit condition)
             if tolerance < thresh_resoln:
-                if not suprathreshold:
-                    stimamp = stimamp_prev
-                logger.info("Threshold found at stimamp = %s", round(stimamp, 6))
+                logger.info(
+                    "Threshold found at stimamp = %s after %d bisection iterations",
+                    round(stimamp_top, 4),
+                    bisection_iter,
+                )
                 logger.info("Validating threshold...")
 
                 # Confirm the final run at the chosen amplitude
-                n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)  # type: ignore
+                n_aps, aptime = self.run_sim(stimamp_top, fiber, **kwargs)  # type: ignore
                 # Check that it indeed triggers or blocks (i.e., is suprathreshold)
                 if not self.threshold_checker(
                     fiber,
@@ -576,12 +620,35 @@ class Stimulation:
                         "Threshold stimulation did not generate the expected action potential condition."
                     )
                 break
-            elif suprathreshold:
+
+            bisection_iter += 1
+
+            # Compute the midpoint based on the chosen mean
+            if bisection_mean == BisectionMean.ARITHMETIC:
+                stimamp = (stimamp_bottom + stimamp_top) / 2
+            else:  # GEOMETRIC
+                stimamp = np.sign(stimamp_top) * (stimamp_bottom * stimamp_top) ** 0.5
+
+            logger.info(
+                "Bisect. iter. %3d: [%+10.4f, %+10.4f]  tol=%6.4f/%6.4f  next=%+10.4f",
+                bisection_iter,
+                stimamp_bottom,
+                stimamp_top,
+                tolerance,
+                thresh_resoln,
+                stimamp,
+            )
+
+            suprathreshold, _ = self.threshsim(
+                stimamp, fiber, condition=condition, block_delay=block_delay, thresh_num_aps=thresh_num_aps, **kwargs
+            )
+
+            if suprathreshold:
                 stimamp_top = stimamp
             else:
                 stimamp_bottom = stimamp
 
-        return stimamp, (n_aps, aptime)
+        return stimamp_top, (n_aps, aptime)
 
     def _validate_threshold_args(
         self: Stimulation,
@@ -605,7 +672,10 @@ class Stimulation:
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater in magnitude than stimamp_bottom.")
         if stimamp_top * stimamp_bottom < 0:
-            raise ValueError("stimamp_top and stimamp_bottom must have the same sign.")
+            raise ValueError(
+                f"stimamp_top={stimamp_top} and stimamp_bottom={stimamp_bottom} have opposite signs. "
+                "Both bounds must have the same sign."
+            )
         if fiber.stim is not None and condition == ThresholdCondition.ACTIVATION:
             warnings.warn(
                 "This fiber has intrinsic activity; check if you truly want an activation threshold search.",
@@ -878,7 +948,7 @@ class IntraStim(Stimulation):
         self._add_istim(fiber)  # type: ignore
         self.istim.amp *= stimamp
         self._validate_inputs(stimamp, fiber)
-        logger.info('Running: %s', np.array(stimamp).round(6))
+        logger.info('Running amplitude(s): %s', np.array(stimamp).round(4))
 
         self.pre_run_setup(fiber, ap_detect_threshold=ap_detect_threshold)
 
@@ -903,7 +973,7 @@ class IntraStim(Stimulation):
         if fail_on_end_excitation is not None:
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
         n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
-        logger.info('N aps: %s, time %s', int(n_ap), time)
+        logger.info('Num. APs: %s, last AP time: %s', int(n_ap), time)
 
         # Clean up trainIClamp at the end of simulation
         self._cleanup_istim()
@@ -1260,7 +1330,7 @@ class ScaledStim(Stimulation):
         :return: Tuple (num_aps, last_ap_time in ms).
         """
         stimamps = np.array(stimamp)
-        logger.info("Running: %s", stimamps.round(6))
+        logger.info("Running amplitude(s): %s", stimamps.round(4))
 
         stimamps = self._validate_scaling_inputs(fiber, stimamps)
 
