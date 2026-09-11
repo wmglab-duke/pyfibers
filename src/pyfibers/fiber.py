@@ -113,6 +113,9 @@ def build_fiber(
             stacklevel=2,
         )
 
+    # Set temperature for temperature-dependent mechanisms (e.g. Thio)
+    h.celsius = fiber_instance.temperature
+
     # Set all sections to the rest potentials (important for balancing currents)
     h.finitialize(fiber_instance.v_rest)
 

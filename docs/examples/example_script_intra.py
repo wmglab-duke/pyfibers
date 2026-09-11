@@ -55,5 +55,4 @@ plt.sca(ax2)
 plt.plot(stimulation.time, fiber.vm[fiber.loc_index(0.5)], label='vm', color='k')
 plt.ylabel('Vm')
 plt.xlim(0, 4)
-
-str(fiber)
+plt.show()

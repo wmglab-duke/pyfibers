@@ -75,6 +75,18 @@ def test_steady_state_drift_from_start():
             stim._steady_state(fiber)
 
 
+def test_thio_autonomic_steady_state_without_preset_celsius():
+    """THIO balancing must use fiber.temperature even if h.celsius was never set.
+
+    Regression for https://github.com/wmglab-duke/pyfibers/issues/55
+    """
+    h.celsius = 6.3  # NEURON default
+    fiber = build_fiber(fiber_model=FiberModel.THIO_AUTONOMIC, diameter=1.0, n_nodes=5, temperature=37)
+    stim = Stimulation(dt=0.001, tstop=1, t_init_ss=-200, dt_init_ss=5)
+    stim.pre_run_setup(fiber)
+    assert fiber(0.5).v == pytest.approx(fiber.v_rest, abs=1)
+
+
 def test_pre_run_setup_sets_temp_apc_extra(fiber):
     stim = Stimulation(dt=0.001, tstop=1)
     stim._steady_state = lambda _fiber: None
