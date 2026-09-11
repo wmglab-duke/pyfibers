@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.10.1 (2026-09-11)
+
+### Bug Fixes
+
+- **fiber**: Fix bug where thio fiber would not balance at set fiber temperature
+  ([#56](https://github.com/wmglab-duke/pyfibers/pull/56),
+  [`2621bb5`](https://github.com/wmglab-duke/pyfibers/commit/2621bb5d8fd6ef7af7ecec75d5aedfee3d9ff627))
+
+
 ## v0.10.0 (2026-09-10)
 
 ### Bug Fixes
