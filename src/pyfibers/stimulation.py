@@ -508,7 +508,7 @@ class Stimulation:
 
         See :meth:`find_threshold`.
 
-        :return: The bounding ``(stimamp_top, stimamp_bottom)`` pair.
+        :return: The bounding ``(stimamp_top, stimamp_bottom)``.
         :raises RuntimeError: If the initial bounds are contradictory, or if valid bounds
             are not found within ``max_iterations``.
         """
@@ -647,7 +647,7 @@ class Stimulation:
 
         See :meth:`find_threshold`.
 
-        :return: ``(stimamp, n_aps, aptime)`` at the accepted threshold.
+        :return: ``(stimamp, n_aps, aptime)`` at threshold.
         :raises RuntimeError: If the converged amplitude does not produce the expected
             action-potential condition.
         """
