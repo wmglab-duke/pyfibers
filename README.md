@@ -2,11 +2,12 @@
 
 **PyFibers Paper**: Marshall DP, Farah ES, Musselman ED, Pelot NA, Grill WM (2025) PyFibers: An open-source NEURON-Python package to simulate responses of model nerve fibers to electrical stimulation. PLoS Comput Biol 21(12): e1013764. [https://doi.org/10.1371/journal.pcbi.1013764](https://doi.org/10.1371/journal.pcbi.1013764)
 
+<!-- Uncomment when Zenodo has fixed things on their end [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760) -->
+
 [![Publication](https://img.shields.io/badge/Publication-PLoS%20Comput%20Biol-9cf)](https://doi.org/10.1371/journal.pcbi.1013764)
 [![Citations](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1371%2Fjournal.pcbi.1013764%3Ffields%3DcitationCount&query=%24.citationCount&label=citations)](https://badge.dimensions.ai/details/doi/10.1371/journal.pcbi.1013764)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/wmglab-duke/pyfibers)
 [![Documentation](https://img.shields.io/badge/Documentation-GitHub%20Pages-blue.svg)](https://wmglab-duke.github.io/pyfibers/)
-<!-- Uncomment when Zenodo has fixed things on their end [![DOI](https://zenodo.org/badge/1010198505.svg)](https://doi.org/10.5281/zenodo.17068760) -->
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.17068760-blue)](https://doi.org/10.5281/zenodo.17068760)
 [![Stars](https://img.shields.io/github/stars/wmglab-duke/pyfibers.svg)](https://github.com/wmglab-duke/pyfibers/stargazers)
 [![CI](https://github.com/wmglab-duke/pyfibers/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/wmglab-duke/pyfibers/actions/workflows/ci.yml?query=branch%3Amain)
