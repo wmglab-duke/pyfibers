@@ -344,8 +344,11 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
         :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
-        :param block_delay: Time after simulation start to check for block (ms).
-        :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
+        :param block_delay: Time after simulation start used as the block-check window (ms).
+            An AP with ``detect_time <= block_delay`` is treated as pre-window (block success).
+            Default ``0`` is not usable for typical block searches.
+        :param thresh_num_aps: For activation, number of APs that constitutes suprathreshold.
+            For block, must be ``1`` (AP-count comparison is not used; see ``block_delay``).
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
@@ -424,13 +427,18 @@ class Stimulation:
         :param stimamp_top: Initial upper-bound scaling factor passed to :meth:`run_sim`.
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param max_iterations: Maximum attempts to find bounding amplitudes before bisection.
-        :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
+        :param exit_t_shift: Extra time (ms) after a suprathreshold AP is detected; later activation
+            trials may stop at that AP time + ``exit_t_shift``. Used for activation searches only.
+            Pass ``None`` to disable setting an early-exit time.
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
-        :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
-        :param thresh_num_aps: Number of action potentials for threshold search:
-            if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
-            if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
+        :param block_delay: Time (ms) after start used as the block-check window: an AP at
+            ``detect_time <= block_delay`` counts as pre-window (block success). Default ``0`` is
+            not usable for typical block searches—set a positive delay past onset / intrinsic activity.
+        :param thresh_num_aps: Number of action potentials for threshold search.
+            For ``"activation"``, suprathreshold requires detected APs >= ``thresh_num_aps``.
+            For ``"block"``, only ``thresh_num_aps=1`` is supported; suprathreshold means the (single)
+            detected AP time is <= ``block_delay`` (no APs after the delay window).
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         :raises ValueError: If invalid enum values are provided for
@@ -936,7 +944,7 @@ class IntraStim(Stimulation):
         :param exit_func: Function to call to check if simulation should be exited early.
         :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
-        :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
+        :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;

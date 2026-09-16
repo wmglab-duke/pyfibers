@@ -36,7 +36,7 @@ the following steps occur:
 
 1. **Bisection Search**
 
-   - Let `mid = (lb + ub) / 2`.
+   - Choose a midpoint between the current lower and upper bounds (arithmetic mean by default; geometric mean is also available via `bisection_mean`).
    - Run a simulation at amplitude `mid` (by calling `run_sim(mid, fiber)`).
    - Determine if it is subthreshold or suprathreshold:
      - For **activation**: Suprathreshold if ≥1 action potential is detected (by default, users can change the number of APs required, see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
@@ -44,11 +44,11 @@ the following steps occur:
    - Update bounds:
      - If subthreshold → set `lb = mid`.
      - If suprathreshold → set `ub = mid`.
-   - Repeat until `ub/lb` is less than the tolerance (default: 1% of amplitude).
+   - Repeat until the termination criterion is met. For the default percent mode, that is `|top − bottom| / |top|` below the tolerance (default: 1% of amplitude). Absolute-difference mode uses `|top − bottom|` instead.
 
 1. **Return**
 
-   - The threshold is reported as the **upper bound** (`ub`) once `(ub/lb)` is small enough to meet the tolerance criteria.
+   - The threshold is reported as the **upper bound** (`ub` / `stimamp_top`) once the chosen termination criterion is met.
 
 See the figure below for examples of threshold searches with both bounds subthreshold, both bounds suprathreshold, and one where the top bound is suprathreshold and the bottom bound is subthreshold. Below that, a flowchart shows the mechanics of the threshold search algorithm.
 
@@ -83,7 +83,7 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
    – In the current implementation, it is up to the user to pick a meaningful upper bound that does not push the fiber into re‑excitation. Future versions may include a more sophisticated block detection algorithm that detects re-excitation, and/or determines the re-excitation threshold in addition to the block threshold.
 
 1. **Onset Response**
-   – High-frequency signals can evoke short-latency spikes at onset. PyFibers requires a certain delay (`block_delay` argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) before checking for block.
+   – High-frequency signals can evoke short-latency spikes at onset. PyFibers treats an AP whose detection time is ≤ `block_delay` (argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) as occurring before the block check window. The default `block_delay=0` is not usable for typical block searches—set a positive delay past onset (and past intrinsic-activity start) so blocked conduction is scored correctly.
 
 ### 1.5 Changes that reduce threshold search runtime
 
