@@ -85,6 +85,10 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
 1. **Onset Response**
    – High-frequency signals can evoke short-latency spikes at onset. PyFibers requires a certain delay (`block_delay` argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) before checking for block.
 
+```{warning}
+The default `block_delay` is ``None``. {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` raises ``ValueError`` if you leave `block_delay` unset or non-positive when ``condition="block"``. Always set an explicit positive `block_delay` (past onset / intrinsic activity).
+```
+
 ### 1.5 Changes that reduce threshold search runtime
 
 Our threshold search was adapted from the algorithm provided in ASCENT {cite:p}`musselman_ascent_2021`. We made several modifications to speed up the search process:

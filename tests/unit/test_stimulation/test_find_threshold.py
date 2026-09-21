@@ -59,7 +59,7 @@ def _bounds_search(stim, fiber, stimamp_top, stimamp_bottom, **overrides):
         "stimamp_bottom": stimamp_bottom,
         "max_iterations": 50,
         "exit_t_shift": 5,
-        "block_delay": 0,
+        "block_delay": 5.0,
         "thresh_num_aps": 1,
         "kwargs": {},
     }
@@ -75,7 +75,7 @@ def _bisection_search(stim, fiber, stimamp_top, stimamp_bottom, **overrides):
         "stimamp_top": stimamp_top,
         "stimamp_bottom": stimamp_bottom,
         "bisection_mean": BisectionMean.ARITHMETIC,
-        "block_delay": 0,
+        "block_delay": 5.0,
         "thresh_num_aps": 1,
         "kwargs": {},
     }
@@ -150,6 +150,12 @@ def test_validate_threshold_enums_rejects_invalid(bad_kwargs, match):
         stim._validate_threshold_enums(**kwargs)
 
 
+def _mock_block_fiber():
+    from unittest.mock import MagicMock
+
+    from pyfibers.fiber import Fiber
+
+
 def test_validate_threshold_args_rejects_inconsistent_bounds():
     stim = Stimulation(dt=0.001, tstop=1)
     fiber = MagicMock()
@@ -170,7 +176,7 @@ def test_validate_threshold_args_warns_for_intrinsic_activity():
         stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 5, fiber)
     fiber.stim = None
     with pytest.warns(UserWarning, match="lacks intrinsic activity"):
-        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber)
+        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber, block_delay=5.0)
     assert stim._exit_t == float("Inf")
 
 
@@ -205,7 +211,7 @@ def test_bounds_search_raises_on_contradictory_bounds(fiber):
 
 def test_bounds_search_block_does_not_set_exit_t(fiber):
     stim = StubStim(lambda amp: abs(amp) >= 0.5, dt=0.001, tstop=1)
-    _bounds_search(stim, fiber, -1.0, -0.01, condition=ThresholdCondition.BLOCK)
+    _bounds_search(stim, fiber, -1.0, -0.01, condition=ThresholdCondition.BLOCK, block_delay=5.0)
     assert stim._exit_t is None
 
 
@@ -277,3 +283,52 @@ def test_find_threshold_returns_confirmed_amplitude(fiber):
     assert n_aps == 1
     assert aptime == 2.0
     assert stim.run_sim_calls[-1] == pytest.approx(amp)
+    fiber = MagicMock(spec=Fiber)
+    fiber.stim = MagicMock()  # pretend intrinsic activity present
+    return fiber
+
+
+def test_block_delay_none_errors():
+    """Block searches with default block_delay=None should raise ValueError."""
+    fiber = _mock_block_fiber()
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(ValueError, match="positive block_delay"):
+        stim.find_threshold(
+            fiber,
+            condition="block",
+            stimamp_top=-1,
+            stimamp_bottom=-0.01,
+            max_iterations=1,
+        )
+
+
+def test_block_delay_nonpositive_errors():
+    """Block searches with block_delay <= 0 should raise ValueError."""
+    fiber = _mock_block_fiber()
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    for delay in (0, -1.0):
+        with pytest.raises(ValueError, match="positive block_delay"):
+            stim.find_threshold(
+                fiber,
+                condition="block",
+                stimamp_top=-1,
+                stimamp_bottom=-0.01,
+                block_delay=delay,
+                max_iterations=1,
+            )
+
+
+def test_activation_block_delay_none_ok():
+    """Activation searches may leave block_delay as None."""
+    fiber = _mock_block_fiber()
+    fiber.stim = None  # avoid intrinsic-activity warning for activation
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="max_iterations"):
+        stim.find_threshold(
+            fiber,
+            condition="activation",
+            stimamp_top=-1,
+            stimamp_bottom=-0.01,
+            block_delay=None,
+            max_iterations=1,
+        )
