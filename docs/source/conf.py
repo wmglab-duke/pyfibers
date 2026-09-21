@@ -185,6 +185,9 @@ linkcheck_ignore = [
     r'^https://github\.com/wmglab-duke/pyfibers/stargazers$',
     # AIP publishing
     r"https://doi\.org/10\.1063/.*",
+    # Zenodo returns 403 to automated checkers (doi.org redirects and zenodo.org).
+    r'(?i)^https://doi\.org/10\.5281/zenodo\.',
+    r'(?i)^https://(www\.)?zenodo\.org/',
 ]
 
 # latex
