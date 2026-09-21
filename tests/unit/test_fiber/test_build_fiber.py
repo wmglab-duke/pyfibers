@@ -223,7 +223,7 @@ def test_len_nodecount_mismatch():
     fiber = build_fiber(fiber_model=FiberModel.MRG_INTERPOLATION, diameter=10.0, n_nodes=5)
     fiber.nodecount = 99
     with pytest.raises(RuntimeError, match="Node count does not match"):
-        len(fiber)
+        _ = len(fiber)
 
 
 def test_fiber_str_repr(fiber):
