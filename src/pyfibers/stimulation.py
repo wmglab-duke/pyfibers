@@ -437,8 +437,7 @@ class Stimulation:
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
         :param block_delay: Block-check window start (ms). Semantics are those of
-            :meth:`threshold_checker`. Default ``0`` is not usable for typical block searches;
-            a warning is issued if left at ``0`` when ``condition`` is block.
+            :meth:`threshold_checker`. Default ``0`` is not usable for typical block searches.
         :param thresh_num_aps: AP-count threshold; see :meth:`threshold_checker`
             (for block, only ``1`` is supported).
         :param kwargs: Additional arguments passed to the run_sim method.
@@ -458,9 +457,7 @@ class Stimulation:
             # Remove it from kwargs to avoid passing it to run_sim
             kwargs.pop('silent')
 
-        self._validate_threshold_args(
-            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay=block_delay
-        )
+        self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
         # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
         if condition not in [mem.value for mem in ThresholdCondition]:
             raise ValueError("Invalid threshold condition.")
@@ -669,7 +666,6 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float = 0,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
@@ -679,7 +675,6 @@ class Stimulation:
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
-        :param block_delay: Block-check window start (ms); warned if ``<= 0`` for block searches.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
         :raises ValueError: If exit_t_shift is not positive.
         """
@@ -698,12 +693,6 @@ class Stimulation:
         if fiber.stim is None and condition == ThresholdCondition.BLOCK:
             warnings.warn(
                 "This fiber lacks intrinsic activity; a block threshold search may be meaningless.",
-                stacklevel=2,
-            )
-        if condition == ThresholdCondition.BLOCK and block_delay <= 0:
-            warnings.warn(
-                "block_delay is 0 (default) during a block threshold search; "
-                "set a positive block_delay past onset / intrinsic activity so block scoring is meaningful.",
                 stacklevel=2,
             )
         if exit_t_shift is not None and exit_t_shift <= 0:

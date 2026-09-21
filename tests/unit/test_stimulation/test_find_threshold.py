@@ -78,22 +78,3 @@ def test_both_sub_absolute_expands_anodic_top(fiber):
         )
     assert stim.threshsim_calls[2] == pytest.approx(1.1)
 
-
-def test_block_delay_default_warns():
-    """Block searches with default block_delay=0 should warn."""
-    from unittest.mock import MagicMock
-
-    from pyfibers.fiber import Fiber
-
-    fiber = MagicMock(spec=Fiber)
-    fiber.stim = MagicMock()  # pretend intrinsic activity present
-    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
-    with pytest.warns(UserWarning, match="block_delay is 0"):
-        with pytest.raises(RuntimeError, match="max_iterations"):
-            stim.find_threshold(
-                fiber,
-                condition="block",
-                stimamp_top=-1,
-                stimamp_bottom=-0.01,
-                max_iterations=1,
-            )

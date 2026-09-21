@@ -36,6 +36,9 @@ the following steps occur:
 
 1. **Bisection Search**
 
+   Each loop iteration matches `find_threshold`: **check for convergence first**, then take a midpoint step only if needed.
+
+   - Check the termination criterion. For the default percent mode, that is `|stimamp_top − stimamp_bottom| / |stimamp_top|` below the tolerance (default: 1% of amplitude). Absolute-difference mode uses `|stimamp_top − stimamp_bottom|` instead. If already within tolerance, exit (threshold is `stimamp_top`) without another midpoint simulation.
    - Choose a midpoint between the current lower and upper bounds (arithmetic mean by default; geometric mean is also available via `bisection_mean`).
    - Run a simulation at amplitude `mid` (by calling `run_sim(mid, fiber)`).
    - Determine if it is subthreshold or suprathreshold:
@@ -44,7 +47,7 @@ the following steps occur:
    - Update bounds:
      - If subthreshold → set `stimamp_bottom = mid`.
      - If suprathreshold → set `stimamp_top = mid`.
-   - Repeat until the termination criterion is met. For the default percent mode, that is `|stimamp_top − stimamp_bottom| / |stimamp_top|` below the tolerance (default: 1% of amplitude). Absolute-difference mode uses `|stimamp_top − stimamp_bottom|` instead.
+   - Repeat from the convergence check.
 
 1. **Return**
 
@@ -67,7 +70,7 @@ Example threshold searches superimposed on the same axes—one with both initial
 
 Flowchart of the PyFibers algorithm to identify activation or block threshold. For simplification, several validation checks and details are omitted or simplified. Initial upper and lower bound amplitudes (`stimamp_top` / `stimamp_bottom`) are provided. If the bounds are too low (both subthreshold), an upwards bounds search commences, and if the bounds are too high (both suprathreshold), a downwards bounds search commences. Once the bounds are established (`stimamp_bottom` subthreshold, `stimamp_top` suprathreshold), a bisection search executes until the user‐defined exit criterion is reached.
 
-**Note:** This figure is slightly incorrect about bisection entry. In code (since v0.10.0), the bisection phase begins at the convergence check rather than by immediately taking a bisection midpoint step—so if the bounds already satisfy the termination tolerance when bisection starts, no extra midpoint simulation is run.
+**Note:** Since v0.10.0, bisection starts with the convergence check (not a midpoint step), so already-converged bounds skip an extra simulation.
 ```
 
 ### Caveats for block threshold searches
@@ -87,9 +90,6 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
 1. **Onset Response**
    – High-frequency signals can evoke short-latency spikes at onset. APs at or before `block_delay` (argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) are ignored for scoring a failed block; only an AP after `block_delay` counts as failed block (subthreshold). Set a positive delay past onset (and past intrinsic-activity start) so blocked conduction is scored correctly.
 
-```{warning}
-The default `block_delay=0` is not usable for typical block searches. {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold` warns if you leave `block_delay` at ``0`` when ``condition="block"``. Always set a positive `block_delay`.
-```
 
 ### 1.5 Changes that reduce threshold search runtime
 
