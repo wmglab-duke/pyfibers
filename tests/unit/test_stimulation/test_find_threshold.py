@@ -77,4 +77,3 @@ def test_both_sub_absolute_expands_anodic_top(fiber):
             max_iterations=1,
         )
     assert stim.threshsim_calls[2] == pytest.approx(1.1)
-

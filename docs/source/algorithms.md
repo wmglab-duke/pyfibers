@@ -90,7 +90,6 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
 1. **Onset Response**
    – High-frequency signals can evoke short-latency spikes at onset. APs at or before `block_delay` (argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) are ignored for scoring a failed block; only an AP after `block_delay` counts as failed block (subthreshold). Set a positive delay past onset (and past intrinsic-activity start) so blocked conduction is scored correctly.
 
-
 ### 1.5 Changes that reduce threshold search runtime
 
 Our threshold search was adapted from the algorithm provided in ASCENT {cite:p}`musselman_ascent_2021`. We made several modifications to speed up the search process:
