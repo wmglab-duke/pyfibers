@@ -13,7 +13,7 @@
 
 - Ignore dependabot commits in changelog ([#59](https://github.com/wmglab-duke/pyfibers/pull/59),
   [`0edf660`](https://github.com/wmglab-duke/pyfibers/commit/0edf66082ea8af0e514f6b87803918ebdc892a4e))
-  
+
 - Ignore Zenodo URLs in Sphinx linkcheck ([#63](https://github.com/wmglab-duke/pyfibers/pull/63),
   [`ec61726`](https://github.com/wmglab-duke/pyfibers/commit/ec6172600a9e9a46aeded79a625e89e899d20ec6))
 
