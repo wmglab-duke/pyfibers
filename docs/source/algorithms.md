@@ -19,8 +19,8 @@ When you call:
 amp, ap_info = stimulation.find_threshold(
     fiber=my_fiber,
     condition="activation",  # or "block"
-    stimamp_top=...,  # initial suprathreshold guess
-    stimamp_bottom=...,  # initial subthreshold guess
+    stimamp_top=ub,  # upper bound, initial suprathreshold guess
+    stimamp_bottom=lb,  # lower bound, initial subthreshold guess
     ...,
 )
 ```
@@ -30,28 +30,29 @@ the following steps occur:
 1. **Bounds Search**
 
    - Run simulations at the initial guesses for the upper and lower bounds.
-   - If the upper bound is suprathreshold and the lower bound is subthreshold, proceed to bisection search.
-   - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
-   - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
+   - Loop:
+      - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
+      - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
+      - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
 
 1. **Bisection Search**
 
    Each loop iteration matches `find_threshold`: **check for convergence first**, then take a midpoint step only if needed.
 
-   - Check the termination criterion. For the default percent mode, that is `|stimamp_top − stimamp_bottom| / |stimamp_top|` below the tolerance (default: 1% of amplitude). Absolute-difference mode uses `|stimamp_top − stimamp_bottom|` instead. If already within tolerance, exit (threshold is `stimamp_top`) without another midpoint simulation.
-   - Choose a midpoint between the current lower and upper bounds (arithmetic mean by default; geometric mean is also available via `bisection_mean`).
+Loop:
+   - Check the termination criterion (default: `|ub − lb| / |ub|` < 1%). Exit loop if condition is met, otherwise, continue.
+   - Let `mid = (lb + ub) / 2` (for default arithmetic mean).
    - Run a simulation at amplitude `mid` (by calling `run_sim(mid, fiber)`).
    - Determine if it is subthreshold or suprathreshold:
      - For **activation**: Suprathreshold if ≥1 action potential is detected (by default, users can change the number of APs required, see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
      - For **block**: Suprathreshold if conduction is blocked (i.e., the test action potentials fail to propagate to a distal node).
    - Update bounds:
-     - If subthreshold → set `stimamp_bottom = mid`.
-     - If suprathreshold → set `stimamp_top = mid`.
-   - Repeat from the convergence check.
+     - If subthreshold → set `lb = mid`.
+     - If suprathreshold → set `ub = mid`.
 
 1. **Return**
 
-   - The threshold is reported as **`stimamp_top`** once the chosen termination criterion is met.
+   -The threshold is reported as the **upper bound** (`ub`) once the chosen termination criterion is met.
 
 See the figure below for examples of threshold searches with both bounds subthreshold, both bounds suprathreshold, and one where the top bound is suprathreshold and the bottom bound is subthreshold. Below that, a flowchart shows the mechanics of the threshold search algorithm.
 
@@ -68,9 +69,9 @@ Example threshold searches superimposed on the same axes—one with both initial
 :align: center
 :alt: Threshold search diagram
 
-Flowchart of the PyFibers algorithm to identify activation or block threshold. For simplification, several validation checks and details are omitted or simplified. Initial upper and lower bound amplitudes (`stimamp_top` / `stimamp_bottom`) are provided. If the bounds are too low (both subthreshold), an upwards bounds search commences, and if the bounds are too high (both suprathreshold), a downwards bounds search commences. Once the bounds are established (`stimamp_bottom` subthreshold, `stimamp_top` suprathreshold), a bisection search executes until the user‐defined exit criterion is reached.
+Flowchart of the PyFibers algorithm to identify activation or block threshold. For simplification, several validation checks and details are omitted or simplified. Initial upper and lower bound amplitudes are provided. If the bounds are too low (both subthreshold), an upwards bounds search commences, and if the bounds are too high (both suprathreshold), a downwards bounds search commences. Once the bounds are established (lower bound subthreshold, upper bound suprathreshold), a bisection search executes until the user‐defined exit criterion is reached.
 
-**Note:** Since v0.10.0, bisection starts with the convergence check (not a midpoint step), so already-converged bounds skip an extra simulation.
+**Note:** Changed in v0.10.0, bisection starts at the convergence check, so if the bounds are already converged, an extraneous bisection step is not conducted.
 ```
 
 ### Caveats for block threshold searches
@@ -88,7 +89,7 @@ While **activation** threshold is straightforward—did we see an AP?—**block*
    – In the current implementation, it is up to the user to pick a meaningful upper bound that does not push the fiber into re‑excitation. Future versions may include a more sophisticated block detection algorithm that detects re-excitation, and/or determines the re-excitation threshold in addition to the block threshold.
 
 1. **Onset Response**
-   – High-frequency signals can evoke short-latency spikes at onset. APs at or before `block_delay` (argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`) are ignored for scoring a failed block; only an AP after `block_delay` counts as failed block (subthreshold). Set a positive delay past onset (and past intrinsic-activity start) so blocked conduction is scored correctly.
+   – High-frequency signals can evoke short-latency spikes at onset. Therefore, PyFibers requires that users specify a `block_delay` (argument to {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`); only APs detected after `block_delay` counts as failed block (subthreshold).
 
 ### 1.5 Changes that reduce threshold search runtime
 
@@ -100,7 +101,7 @@ Our threshold search was adapted from the algorithm provided in ASCENT {cite:p}`
 (algorithms-early-termination)=
 
 1. **Early Termination for Activation**
-   – If **activation** is the condition, the simulation stops as soon as an action potential is detected in the “detection node.” This can dramatically shorten simulation time for suprathreshold attempts. Later trials may also stop at a recorded AP time plus `exit_t_shift` when `use_exit_t` is enabled in `run_sim` (see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
+   – If **activation** is the condition, the simulation stops as soon as an action potential is detected in the “detection node.” This can dramatically shorten simulation time for suprathreshold attempts. Further trials (even subthreshold trials) by default, will automatically stop at this time, plus an `exit_t_shift` when `use_exit_t` is enabled (see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
 
 1. **Partial Simulation Reuse** (Optional)
    – Once the earliest time point of AP detection is known in an iteration, subsequent runs can skip simulation steps beyond that point plus a user-defined buffer.

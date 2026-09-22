@@ -344,10 +344,9 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
         :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
-        :param block_delay: Start of the block-check window (ms after simulation start).
+        :param block_delay: Time after simulation start to check for block (ms).
             APs with ``detect_time <= block_delay`` are ignored for scoring failed block;
             only an AP with ``detect_time > block_delay`` counts as failed block (subthreshold).
-            Default ``0`` is not usable for typical block searches.
         :param thresh_num_aps: For activation, number of APs that constitutes suprathreshold.
             For block, only ``1`` is supported: a single AP after ``block_delay`` makes the
             trial subthreshold (NEURON APCount records only the last AP time, so multi-AP
@@ -374,8 +373,8 @@ class Stimulation:
                     "No APs detected for block threshold. Possibly the intrinsic activity weight is too low, "
                     "or no excitation is triggered at all. Check block_delay and/or start time of intrinsic activity."
                 )
-            # Last AP at/before block_delay => no APs in the block window => successful block (suprathreshold).
-            # An AP after block_delay => failed block (subthreshold). Earlier APs are ignored for that scoring.
+            # Last AP at/before block_delay: no APs in the block window => successful block (suprathreshold).
+            # An AP after block_delay: failed block (subthreshold). Earlier APs are ignored for that scoring.
             return detect_time <= block_delay
 
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
@@ -436,10 +435,11 @@ class Stimulation:
             Pass ``None`` to disable setting an early-exit time.
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
-        :param block_delay: Block-check window start (ms). Semantics are those of
-            :meth:`threshold_checker`. Default ``0`` is not usable for typical block searches.
+        :param block_delay: Time at which to start checking for block (ms). See
+            :meth:`threshold_checker`.
         :param thresh_num_aps: AP-count threshold; see :meth:`threshold_checker`
-            (for block, only ``1`` is supported).
+            if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
+            if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         :raises ValueError: If invalid enum values are provided for
