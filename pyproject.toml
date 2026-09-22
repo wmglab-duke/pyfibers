@@ -195,7 +195,7 @@ exclude_commit_patterns = [
   '''refactor(?:\([^)]*?\))?: .+''',
   '''style(?:\([^)]*?\))?: .+''',
   '''test(?:\([^)]*?\))?: .+''',
-  '''build\((?!deps\): .+)'''
+  '''build\([^)]*?\): .+'''
 ]
 mode = "update"
 

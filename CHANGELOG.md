@@ -24,37 +24,6 @@
 - Update some dependencies to optional ([#54](https://github.com/wmglab-duke/pyfibers/pull/54),
   [`82f651c`](https://github.com/wmglab-duke/pyfibers/commit/82f651c2ac86f579de85218f0c3f8a789f73898c))
 
-- **deps**: Bump actions/cache from 5 to 6 ([#34](https://github.com/wmglab-duke/pyfibers/pull/34),
-  [`9c52ece`](https://github.com/wmglab-duke/pyfibers/commit/9c52ececc6f670b95bb23e4fd091454b63110ce5))
-
-- **deps**: Bump actions/checkout from 2 to 7
-  ([#25](https://github.com/wmglab-duke/pyfibers/pull/25),
-  [`ae8dd19`](https://github.com/wmglab-duke/pyfibers/commit/ae8dd199d454be34c22c0d3c5456f89fee47d448))
-
-- **deps**: Bump https://github.com/commitizen-tools/commitizen
-  ([#32](https://github.com/wmglab-duke/pyfibers/pull/32),
-  [`749b6a8`](https://github.com/wmglab-duke/pyfibers/commit/749b6a82a100a3dd00a8ed869f3eba79a9486c85))
-
-- **deps**: Bump https://github.com/commitizen-tools/commitizen
-  ([#28](https://github.com/wmglab-duke/pyfibers/pull/28),
-  [`e41c7d1`](https://github.com/wmglab-duke/pyfibers/commit/e41c7d1fc8a3faf980d474089e0ced1aa29e4270))
-
-- **deps**: Bump https://github.com/pre-commit/mirrors-mypy
-  ([#27](https://github.com/wmglab-duke/pyfibers/pull/27),
-  [`6a58727`](https://github.com/wmglab-duke/pyfibers/commit/6a5872782c6d711346b052e0b7b347a9a56573f7))
-
-- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b2 to 9.0.0b5
-  ([#26](https://github.com/wmglab-duke/pyfibers/pull/26),
-  [`59ef4b9`](https://github.com/wmglab-duke/pyfibers/commit/59ef4b97e9104c30210a7307bc62c2302bd1c912))
-
-- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b5 to 9.0.1
-  ([#45](https://github.com/wmglab-duke/pyfibers/pull/45),
-  [`d486604`](https://github.com/wmglab-duke/pyfibers/commit/d4866049321e3a800bbccbfd5d4b3a2ee38dbf13))
-
-- **deps**: Bump python-semantic-release/python-semantic-release
-  ([#46](https://github.com/wmglab-duke/pyfibers/pull/46),
-  [`a93983d`](https://github.com/wmglab-duke/pyfibers/commit/a93983d43a3ac78ef567d7d76474e26d15da9fd2))
-
 ### Documentation
 
 - Add Atchuthan EMBC 2025 to pubs using PyFibers
@@ -109,67 +78,6 @@
 - Configure semantic-release for GitHub remote
   ([#4](https://github.com/wmglab-duke/pyfibers/pull/4),
   [`9618eab`](https://github.com/wmglab-duke/pyfibers/commit/9618eab8db89bfb02faaf54c789299a67828153b))
-
-- **deps**: Bump dorny/paths-filter from 3 to 4
-  ([#5](https://github.com/wmglab-duke/pyfibers/pull/5),
-  [`307f396`](https://github.com/wmglab-duke/pyfibers/commit/307f3965707925f092ce0bdd28421ba573bf37d0))
-
-Bumps [dorny/paths-filter](https://github.com/dorny/paths-filter) from 3 to 4. - [Release
-  notes](https://github.com/dorny/paths-filter/releases) -
-  [Changelog](https://github.com/dorny/paths-filter/blob/master/CHANGELOG.md) -
-  [Commits](https://github.com/dorny/paths-filter/compare/v3...v4)
-
---- updated-dependencies: - dependency-name: dorny/paths-filter dependency-version: '4'
-
-dependency-type: direct:production
-
-update-type: version-update:semver-major ...
-
-Signed-off-by: dependabot[bot] <support@github.com>
-
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
-
-- **deps**: Bump https://github.com/pycqa/isort from 9.0.0b1 to 9.0.0b2
-  ([#10](https://github.com/wmglab-duke/pyfibers/pull/10),
-  [`a5e1d64`](https://github.com/wmglab-duke/pyfibers/commit/a5e1d64ece85c64e4ea4daefaa8ebe71cc0c7764))
-
-Bumps [https://github.com/pycqa/isort](https://github.com/pycqa/isort) from 9.0.0b1 to 9.0.0b2. -
-  [Release notes](https://github.com/pycqa/isort/releases) -
-  [Changelog](https://github.com/PyCQA/isort/blob/main/CHANGELOG.md) -
-  [Commits](https://github.com/pycqa/isort/compare/9.0.0b1...9.0.0b2)
-
---- updated-dependencies: - dependency-name: https://github.com/pycqa/isort dependency-version:
-  9.0.0b2
-
-dependency-type: direct:production
-
-update-type: version-update:semver-patch ...
-
-Signed-off-by: dependabot[bot] <support@github.com>
-
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
-
-- **deps**: Bump https://github.com/python-jsonschema/check-jsonschema
-  ([#8](https://github.com/wmglab-duke/pyfibers/pull/8),
-  [`0947b52`](https://github.com/wmglab-duke/pyfibers/commit/0947b52f963b588b025a71f3f1ea9286109915e7))
-
-Bumps
-  [https://github.com/python-jsonschema/check-jsonschema](https://github.com/python-jsonschema/check-jsonschema)
-  from 0.37.4 to 0.38.0. - [Release
-  notes](https://github.com/python-jsonschema/check-jsonschema/releases) -
-  [Changelog](https://github.com/python-jsonschema/check-jsonschema/blob/main/CHANGELOG.rst) -
-  [Commits](https://github.com/python-jsonschema/check-jsonschema/compare/0.37.4...0.38.0)
-
---- updated-dependencies: - dependency-name: https://github.com/python-jsonschema/check-jsonschema
-  dependency-version: 0.38.0
-
-dependency-type: direct:production
-
-update-type: version-update:semver-minor ...
-
-Signed-off-by: dependabot[bot] <support@github.com>
-
-Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
 
 ### Documentation
 
