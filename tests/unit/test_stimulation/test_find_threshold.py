@@ -277,3 +277,31 @@ def test_find_threshold_returns_confirmed_amplitude(fiber):
     assert n_aps == 1
     assert aptime == 2.0
     assert stim.run_sim_calls[-1] == pytest.approx(amp)
+
+
+def test_bisection_confirming_run_keeps_end_excitation_default():
+    """Confirming run_sim must not inherit fail_on_end_excitation=None from threshsim (#484)."""
+    stim = Stimulation(dt=0.001, tstop=1)
+    run_flags = []
+
+    def fake_run_sim(stimamp, fiber_arg, **kwargs):
+        # Missing key means run_sim default (True) applies — the bug set it to None.
+        run_flags.append(kwargs.get("fail_on_end_excitation", "DEFAULT"))
+        return 1, 2.0
+
+    stim.run_sim = fake_run_sim
+    # Always supra: one threshsim at the midpoint mutates shared kwargs (pre-fix), then confirm.
+    stim.threshold_checker = lambda *args, **kwargs: True
+    shared_kwargs = {}
+    _bisection_search(
+        stim,
+        MagicMock(),
+        -1.0,
+        -0.5,
+        termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
+        termination_tolerance=0.3,
+        kwargs=shared_kwargs,
+    )
+    assert "fail_on_end_excitation" not in shared_kwargs
+    assert None in run_flags  # intermediate threshsim still disables the check
+    assert run_flags[-1] == "DEFAULT"  # confirming run must keep the default
