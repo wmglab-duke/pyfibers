@@ -151,9 +151,9 @@ def test_validate_threshold_enums_rejects_invalid(bad_kwargs, match):
 
 
 def _mock_block_fiber():
-    from unittest.mock import MagicMock
-
-    from pyfibers.fiber import Fiber
+    fiber = MagicMock()
+    fiber.stim = MagicMock()  # pretend intrinsic activity present
+    return fiber
 
 
 def test_validate_threshold_args_rejects_inconsistent_bounds():
@@ -283,9 +283,6 @@ def test_find_threshold_returns_confirmed_amplitude(fiber):
     assert n_aps == 1
     assert aptime == 2.0
     assert stim.run_sim_calls[-1] == pytest.approx(amp)
-    fiber = MagicMock(spec=Fiber)
-    fiber.stim = MagicMock()  # pretend intrinsic activity present
-    return fiber
 
 
 def test_block_delay_none_errors():
