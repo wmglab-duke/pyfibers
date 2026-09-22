@@ -349,8 +349,8 @@ class Stimulation:
             only an AP with ``detect_time > block_delay`` counts as failed block (subthreshold).
         :param thresh_num_aps: For activation, number of APs that constitutes suprathreshold.
             For block, only ``1`` is supported: a single AP after ``block_delay`` makes the
-            trial subthreshold (NEURON APCount records only the last AP time, so multi-AP
-            thresholds in the block window are not implemented).
+            trial subthreshold (:class:`APCount <neuron:APCount>` records only the last AP
+            time, so multi-AP thresholds in the block window are not implemented).
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
@@ -947,8 +947,8 @@ class IntraStim(Stimulation):
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
             ``_exit_t`` is set during activation threshold search via
-            ``find_threshold(..., exit_t_shift=...)``; see also the early-termination
-            notes in ``docs/source/algorithms.md``.
+            :paramref:`~pyfibers.stimulation.Stimulation.find_threshold.exit_t_shift`;
+            see also :ref:`algorithms-early-termination`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
@@ -1334,8 +1334,8 @@ class ScaledStim(Stimulation):
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
             ``_exit_t`` is set during activation threshold search via
-            ``find_threshold(..., exit_t_shift=...)``; see also the early-termination
-            notes in ``docs/source/algorithms.md``.
+            :paramref:`~pyfibers.stimulation.Stimulation.find_threshold.exit_t_shift`;
+            see also :ref:`algorithms-early-termination`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
