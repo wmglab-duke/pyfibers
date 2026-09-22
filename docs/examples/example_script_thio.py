@@ -66,3 +66,5 @@ plt.axvline(0.5, color='red')
 plt.legend()
 plt.ylim(-80, 80)
 print(f'cv={fiber.measure_cv(start=0.5)}')
+
+plt.show()

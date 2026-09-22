@@ -63,3 +63,5 @@ ap, time = stimulation.run_sim(-1, fiber)
 
 # run with multiple stim amps
 ap, time = stimulation.run_sim([-1, 1], fiber)
+
+plt.show()

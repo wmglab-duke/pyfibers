@@ -36,7 +36,7 @@ project = 'pyfibers'
 copyright_info = '2023, Duke University'
 
 # The full version, including alpha/beta/rc tags
-release = "0.9.2"
+release = "0.10.1"
 
 html_short_title = "PyFibers documentation"
 # html_logo = './static/logo.png' noqa: E800
@@ -185,6 +185,9 @@ linkcheck_ignore = [
     r'^https://github\.com/wmglab-duke/pyfibers/stargazers$',
     # AIP publishing
     r"https://doi\.org/10\.1063/.*",
+    # Zenodo returns 403 to automated checkers (doi.org redirects and zenodo.org).
+    r'(?i)^https://doi\.org/10\.5281/zenodo\.',
+    r'(?i)^https://(www\.)?zenodo\.org/',
 ]
 
 # latex

@@ -36,31 +36,31 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
 
 
 def test_mrg_discrete():
-    assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), 0.15576171875)
+    assert np.isclose(get_activation_threshold(FiberModel.MRG_DISCRETE), 0.15625)
 
 
 def test_mrg_interpolation():
-    assert np.isclose(get_activation_threshold(FiberModel.MRG_INTERPOLATION), 0.17333984375)
+    assert np.isclose(get_activation_threshold(FiberModel.MRG_INTERPOLATION), 0.173828125)
 
 
 def test_tigerholm():
     assert np.isclose(
         get_activation_threshold(FiberModel.TIGERHOLM, diameter=1),
-        0.419921875,
+        0.421875,
     )
 
 
 def test_rattay():
     assert np.isclose(
         get_activation_threshold(FiberModel.RATTAY, diameter=1),
-        0.18603515625,
+        0.1865234375,
     )
 
 
 def test_sundt():
     assert np.isclose(
         get_activation_threshold(FiberModel.SUNDT, diameter=1),
-        0.16650390625,
+        0.1669921875,
     )
 
 
@@ -81,7 +81,7 @@ def test_schild97():
 def test_thio_autonomic():
     assert np.isclose(
         get_activation_threshold(FiberModel.THIO_AUTONOMIC, diameter=1, nodecount=265),
-        0.3115234375,
+        0.3125,
     )
 
 
@@ -95,7 +95,7 @@ def test_thio_cutaneous():
 def test_sweeney():
     assert np.isclose(
         get_activation_threshold(FiberModel.SWEENEY, diameter=5.7, nodecount=133),
-        0.716796875,
+        0.71875,
     )
 
 
