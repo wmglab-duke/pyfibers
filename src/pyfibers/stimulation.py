@@ -374,7 +374,7 @@ class Stimulation:
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
         return detect_n >= thresh_num_aps
 
-    def find_threshold(  # noqa: C901
+    def find_threshold(
         self: Stimulation,
         fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
@@ -433,22 +433,53 @@ class Stimulation:
             if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
-        :raises ValueError: If invalid enum values are provided for
-            condition, bounds_search_mode, termination_mode, or bisection_mean.
-        :raises RuntimeError: If contradictory bounding conditions occur or if the search fails to converge.
         """
-        # Handle deprecated silent parameter
-        if 'silent' in kwargs:
-            warnings.warn(
-                "The 'silent' parameter is deprecated and will be removed in a future version. "
-                "Use pyfibers.enable_logging() to control logging output instead.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            # Remove it from kwargs to avoid passing it to run_sim
-            kwargs.pop('silent')
-
         self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
+
+        self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
+
+        stimamp_top, stimamp_bottom = self._bounds_search(
+            fiber,
+            condition,
+            bounds_search_mode,
+            bounds_search_step,
+            stimamp_top,
+            stimamp_bottom,
+            max_iterations,
+            exit_t_shift,
+            block_delay,
+            thresh_num_aps,
+            kwargs,
+        )
+
+        stimamp_top, n_aps, aptime = self._bisection_search(
+            fiber,
+            condition,
+            termination_mode,
+            termination_tolerance,
+            stimamp_top,
+            stimamp_bottom,
+            bisection_mean,
+            block_delay,
+            thresh_num_aps,
+            kwargs,
+        )
+
+        return stimamp_top, (n_aps, aptime)
+
+    def _validate_threshold_enums(
+        self: Stimulation,
+        condition: ThresholdCondition,
+        bounds_search_mode: BoundsSearchMode,
+        termination_mode: TerminationMode,
+        bisection_mean: BisectionMean,
+    ) -> None:  # noqa: DAR101
+        """Validate threshold-search enum arguments.
+
+        See :meth:`find_threshold`.
+
+        :raises ValueError: If any argument is not a valid enumerator value.
+        """
         # Validate enums. Using "in" directly on enum requires Python 3.12+, so using list comp instead
         if condition not in [mem.value for mem in ThresholdCondition]:
             raise ValueError("Invalid threshold condition.")
@@ -459,6 +490,28 @@ class Stimulation:
         if bisection_mean not in [mem.value for mem in BisectionMean]:
             raise ValueError("Invalid bisection mean.")
 
+    def _bounds_search(
+        self: Stimulation,
+        fiber: Fiber,
+        condition: ThresholdCondition,
+        bounds_search_mode: BoundsSearchMode,
+        bounds_search_step: float,
+        stimamp_top: float,
+        stimamp_bottom: float,
+        max_iterations: int,
+        exit_t_shift: float | None,
+        block_delay: float,
+        thresh_num_aps: int,
+        kwargs: dict,
+    ) -> tuple[float, float]:  # noqa: DAR101
+        """Expand stimamp bounds until one is subthreshold and one is suprathreshold.
+
+        See :meth:`find_threshold`.
+
+        :return: The bounding ``(stimamp_top, stimamp_bottom)``.
+        :raises RuntimeError: If the initial bounds are contradictory, or if valid bounds
+            are not found within ``max_iterations``.
+        """
         logger.info("Beginning bounds search. Checking initial bounds...")
         iteration = 0
 
@@ -486,6 +539,7 @@ class Stimulation:
             bounds_search_step,
             max_iterations,
         )
+
         # Count bound iteration; each loop entry either succeeds or performs one adjustment.
         while iteration < max_iterations:
             # If top is supra-threshold, set an early exit time for activation searches
@@ -574,7 +628,29 @@ class Stimulation:
                 "if the initial top bound is high enough for virtual anode block. "
                 "For block threshold searches, this can occur if the top bound is high enough for re-excitation."
             )
+        return stimamp_top, stimamp_bottom
 
+    def _bisection_search(
+        self: Stimulation,
+        fiber: Fiber,
+        condition: ThresholdCondition,
+        termination_mode: TerminationMode,
+        termination_tolerance: float,
+        stimamp_top: float,
+        stimamp_bottom: float,
+        bisection_mean: BisectionMean,
+        block_delay: float,
+        thresh_num_aps: int,
+        kwargs: dict,
+    ) -> tuple[float, int, float | None]:  # noqa: DAR101
+        """Narrow stimamp bounds until they meet the termination tolerance.
+
+        See :meth:`find_threshold`.
+
+        :return: ``(stimamp, n_aps, aptime)`` at threshold.
+        :raises RuntimeError: If the converged amplitude does not produce the expected
+            action-potential condition.
+        """
         # Begin the bisection search phase
         logger.info("Beginning bisection search...")
         logger.debug(
@@ -588,7 +664,6 @@ class Stimulation:
 
         bisection_iter = 0
         while True:
-
             # Compute the tolerance based on the chosen termination mode
             if termination_mode == TerminationMode.PERCENT_DIFFERENCE:
                 thresh_resoln = abs(termination_tolerance / 100)
@@ -647,8 +722,7 @@ class Stimulation:
                 stimamp_top = stimamp
             else:
                 stimamp_bottom = stimamp
-
-        return stimamp_top, (n_aps, aptime)
+        return stimamp_top, n_aps, aptime
 
     def _validate_threshold_args(
         self: Stimulation,
