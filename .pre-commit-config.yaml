@@ -250,7 +250,7 @@ repos:
     - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.18.0
+  rev: v4.18.1
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
