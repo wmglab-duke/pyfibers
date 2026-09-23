@@ -335,7 +335,7 @@ class Stimulation:
         fiber: Fiber,
         block: bool = False,
         ap_detect_location: float = 0.9,
-        block_delay: float = 0,
+        block_delay: float | None = None,
         thresh_num_aps: int = 1,
         check_all_apc: bool = True,
     ) -> bool:
@@ -344,16 +344,22 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
         :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
-        :param block_delay: Time after simulation start to check for block (ms).
+        :param block_delay: Time after simulation start to check for block (ms). Required and must be
+            positive when ``block`` is ``True``; ignored for activation.
         :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
+        :raises ValueError: If ``block`` is ``True`` and ``block_delay`` is unset or non-positive.
         :raises NotImplementedError: If block is ``True`` and thresh_num_aps != 1.
         :raises RuntimeError: If no APs are detected at all in a block threshold search.
         """
         if thresh_num_aps <= 0:
             raise ValueError("thresh_num_aps must be positive.")
+        if block and (block_delay is None or block_delay <= 0):
+            raise ValueError(
+                "Block searches require an explicit positive block_delay (past onset / intrinsic activity)."
+            )
         detect_n, detect_time = Stimulation.ap_checker(
             fiber, ap_detect_location=ap_detect_location, check_all_apc=check_all_apc
         )
@@ -387,7 +393,7 @@ class Stimulation:
         max_iterations: int = 50,
         exit_t_shift: float = 5,
         bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
-        block_delay: float = 0,
+        block_delay: float | None = None,
         thresh_num_aps: int = 1,
         **kwargs,
     ) -> tuple[float, tuple[int, float | None]]:
@@ -428,13 +434,17 @@ class Stimulation:
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
         :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
+            Defaults to ``None``; block searches require an explicit positive value (past onset /
+            intrinsic activity). Ignored for activation searches.
         :param thresh_num_aps: Number of action potentials for threshold search:
             if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
             if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber)
+        self._validate_threshold_args(
+            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay=block_delay
+        )
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
@@ -731,6 +741,7 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
+        block_delay: float | None = None,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
@@ -740,8 +751,10 @@ class Stimulation:
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
+        :param block_delay: Block-check window start (ms); required and must be positive for block searches.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
         :raises ValueError: If exit_t_shift is not positive.
+        :raises ValueError: If ``condition`` is block and ``block_delay`` is unset or non-positive.
         """
         if abs(stimamp_top) < abs(stimamp_bottom):
             raise ValueError("stimamp_top must be greater in magnitude than stimamp_bottom.")
@@ -759,6 +772,10 @@ class Stimulation:
             warnings.warn(
                 "This fiber lacks intrinsic activity; a block threshold search may be meaningless.",
                 stacklevel=2,
+            )
+        if condition == ThresholdCondition.BLOCK and (block_delay is None or block_delay <= 0):
+            raise ValueError(
+                "Block searches require an explicit positive block_delay (past onset / intrinsic activity)."
             )
         if exit_t_shift is not None and exit_t_shift <= 0:
             raise ValueError("exit_t_shift must be nonzero and positive.")
@@ -825,7 +842,7 @@ class Stimulation:
         stimamp: float,
         fiber: Fiber,
         condition: ThresholdCondition = ThresholdCondition.ACTIVATION,
-        block_delay: float = 0,
+        block_delay: float | None = None,
         thresh_num_aps: int = 1,
         **kwargs,
     ) -> tuple[bool, tuple[int, float | None]]:
@@ -836,6 +853,7 @@ class Stimulation:
         :param condition: Threshold condition
             (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
         :param block_delay: If condition=BLOCK, time after which AP detection is considered blocked (ms).
+            Must be an explicit positive value for block; ignored for activation.
         :param thresh_num_aps: Number of APs required to be considered suprathreshold.
         :param kwargs: Additional arguments for the run_sim method.
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
