@@ -31,24 +31,25 @@ the following steps occur:
 
    - Run simulations at the initial guesses for the upper and lower bounds.
    - Loop:
-      - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
-      - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
-      - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
+     - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
+     - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
+     - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
 
 1. **Bisection Search**
 
    Each loop iteration matches `find_threshold`: **check for convergence first**, then take a midpoint step only if needed.
 
 Loop:
-   - Check the termination criterion (default: `|ub − lb| / |ub|` < 1%). Exit loop if condition is met, otherwise, continue.
-   - Let `mid = (lb + ub) / 2` (for default arithmetic mean).
-   - Run a simulation at amplitude `mid` (by calling `run_sim(mid, fiber)`).
-   - Determine if it is subthreshold or suprathreshold:
-     - For **activation**: Suprathreshold if ≥1 action potential is detected (by default, users can change the number of APs required, see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
-     - For **block**: Suprathreshold if conduction is blocked (i.e., the test action potentials fail to propagate to a distal node).
-   - Update bounds:
-     - If subthreshold → set `lb = mid`.
-     - If suprathreshold → set `ub = mid`.
+
+- Check the termination criterion (default: `|ub − lb| / |ub|` < 1%). Exit loop if condition is met, otherwise, continue.
+- Let `mid = (lb + ub) / 2` (for default arithmetic mean).
+- Run a simulation at amplitude `mid` (by calling `run_sim(mid, fiber)`).
+- Determine if it is subthreshold or suprathreshold:
+  - For **activation**: Suprathreshold if ≥1 action potential is detected (by default, users can change the number of APs required, see {py:meth}`~pyfibers.stimulation.Stimulation.find_threshold`).
+  - For **block**: Suprathreshold if conduction is blocked (i.e., the test action potentials fail to propagate to a distal node).
+- Update bounds:
+  - If subthreshold → set `lb = mid`.
+  - If suprathreshold → set `ub = mid`.
 
 1. **Return**
 
