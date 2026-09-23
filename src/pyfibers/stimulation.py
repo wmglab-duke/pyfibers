@@ -946,9 +946,9 @@ class IntraStim(Stimulation):
         :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
-            ``_exit_t`` is set during activation threshold search via
-            :paramref:`~pyfibers.stimulation.Stimulation.find_threshold.exit_t_shift`;
-            see also :ref:`algorithms-early-termination`.
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
@@ -1333,9 +1333,9 @@ class ScaledStim(Stimulation):
         :param exit_func_interval: How often (in time steps) to call exit_func.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
-            ``_exit_t`` is set during activation threshold search via
-            :paramref:`~pyfibers.stimulation.Stimulation.find_threshold.exit_t_shift`;
-            see also :ref:`algorithms-early-termination`.
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
