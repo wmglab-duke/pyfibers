@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.10.3 (2026-09-23)
+
+### Bug Fixes
+
+- Require positive block_delay for block searches
+  ([#65](https://github.com/wmglab-duke/pyfibers/pull/65),
+  [`ce41072`](https://github.com/wmglab-duke/pyfibers/commit/ce410726378993bba5e38be619fd980a8242b88c))
+
+### Documentation
+
+- Fix changelog ([#64](https://github.com/wmglab-duke/pyfibers/pull/64),
+  [`c0a70c2`](https://github.com/wmglab-duke/pyfibers/commit/c0a70c217e70af739e17fe0eeadede5c218a6144))
+
+
 ## v0.10.2 (2026-09-22)
 
 ### Bug Fixes
