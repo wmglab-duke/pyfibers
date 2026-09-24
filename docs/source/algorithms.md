@@ -29,15 +29,13 @@ the following steps occur:
 
 1. **Bounds Search**
 
-   - Run simulations at the initial guesses for the upper and lower bounds.
-   - Loop:
-     - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
-     - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
-     - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
+- Run simulations at the initial guesses for the upper and lower bounds.
+- Loop:
+   - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
+   - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
+   - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
 
 1. **Bisection Search**
-
-   Each loop iteration matches `find_threshold`: **check for convergence first**, then take a midpoint step only if needed.
 
 Loop:
 
@@ -65,14 +63,14 @@ See the figure below for examples of threshold searches with both bounds subthre
 Example threshold searches superimposed on the same axes—one with both initial bounds too low, one with both too high, and one straddling the threshold. For the case with the initial bounds both too low or too high, a bounds search (gray) is first conducted to identify bounds that straddle the threshold, and then the bisection search (black) is initiated. In the case where the initial bounds straddle the threshold, a bisection search begins immediately. The bisection search continues until the difference between the upper and lower bounds is less than the search tolerance, and the threshold is then taken as the upper bound amplitude.
 ```
 
-```{figure} images/threshold_flowchart.png
+```{figure} images/threshold_flowchart.svg
 :name: threshold_search
 :align: center
 :alt: Threshold search diagram
 
 Flowchart of the PyFibers algorithm to identify activation or block threshold. For simplification, several validation checks and details are omitted or simplified. Initial upper and lower bound amplitudes are provided. If the bounds are too low (both subthreshold), an upwards bounds search commences, and if the bounds are too high (both suprathreshold), a downwards bounds search commences. Once the bounds are established (lower bound subthreshold, upper bound suprathreshold), a bisection search executes until the user‐defined exit criterion is reached.
 
-**Note:** Changed in v0.10.0, bisection starts at the convergence check, so if the bounds are already converged, an extraneous bisection step is not conducted.
+**Note:** Prior to v0.10.0, the loop would errantly conduct an extra bisection step after convergence was reached.
 ```
 
 ### Caveats for block threshold searches
