@@ -450,9 +450,7 @@ class Stimulation:
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(
-            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay
-        )
+        self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay)
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
