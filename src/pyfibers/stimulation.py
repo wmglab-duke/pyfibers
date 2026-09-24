@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from neuron import h
+from scipy.interpolate import interp1d
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -1161,127 +1162,117 @@ class ScaledStim(Stimulation):
             callables (e.g., function). Each callable should accept
             a single float argument for the simulation time (in ms) and return the waveform value at
             that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
-            Support for waveform as a numpy array is retained for backwards compatibility, and will be
-            removed in a future release.
+            1D/2D arrays (or lists of floats) are deprecated and converted to interpolants
+            that return 0 outside the sampled time range.
         :param dt: Main simulation time step (ms).
         :param tstop: Total simulation duration (ms).
         :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
         :param dt_init_ss: Large time step used during the steady-state period (ms).
-        :param pad_waveform: If ``True``, extend the waveform with zeros to match simulation time.
-        :param truncate_waveform: If ``True``, truncate the waveform if it exceeds the simulation time.
-        :ivar waveform: The waveform(s) to be applied to the fiber potentials.
+        :param pad_waveform: If ``True``, pad a **deprecated array** waveform with zeros
+            to match ``tstop``. Has no effect on callable interpolants; those are evaluated
+            at each time step and should return 0 outside the pulse themselves.
+        :param truncate_waveform: If ``True``, truncate a **deprecated array** waveform
+            to ``tstop``. Has no effect on callable interpolants.
+        :ivar waveform: Interpolants applied to the fiber potentials.
             See :class:`ScaledStim` for more info.
-        :ivar pad: If ``True``, extend the waveform with zeros to match simulation time.
-        :ivar truncate: If ``True``, truncate the waveform if it exceeds the simulation time.
+        :ivar pad: If ``True``, pad deprecated array waveforms with zeros to ``tstop``.
+        :ivar truncate: If ``True``, truncate deprecated array waveforms to ``tstop``.
         """
-        super().__init__(dt, tstop, t_init_ss, dt_init_ss)
+        self._waveform_input: np.ndarray | list[Callable[[float], float]] | Callable[[float], float] | None = None
         self._pad = pad_waveform
         self._truncate = truncate_waveform
+        super().__init__(dt, tstop, t_init_ss, dt_init_ss)
         self.waveform = waveform
-        self._prep_waveform()
+
+    def _reprocess_waveform(self: ScaledStim) -> None:
+        """Re-process the original user-supplied waveform with current time/pad settings."""
+        if self._waveform_input is not None:
+            self.waveform = self._waveform_input
 
     def _on_time_params_changed(self: ScaledStim) -> None:
-        """Re-process the waveform when ``dt`` or ``tstop`` changes."""
-        if getattr(self, 'waveform', None) is not None:
-            self._prep_waveform()
+        """Re-process the original waveform when ``dt`` or ``tstop`` changes."""
+        self._reprocess_waveform()
 
     @property
     def pad(self: ScaledStim) -> bool:
-        """If ``True``, extend a sampled waveform with zeros to match simulation time.
+        """If ``True``, pad a deprecated array waveform with zeros to ``tstop``.
 
-        :return: Whether sampled waveforms are padded to ``tstop``.
+        Callable interpolants are not padded; they are evaluated at each time step.
+
+        :return: Whether deprecated array waveforms are padded to ``tstop``.
         """
         return self._pad
 
     @pad.setter
     def pad(self: ScaledStim, value: bool) -> None:
-        """Set waveform padding and re-process the current waveform.
+        """Set array-waveform padding and re-process the original waveform input.
 
-        :param value: If ``True``, extend a sampled waveform with zeros to match simulation time.
+        :param value: If ``True``, pad a deprecated array waveform with zeros to ``tstop``.
+            Ignored for callable interpolants.
         """
         self._pad = value
-        if getattr(self, 'waveform', None) is not None:
-            self._prep_waveform()
+        self._reprocess_waveform()
 
     @property
     def truncate(self: ScaledStim) -> bool:
-        """If ``True``, truncate a sampled waveform if it exceeds the simulation time.
+        """If ``True``, truncate a deprecated array waveform to ``tstop``.
 
-        :return: Whether sampled waveforms are truncated to ``tstop``.
+        Callable interpolants are not truncated; they are evaluated at each time step.
+
+        :return: Whether deprecated array waveforms are truncated to ``tstop``.
         """
         return self._truncate
 
     @truncate.setter
     def truncate(self: ScaledStim, value: bool) -> None:
-        """Set waveform truncation and re-process the current waveform.
+        """Set array-waveform truncation and re-process the original waveform input.
 
-        :param value: If ``True``, truncate a sampled waveform if it exceeds the simulation time.
+        :param value: If ``True``, truncate a deprecated array waveform to ``tstop``.
+            Ignored for callable interpolants.
         """
         self._truncate = value
-        if getattr(self, 'waveform', None) is not None:
-            self._prep_waveform()
+        self._reprocess_waveform()
 
-    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
-        """Prepare the fiber's potentials for scaled stimulation.
+    @property
+    def waveform(self: ScaledStim) -> list[Callable[[float], float]]:
+        """Interpolants applied to the fiber potentials.
 
-        Ensures they are in a suitable 2D numpy array form, one row per
-        potential set. Each row must match the length of the fiber coordinates.
-
-        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
-        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
+        :return: The waveform interpolants applied to the fiber potentials.
         """
-        # This should be moved to the Fiber class as a setter method
-        if fiber.potentials is None:
-            raise ValueError("No fiber potentials found.")
-        fiber.potentials = np.array(fiber.potentials)
+        return self._waveform
 
-        # If it's just one 1D array, wrap it in a list for stacking
-        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
-            fiber.potentials = [fiber.potentials]
+    @waveform.setter
+    def waveform(
+        self: ScaledStim,
+        value: np.ndarray | list[Callable[[float], float]] | Callable[[float], float],
+    ) -> None:
+        """Set the waveform and convert it to interpolants for evaluation at simulation time.
 
-        # Convert each potential to a np.array and check lengths
-        processed_potentials = [np.array(potential) for potential in fiber.potentials]
-        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
-            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
-
-        # Stack them into a 2D array
-        fiber.potentials = np.vstack(processed_potentials)
-
-    def _prep_waveform(self: ScaledStim) -> None:
-        """Process user-provided waveform(s) to match the simulation length.
-
-        Accepts single waveform (1D numpy array or single callable) or
-        multiple waveforms (2D numpy array or list of callables),
-        processes each waveform independently, and saves the processed waveform(s) as a 2D numpy array.
+        Accepts a single callable or a list of callables, processes each independently,
+        and stores interpolants on ``waveform``.
         Also checks if the waveform has a max absolute value of 1 (recommended).
+        The original ``value`` is kept so pad, truncate, ``dt``, and ``tstop`` can re-process it.
 
-        :raises ValueError: if any processed waveform row length is not equal to the number of time steps
+        Array or list-of-float inputs are deprecated. They are converted to
+        ``interp1d`` interpolants with ``kind='previous'`` that return 0 at times
+        outside the sampled range.
+
+        :param value: Callable or list of callables. Each callable should accept
+            a single float argument for the simulation time (in ms) and return the waveform value at
+            that time. Arrays/lists of floats are deprecated.
         :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
-        :raises RuntimeError: if an error is encountered while processing a callable into an array
         """
-        prepped_waveform = self.waveform
-        # wrap waveform in a list in not already a list
-        if not isinstance(prepped_waveform, list | np.ndarray):
-            prepped_waveform = [prepped_waveform]
 
-        if any(callable(wf) for wf in prepped_waveform):
-            # if a mix of callables and arrays were specified, throw an error
-            if not all(callable(wf) for wf in prepped_waveform):
-                raise TypeError("Waveform must be specified as either a callable or a list of callables.")
+        def array_processor(array_waveform: np.ndarray) -> list[Callable[[float], float]]:
+            """Process a deprecated array waveform into interpolants.
 
-            # process callable(s) into 2d array with shape (len(prepped_waveform), self.n_timesteps)
-            try:
-                prepped_waveform = np.fromfunction(
-                    np.vectorize(lambda i, j: prepped_waveform[int(i)](j * self.dt)),
-                    (len(prepped_waveform), self.n_timesteps),
-                )
-            except Exception as e:  # noqa: B902
-                # provide some information on where the error happened to the user
-                raise RuntimeError(
-                    'Error encountered while processing callable into array.'
-                    'Does the callable produce valid output for all time steps?'
-                ) from e
-        else:
+            Each row is converted to an interpolant that returns 0 outside the
+            sampled time range (``fill_value=0`` with ``bounds_error=False``).
+
+            :param array_waveform: Waveform provided as array
+            :raises ValueError: if any processed waveform row length is not equal to the number of time steps
+            :return: List of processed waveforms
+            """
             # process waveform provided as array for backwards compatibility
             warnings.warn(
                 """Specifying waveforms using lists/arrays is deprecated."""
@@ -1289,19 +1280,13 @@ class ScaledStim(Stimulation):
                 FutureWarning,
                 stacklevel=2,
             )
-            prepped_waveform = np.array(prepped_waveform)
-
-            # Check if waveform is a single 1D numpy array and wrap it in a list
-            if prepped_waveform.ndim == 1:
-                prepped_waveform = [prepped_waveform]
+            array_waveform = np.atleast_2d(np.asarray(array_waveform))
 
             # Initialize list to store processed waveforms
             processed_waveforms = []
 
             # Process each waveform
-            for row in prepped_waveform:
-                row = np.array(row)  # Ensure row is a numpy array
-
+            for row in array_waveform:
                 if self.pad and (self.n_timesteps > len(row)):
                     # Extend waveform row until it is of length tstop/dt
                     if row[-1] != 0:
@@ -1317,42 +1302,76 @@ class ScaledStim(Stimulation):
                 if len(row) != self.n_timesteps:
                     raise ValueError("Processed waveform length must match the number of time steps (tstop / dt).")
 
-                processed_waveforms.append(row)  # Append processed row to the list
+                times = np.arange(len(row)) * self.dt
+                if len(times) == 1:
+                    times = np.append(times, times[0] + self.dt)
+                    row = np.append(row, row[0])
+                # Return 0 at times before the first sample or after the last sample
+                processed_waveforms.append(interp1d(times, row, kind='previous', bounds_error=False, fill_value=0.0))
 
-            # Convert list of processed rows into a 2D numpy array
-            prepped_waveform = np.vstack(processed_waveforms)
+            return processed_waveforms
+
+        # wrap waveform in a list in not already a list
+        if not isinstance(value, list | np.ndarray):
+            waveforms = [value]
+        else:
+            waveforms = value
+
+        if any(callable(wf) for wf in waveforms):
+            # if a mix of callables and arrays were specified, throw an error
+            if not all(callable(wf) for wf in waveforms):
+                raise TypeError("Waveform must be specified as either a callable or a list of callables.")
+            waveform_list = waveforms if isinstance(value, list) else list(waveforms)
+        else:
+            waveform_list = array_processor(waveforms)
+
+        sampled = self._sample_waveforms(waveform_list)
 
         # if max abs value is not 1, warn user
-        if np.max(np.abs(prepped_waveform)) != 1:
+        if np.max(np.abs(sampled)) != 1:
             warnings.warn(
                 'Waveform does not have a max absolute value of 1. '
                 'This is recommended to simplify scaling of the waveform.',
                 stacklevel=2,
             )
 
-        # make sure that number of columns in the waveform matches the number of time steps
-        if prepped_waveform.shape[1] != self.n_timesteps:
-            raise RuntimeError("Processed waveform length must match the number of time steps (tstop / dt).")
+        self._waveform = waveform_list
+        self._waveform_input = value
 
-        self._prepped_waveform = prepped_waveform
+    def _sample_waveforms(self: ScaledStim, waveform_list: list[Callable[[float], float]]) -> np.ndarray:
+        """Evaluate interpolants on the current ``dt``/``tstop`` grid.
+
+        :param waveform_list: Interpolants to sample.
+        :raises RuntimeError: if an interpolant fails at any time step.
+        :return: Array of shape ``(n_waveforms, n_timesteps)``.
+        """
+        times = np.arange(self.n_timesteps) * self.dt
+        try:
+            return np.array([[wf(t) for t in times] for wf in waveform_list], dtype=float)
+        except Exception as e:  # noqa: B902
+            raise RuntimeError(
+                'Error encountered while processing callable into array.'
+                'Does the callable produce valid output for all time steps?'
+            ) from e
 
     def _potentials_at_time(
-        self: ScaledStim, i: int, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+        self: ScaledStim, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
     ) -> np.typing.NDArray[np.float64]:
-        """Compute the total extracellular potential at time index i.
+        """Compute the total extracellular potential at the current NEURON time.
 
         Each row of the fiber's potentials is multiplied by the corresponding
-        waveform value at time i and the corresponding stimamp, then summed.
+        waveform value at ``h.t`` and the corresponding stimamp, then summed.
 
-        :param i: Current time index in the simulation.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object whose potentials are being scaled.
         :param stimamps: Array of amplitude scaling factors (one per waveform row).
         :return: 1D array of summed extracellular potentials (mV) along the fiber sections.
         """
-        potentials = np.zeros(fiber.potentials.shape[1])
+        # atleast_2d: works with main's 1D-or-2D fiber.potentials (no always-2D property)
+        potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
+        potentials = np.zeros(potential_rows.shape[1])
         # Multiply each potential row by the waveform and amplitude at this time
-        for potential_set, waveform_row, amp in zip(fiber.potentials, self._prepped_waveform, stimamps, strict=True):
-            potentials += amp * waveform_row[i] * potential_set
+        for potential_set, waveform_func, amp in zip(potential_rows, self.waveform, stimamps, strict=True):
+            potentials += amp * waveform_func(h.t) * potential_set
         return potentials
 
     def _validate_scaling_inputs(
@@ -1365,18 +1384,17 @@ class ScaledStim(Stimulation):
         :return: Array of scaling factors, one per waveform row.
         :raises ValueError: If validation checks fail for potentials, waveforms, or stimamps.
         """
-        self._prep_waveform()
-        self._prep_potentials(fiber)
-
-        if len(fiber.potentials) != len(self._prepped_waveform):
+        # atleast_2d: works with main's 1D-or-2D fiber.potentials (no always-2D property)
+        potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
+        if potential_rows.shape[0] != len(self.waveform):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
-        if np.all(fiber.potentials == 0):
+        if np.all(potential_rows == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero fiber potential')
-        if np.all(self._prepped_waveform == 0):
+        if np.all(self._sample_waveforms(self.waveform) == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero waveform')
         if len(stimamps.shape) == 0:  # if single float, apply to all sources
-            return np.array([stimamps] * len(self._prepped_waveform))
-        if len(stimamps) != len(self._prepped_waveform):
+            return np.array([stimamps] * len(self.waveform))
+        if len(stimamps) != len(self.waveform):
             raise ValueError("Number of stimamps must match the number of waveform rows.")
 
         return np.array(stimamps)
@@ -1433,7 +1451,7 @@ class ScaledStim(Stimulation):
 
         # Advance the simulation in small steps, updating extracellular potentials each time
         for i in range(self.n_timesteps):
-            timestep_potentials = self._potentials_at_time(i, fiber, stimamps)
+            timestep_potentials = self._potentials_at_time(fiber, stimamps)
             self._update_extracellular(fiber, timestep_potentials)
 
             h.fadvance()

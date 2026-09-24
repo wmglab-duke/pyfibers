@@ -91,12 +91,14 @@ def test_pointsource():
 def test_waveform_pad_truncate():
     fiber = get_fiber()  # noqa: F841
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
-    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._prepped_waveform.shape[1] == 5000
+    with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
+        stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
+    assert stimulation._sample_waveforms(stimulation.waveform).shape[1] == 5000
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
-    stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._prepped_waveform.shape[1] == 5000
+    with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
+        stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
+    assert stimulation._sample_waveforms(stimulation.waveform).shape[1] == 5000
 
 
 def test_waveform_callable():
@@ -115,11 +117,22 @@ def test_waveform_callable():
             np.zeros(int((stop - off) / dt)),
         )
     )
-    concat_stimulation = ScaledStim(waveform=concat_waveform, dt=dt, tstop=stop)
+    with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
+        concat_stimulation = ScaledStim(waveform=concat_waveform, dt=dt, tstop=stop)
 
     callable_waveform = interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous")
     callable_stimulation = ScaledStim(waveform=callable_waveform, dt=dt, tstop=stop)
-    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)
+    assert np.array_equal(
+        concat_stimulation._sample_waveforms(concat_stimulation.waveform),
+        callable_stimulation._sample_waveforms(callable_stimulation.waveform),
+    )
+    assert all(callable(wf) for wf in concat_stimulation.waveform)
+    assert concat_stimulation.waveform[0](up) == 1
+    assert concat_stimulation.waveform[0](down) == -1
+    assert callable_stimulation.waveform[0](up) == 1
+    assert callable_stimulation.waveform[0](down) == -1
+    assert callable_stimulation.waveform[0](start) == 0
+    assert callable_stimulation.waveform[0](off) == 0
 
 
 def test_multiple_waveforms():
@@ -145,6 +158,14 @@ def test_multiple_waveforms():
         )
         callable_waveforms.append(interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous"))
 
-    concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
+    with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
+        concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
     callable_stimulation = ScaledStim(waveform=callable_waveforms, dt=dt, tstop=stop)
-    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)
+    assert np.array_equal(
+        concat_stimulation._sample_waveforms(concat_stimulation.waveform),
+        callable_stimulation._sample_waveforms(callable_stimulation.waveform),
+    )
+    assert len(callable_stimulation.waveform) == len(callable_waveforms)
+    for i, (up, down) in enumerate(zip(up_list, down_list)):
+        assert callable_stimulation.waveform[i](up) == 1
+        assert callable_stimulation.waveform[i](down) == -1
