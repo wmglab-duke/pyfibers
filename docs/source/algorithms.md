@@ -31,9 +31,9 @@ the following steps occur:
 
 - Run simulations at the initial guesses for the upper and lower bounds.
 - Loop:
-   - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
-   - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
-   - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
+  - If the upper bound is suprathreshold and the lower bound is subthreshold, exit loop and proceed to bisection search.
+  - Otherwise, while both bounds are subthreshold or both are suprathreshold, expand the bounds in the appropriate direction.
+  - Repeat until the bounds straddle the threshold, or until the user-defined maximum number of iterations is reached (default).
 
 1. **Bisection Search**
 
