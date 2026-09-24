@@ -451,7 +451,7 @@ class Stimulation:
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
         self._validate_threshold_args(
-            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay=block_delay
+            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay
         )
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
@@ -749,7 +749,7 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float | None = None,
+        block_delay: float | None,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
