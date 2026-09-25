@@ -40,6 +40,28 @@ def _stim(mock_neuron, waveform=None, dt=0.01, tstop=0.05, **kwargs):
         return ScaledStim(waveform=wf, dt=dt, tstop=tstop, **kwargs)
 
 
+def test_prep_potentials_none_raises(mock_neuron, mock_fiber):
+    stim = _stim(mock_neuron)
+    mock_fiber.potentials = None
+    with pytest.raises(ValueError, match="No fiber potentials"):
+        stim._prep_potentials(mock_fiber)
+
+
+def test_prep_potentials_length_mismatch(mock_neuron, mock_fiber):
+    stim = _stim(mock_neuron)
+    mock_fiber.potentials = np.array([0.1, 0.2])
+    with pytest.raises(ValueError, match="match the length"):
+        stim._prep_potentials(mock_fiber)
+
+
+def test_prep_potentials_mutates_1d_to_2d(mock_neuron, mock_fiber):
+    stim = _stim(mock_neuron)
+    mock_fiber.potentials = np.array([0.1, 0.2, 0.3])
+    stim._prep_potentials(mock_fiber)
+    assert mock_fiber.potentials.ndim == 2
+    assert mock_fiber.potentials.shape == (1, 3)
+
+
 def test_waveform_length_mismatch(mock_neuron):
     with (
         patch("pyfibers.stimulation.h", mock_neuron),
@@ -126,9 +148,9 @@ def test_stimamp_list_matching_length_returned(mock_neuron, mock_fiber):
     np.testing.assert_array_equal(result, [1.5, 2.5])
 
 
-def test_callable_raises_runtime_error(mock_neuron):
+def test_callable_exception_propagates(mock_neuron):
     def bad(_t):
         raise ValueError("bad time")
 
-    with patch("pyfibers.stimulation.h", mock_neuron), pytest.raises(RuntimeError, match="processing callable"):
+    with patch("pyfibers.stimulation.h", mock_neuron), pytest.raises(ValueError, match="bad time"):
         ScaledStim(waveform=bad, dt=0.01, tstop=0.05)

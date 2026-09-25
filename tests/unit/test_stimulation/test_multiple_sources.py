@@ -286,5 +286,18 @@ def test_waveform_input_preserved_across_reprocess(mock_neuron):
         np.testing.assert_array_equal(sampled[0], np.concatenate([waveform, np.zeros(5)]))
 
 
+def test_callable_waveform_clears_waveform_input(mock_neuron):
+    with patch('pyfibers.stimulation.h', mock_neuron):
+        array_waveform = np.array([1.0, -1.0, 0.0, 0.0, 0.0])
+        stim = ScaledStim(waveform=array_waveform, dt=0.01, tstop=0.05)
+        assert stim._waveform_input is not None
+
+        stim.waveform = lambda t: 1.0 if t < 0.02 else 0.0
+        assert stim._waveform_input is None
+        stim.tstop = 0.1  # no-op reprocess for callables
+        assert stim._waveform_input is None
+        assert stim.waveform[0](0.0) == 1.0
+
+
 if __name__ == '__main__':
     pytest.main(['-v'])
