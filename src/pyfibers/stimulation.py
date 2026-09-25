@@ -747,7 +747,7 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float | None = None,
+        block_delay: float | None,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
