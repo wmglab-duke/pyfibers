@@ -1162,8 +1162,8 @@ class ScaledStim(Stimulation):
             callables (e.g., function). Each callable should accept
             a single float argument for the simulation time (in ms) and return the waveform value at
             that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
-            1D/2D arrays (or lists of floats) are deprecated and converted to interpolants
-            that return 0 outside the sampled time range.
+            1D/2D arrays (or lists of floats) are deprecated and converted to
+            ``interp1d`` interpolants with ``kind='previous'`` (out-of-range times raise).
         :param dt: Main simulation time step (ms).
         :param tstop: Total simulation duration (ms).
         :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
@@ -1252,10 +1252,10 @@ class ScaledStim(Stimulation):
         Also checks if the waveform has a max absolute value of 1 (recommended).
 
         Array or list-of-float inputs are deprecated. They are converted to
-        ``interp1d`` interpolants with ``kind='previous'`` that return 0 at times
-        outside the sampled range. The original array is kept in ``_waveform_input``
-        so pad, truncate, ``dt``, and ``tstop`` can re-process it. Callable inputs
-        do not need reprocessing, so ``_waveform_input`` is cleared.
+        ``interp1d`` interpolants with ``kind='previous'``; times outside the
+        sampled range raise. The original array is kept in ``_waveform_input``
+        so pad, truncate, ``dt``, and ``tstop`` can re-process it.
+        Callable inputs do not need reprocessing, so ``_waveform_input`` is cleared.
 
         :param value: Callable or list of callables. Each callable should accept
             a single float argument for the simulation time (in ms) and return the waveform value at
@@ -1266,8 +1266,8 @@ class ScaledStim(Stimulation):
         def array_processor(array_waveform: np.ndarray) -> list[Callable[[float], float]]:
             """Process a deprecated array waveform into interpolants.
 
-            Each row is converted to an interpolant that returns 0 outside the
-            sampled time range (``fill_value=0`` with ``bounds_error=False``).
+            Each row is converted to an ``interp1d`` with ``kind='previous'``.
+            Times outside the sampled range raise (``bounds_error=True``).
 
             :param array_waveform: Waveform provided as array
             :raises ValueError: if any processed waveform row length is not equal to the number of time steps
@@ -1306,8 +1306,7 @@ class ScaledStim(Stimulation):
                 if len(times) == 1:
                     times = np.append(times, times[0] + self.dt)
                     row = np.append(row, row[0])
-                # Return 0 at times before the first sample or after the last sample
-                processed_waveforms.append(interp1d(times, row, kind='previous', bounds_error=False, fill_value=0.0))
+                processed_waveforms.append(interp1d(times, row, kind='previous', bounds_error=True))
 
             return processed_waveforms
 

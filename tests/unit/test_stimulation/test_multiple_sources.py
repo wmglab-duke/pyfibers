@@ -217,9 +217,7 @@ def test_array_and_callable_waveforms_equivalent(mock_fiber, mock_neuron):
     with patch('pyfibers.stimulation.h', mock_neuron):
         array_waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         times = np.arange(5) * 0.01
-        callable_waveforms = [
-            interp1d(times, row, kind='previous', bounds_error=False, fill_value=0.0) for row in array_waveforms
-        ]
+        callable_waveforms = [interp1d(times, row, kind='previous', bounds_error=True) for row in array_waveforms]
         array_stim = ScaledStim(array_waveforms, dt=0.01, tstop=0.05)
         callable_stim = ScaledStim(callable_waveforms, dt=0.01, tstop=0.05)
 
@@ -251,15 +249,18 @@ def test_waveform_getter_wraps_single_callable(mock_neuron):
 
 def test_waveform_array_converted_to_interpolants(mock_neuron):
     with patch('pyfibers.stimulation.h', mock_neuron):
-        waveform = [0.0, 1.0, -1.0, 0.0, 0.0]
+        waveform = [0.0, 1.0, -1.0, 0.0, 0.5]
         stim = ScaledStim(waveform=waveform, dt=0.01, tstop=0.05)
         assert all(callable(wf) for wf in stim.waveform)
         assert len(stim.waveform) == 1
         assert stim.waveform[0](0.0) == 0.0
         assert stim.waveform[0](0.01) == 1.0
         assert stim.waveform[0](0.02) == -1.0
-        assert stim.waveform[0](-1.0) == 0.0
-        assert stim.waveform[0](0.05) == 0.0
+        assert stim.waveform[0](0.04) == 0.5
+        with pytest.raises(ValueError, match="interpolation range"):
+            stim.waveform[0](-1.0)
+        with pytest.raises(ValueError, match="interpolation range"):
+            stim.waveform[0](0.05)
 
 
 def test_waveform_dt_setter_reprocesses_array(mock_neuron):
