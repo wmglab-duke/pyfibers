@@ -858,10 +858,10 @@ class Stimulation:
         :param kwargs: Additional arguments for the run_sim method.
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
         """
-        # Skip end-excitation during intermediate threshold sims only. Copy kwargs so
-        # the shared dict used by find_threshold's confirming run_sim is not mutated
-        # (confirming run should keep the caller's fail_on_end_excitation default).
-        kwargs = {**kwargs, "fail_on_end_excitation": None}
+        # Skip end-excitation during intermediate threshold sims only. Copy into a local
+        # dict so the shared find_threshold kwargs passed to the confirming run_sim are
+        # not mutated (confirming run should keep the caller's fail_on_end_excitation default).
+        threshsim_kwargs = {**kwargs, "fail_on_end_excitation": None}
 
         if condition == ThresholdCondition.ACTIVATION:
             # Use supra_exit only for single-AP detection
@@ -869,19 +869,19 @@ class Stimulation:
             exit_func_kws = {"thresh_num_aps": thresh_num_aps}
 
             n_aps, aptime = self.run_sim(
-                stimamp, fiber, exit_func=exit_func, use_exit_t=True, **kwargs, exit_func_kws=exit_func_kws
+                stimamp, fiber, exit_func=exit_func, use_exit_t=True, **threshsim_kwargs, exit_func_kws=exit_func_kws
             )
             # Determine whether it is above threshold
             is_supra = self.threshold_checker(
-                fiber, ap_detect_location=kwargs.get("ap_detect_location", 0.9), thresh_num_aps=thresh_num_aps
+                fiber, ap_detect_location=threshsim_kwargs.get("ap_detect_location", 0.9), thresh_num_aps=thresh_num_aps
             )
             return is_supra, (n_aps, aptime)
         if condition == ThresholdCondition.BLOCK:  # noqa: R503
             # BLOCK condition
-            n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
+            n_aps, aptime = self.run_sim(stimamp, fiber, **threshsim_kwargs)
             is_block = self.threshold_checker(
                 fiber,
-                ap_detect_location=kwargs.get("ap_detect_location", 0.9),
+                ap_detect_location=threshsim_kwargs.get("ap_detect_location", 0.9),
                 block=True,
                 block_delay=block_delay,
                 thresh_num_aps=thresh_num_aps,
