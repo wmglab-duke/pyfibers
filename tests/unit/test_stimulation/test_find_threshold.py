@@ -168,6 +168,31 @@ def test_validate_threshold_args_rejects_inconsistent_bounds():
         stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 0, fiber)
 
 
+def test_validate_threshold_args_rejects_zero_bottom_for_geometric():
+    """Geometric mean with stimamp_bottom=0 never moves mid off 0 (#488)."""
+    stim = Stimulation(dt=0.001, tstop=1)
+    fiber = MagicMock()
+    fiber.stim = None
+    with pytest.raises(ValueError, match="stimamp_bottom cannot be 0.*geometric"):
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION,
+            1.0,
+            0.0,
+            5,
+            fiber,
+            bisection_mean=BisectionMean.GEOMETRIC,
+        )
+    # Arithmetic mean still allows bottom=0 (default path used by some callers).
+    stim._validate_threshold_args(
+        ThresholdCondition.ACTIVATION,
+        1.0,
+        0.0,
+        5,
+        fiber,
+        bisection_mean=BisectionMean.ARITHMETIC,
+    )
+
+
 def test_validate_threshold_args_warns_for_intrinsic_activity():
     stim = Stimulation(dt=0.001, tstop=1)
     fiber = MagicMock()
