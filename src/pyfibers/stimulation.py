@@ -858,9 +858,8 @@ class Stimulation:
         :param kwargs: Additional arguments for the run_sim method.
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
         """
-        # Skip end-excitation during intermediate threshold sims only. Copy into a local
-        # dict so the shared find_threshold kwargs passed to the confirming run_sim are
-        # not mutated (confirming run should keep the caller's fail_on_end_excitation default).
+        # Locally skip end-excitation check.
+        # Local dict avoids overwriting user value for confirming run.
         threshsim_kwargs = {**kwargs, "fail_on_end_excitation": None}
 
         if condition == ThresholdCondition.ACTIVATION:
