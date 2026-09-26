@@ -56,13 +56,22 @@ def test_thresh_num_aps_must_be_positive():
 def test_block_requires_thresh_num_aps_one():
     fiber = make_fiber([1] * 10, ap_times=[5.0] * 10)
     with pytest.raises(NotImplementedError, match="thresh_num_aps=1"):
-        Stimulation.threshold_checker(fiber, block=True, thresh_num_aps=2)
+        Stimulation.threshold_checker(fiber, block=True, block_delay=5.0, thresh_num_aps=2)
 
 
 def test_block_no_aps_raises():
     fiber = make_fiber([0] * 10)
     with pytest.raises(RuntimeError, match="No APs detected for block threshold"):
-        Stimulation.threshold_checker(fiber, block=True)
+        Stimulation.threshold_checker(fiber, block=True, block_delay=5.0)
+
+
+def test_block_requires_positive_block_delay():
+    fiber = make_fiber([1] * 10, ap_times=[5.0] * 10)
+    with pytest.raises(ValueError, match="positive block_delay"):
+        Stimulation.threshold_checker(fiber, block=True, block_delay=None)
+    for delay in (0, -1.0):
+        with pytest.raises(ValueError, match="positive block_delay"):
+            Stimulation.threshold_checker(fiber, block=True, block_delay=delay)
 
 
 def test_block_supra_when_last_ap_before_delay():
