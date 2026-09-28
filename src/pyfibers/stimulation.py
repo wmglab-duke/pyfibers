@@ -344,9 +344,14 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
         :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
-        :param block_delay: Time after simulation start to check for block (ms). Required and must be
-            positive when ``block`` is ``True``; ignored for activation.
-        :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
+        :param block_delay: Time after simulation start to check for block (ms).
+            Required and must be positive when ``block`` is ``True``; ignored for activation.
+            APs with ``detect_time <= block_delay`` are ignored for scoring failed block;
+            only an AP with ``detect_time > block_delay`` counts as failed block (subthreshold).
+        :param thresh_num_aps: For activation, number of APs that constitutes suprathreshold.
+            For block, only ``1`` is supported: a single AP after ``block_delay`` makes the
+            trial subthreshold (:class:`APCount <neuron:APCount>` records only the last AP
+            time, so multi-AP thresholds in the block window are not implemented).
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
@@ -374,7 +379,8 @@ class Stimulation:
                     "No APs detected for block threshold. Possibly the intrinsic activity weight is too low, "
                     "or no excitation is triggered at all. Check block_delay and/or start time of intrinsic activity."
                 )
-            # If no APs occur after block_delay, we interpret that as a successful block (supra-threshold for block).
+            # Last AP at/before block_delay: no APs in the block window => successful block (suprathreshold).
+            # An AP after block_delay: failed block (subthreshold). Earlier APs are ignored for that scoring.
             return detect_time <= block_delay
 
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
@@ -430,21 +436,21 @@ class Stimulation:
         :param stimamp_top: Initial upper-bound scaling factor passed to :meth:`run_sim`.
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param max_iterations: Maximum attempts to find bounding amplitudes before bisection.
-        :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
+        :param exit_t_shift: Extra time (ms) after a suprathreshold AP is detected; later activation
+            trials may stop at that AP time + ``exit_t_shift``. Used for activation searches only.
+            Pass ``None`` to disable setting an early-exit time.
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
-        :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
-            Defaults to ``None``; block searches require an explicit positive value (past onset /
-            intrinsic activity). Ignored for activation searches.
-        :param thresh_num_aps: Number of action potentials for threshold search:
+        :param block_delay: Time at which to start checking for block (ms). See
+            :meth:`threshold_checker`. Block searches require an explicit positive value;
+            ignored for activation searches.
+        :param thresh_num_aps: AP-count threshold; see :meth:`threshold_checker`:
             if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
             if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(
-            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay=block_delay
-        )
+        self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay)
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
@@ -741,7 +747,7 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float | None = None,
+        block_delay: float | None,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
@@ -852,9 +858,9 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param condition: Threshold condition
             (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
-        :param block_delay: If condition=BLOCK, time after which AP detection is considered blocked (ms).
+        :param block_delay: If condition=BLOCK, passed to :meth:`threshold_checker` (ms).
             Must be an explicit positive value for block; ignored for activation.
-        :param thresh_num_aps: Number of APs required to be considered suprathreshold.
+        :param thresh_num_aps: Passed to :meth:`threshold_checker`.
         :param kwargs: Additional arguments for the run_sim method.
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
         """
@@ -1028,7 +1034,10 @@ class IntraStim(Stimulation):
         :param exit_func: Function to call to check if simulation should be exited early.
         :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
-        :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
+        :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
@@ -1413,6 +1422,9 @@ class ScaledStim(Stimulation):
         :param exit_func_interval: How often (in time steps) to call exit_func.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
