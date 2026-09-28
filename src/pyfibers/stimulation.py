@@ -448,8 +448,8 @@ class Stimulation:
             stimamp_bottom,
             exit_t_shift,
             fiber,
-            block_delay=block_delay,
-            bisection_mean=bisection_mean,
+            block_delay,
+            bisection_mean,
         )
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
@@ -747,8 +747,8 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float | None = None,
-        bisection_mean: BisectionMean = BisectionMean.ARITHMETIC,
+        block_delay: float | None,
+        bisection_mean: BisectionMean,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
