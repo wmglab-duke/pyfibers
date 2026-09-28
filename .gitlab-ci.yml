@@ -198,6 +198,10 @@ open_github_pr:
     name: maniator/gh:latest
     entrypoint: ['']
   before_script: []
+  variables:
+    # Full history required: shallow push to GitHub fails with
+    # "remote: fatal: did not receive expected object … / index-pack failed"
+    GIT_DEPTH: '0'
   rules:
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     when: manual
