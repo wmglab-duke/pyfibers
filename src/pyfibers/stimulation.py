@@ -759,7 +759,7 @@ class Stimulation:
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
         :param block_delay: Block-check window start (ms); required and must be positive for block searches.
-        :param bisection_mean: Mean type for bisection; geometric mean rejects a zero lower bound.
+        :param bisection_mean: Mean type for bisection.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
         :raises ValueError: If geometric mean is used with stimamp_bottom equal to 0.
         :raises ValueError: If exit_t_shift is not positive.
