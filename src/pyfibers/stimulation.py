@@ -450,7 +450,15 @@ class Stimulation:
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay)
+        self._validate_threshold_args(
+            condition,
+            stimamp_top,
+            stimamp_bottom,
+            exit_t_shift,
+            fiber,
+            block_delay,
+            bisection_mean,
+        )
 
         self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
@@ -748,6 +756,7 @@ class Stimulation:
         exit_t_shift: float | None,
         fiber: Fiber,
         block_delay: float | None,
+        bisection_mean: BisectionMean,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
@@ -758,7 +767,9 @@ class Stimulation:
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
         :param block_delay: Block-check window start (ms); required and must be positive for block searches.
+        :param bisection_mean: Mean type for bisection.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
+        :raises ValueError: If geometric mean is used with stimamp_bottom equal to 0.
         :raises ValueError: If exit_t_shift is not positive.
         :raises ValueError: If ``condition`` is block and ``block_delay`` is unset or non-positive.
         """
@@ -768,6 +779,11 @@ class Stimulation:
             raise ValueError(
                 f"stimamp_top={stimamp_top} and stimamp_bottom={stimamp_bottom} have opposite signs. "
                 "Both bounds must have the same sign."
+            )
+        if bisection_mean == BisectionMean.GEOMETRIC and stimamp_bottom == 0:
+            raise ValueError(
+                "stimamp_bottom cannot be 0 when using geometric bisection mean "
+                "(geometric midpoint would stay at 0)."
             )
         if fiber.stim is not None and condition == ThresholdCondition.ACTIVATION:
             warnings.warn(

@@ -161,11 +161,44 @@ def test_validate_threshold_args_rejects_inconsistent_bounds():
     fiber = MagicMock()
     fiber.stim = None
     with pytest.raises(ValueError, match="greater in magnitude"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -0.1, -1.0, 5, fiber, block_delay=None)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -0.1, -1.0, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     with pytest.raises(ValueError, match="opposite signs"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, 0.01, 5, fiber, block_delay=None)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, 0.01, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     with pytest.raises(ValueError, match="exit_t_shift must be nonzero and positive"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 0, fiber, block_delay=None)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, -0.01, 0, fiber, None, BisectionMean.ARITHMETIC
+        )
+
+
+def test_validate_threshold_args_rejects_zero_bottom_for_geometric():
+    """Geometric mean with stimamp_bottom=0 never moves mid off 0 (#488)."""
+    stim = Stimulation(dt=0.001, tstop=1)
+    fiber = MagicMock()
+    fiber.stim = None
+    with pytest.raises(ValueError, match="stimamp_bottom cannot be 0.*geometric"):
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION,
+            1.0,
+            0.0,
+            5,
+            fiber,
+            None,
+            BisectionMean.GEOMETRIC,
+        )
+    # Arithmetic mean still allows bottom=0 (default path used by some callers).
+    stim._validate_threshold_args(
+        ThresholdCondition.ACTIVATION,
+        1.0,
+        0.0,
+        5,
+        fiber,
+        None,
+        BisectionMean.ARITHMETIC,
+    )
 
 
 def test_validate_threshold_args_warns_for_intrinsic_activity():
@@ -173,10 +206,12 @@ def test_validate_threshold_args_warns_for_intrinsic_activity():
     fiber = MagicMock()
     fiber.stim = object()
     with pytest.warns(UserWarning, match="intrinsic activity"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 5, fiber, block_delay=None)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, -0.01, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     fiber.stim = None
     with pytest.warns(UserWarning, match="lacks intrinsic activity"):
-        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber, block_delay=5.0)
+        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber, 5.0, BisectionMean.ARITHMETIC)
     assert stim._exit_t == float("Inf")
 
 
