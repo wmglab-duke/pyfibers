@@ -153,7 +153,7 @@ class Stimulation:
         if value <= 0:
             raise ValueError("dt must be positive")
         self._dt = value
-        self._reprocess_arr_waveform()  # deprecated array waveform path
+        self._reprocess_arr_waveform()  # no-op unless using deprecated array waveforms
 
     @property
     def tstop(self: Stimulation) -> float:
@@ -173,7 +173,7 @@ class Stimulation:
         if value <= 0:
             raise ValueError("tstop must be positive")
         self._tstop = value
-        self._reprocess_arr_waveform()  # deprecated array waveform path
+        self._reprocess_arr_waveform()  # no-op unless using deprecated array waveforms
 
     @property
     def n_timesteps(self: Stimulation) -> int:
@@ -184,7 +184,7 @@ class Stimulation:
         return int(self._tstop / self._dt)
 
     def _reprocess_arr_waveform(self: Stimulation) -> None:
-        """Notify subclasses when ``dt`` or ``tstop`` changes."""
+        """If using deprecated array waveforms, this will execute reprocessing."""
 
     def __str__(self: Stimulation) -> str:
         """Return a brief string representation of the Stimulation instance."""  # noqa: DAR201
@@ -1111,7 +1111,7 @@ class ScaledStim(Stimulation):
 
         For more information on defining potentials, see :doc:`/extracellular_potentials`.
 
-    ** Example Usage **
+    **Example Usage**
 
     .. code-block:: python
 
@@ -1162,23 +1162,21 @@ class ScaledStim(Stimulation):
             callables (e.g., function). Each callable should accept
             a single float argument for the simulation time (in ms) and return the waveform value at
             that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
-            1D/2D arrays (or lists of floats) are deprecated and converted to
-            ``interp1d`` interpolants with ``kind='previous'`` (out-of-range times raise).
+            1D/2D arrays (or lists of floats) are deprecated and will be removed in a future release.
+            Internally, they are converted to ``interp1d`` interpolants with 
+            ``kind='previous'`` (out-of-range times raise an error).
         :param dt: Main simulation time step (ms).
         :param tstop: Total simulation duration (ms).
         :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
         :param dt_init_ss: Large time step used during the steady-state period (ms).
-        :param pad_waveform: If ``True``, pad a **deprecated array** waveform with zeros
-            to match ``tstop``. Has no effect on callable interpolants; those are evaluated
-            at each time step and should return 0 outside the pulse themselves.
-        :param truncate_waveform: If ``True``, truncate a **deprecated array** waveform
+        :param pad_waveform: If ``True``, pad a *deprecated* array waveform with zeros
+            to match ``tstop``. Has no effect on callable interpolants.
+        :param truncate_waveform: If ``True``, truncate a *deprecated* array waveform
             to ``tstop``. Has no effect on callable interpolants.
-        :ivar waveform: Interpolants applied to the fiber potentials.
+        :ivar waveform: The waveform(s) to be applied to the fiber potentials.
             See :class:`ScaledStim` for more info.
-        :ivar pad: If ``True``, pad deprecated array waveforms with zeros to ``tstop``.
-        :ivar truncate: If ``True``, truncate deprecated array waveforms to ``tstop``.
         """
-        self._waveform_input: np.ndarray | list | None = None  # deprecated array inputs only
+        self._waveform_input: np.ndarray | list | None = None  # storage for deprecated array inputs
         self._pad = pad_waveform
         self._truncate = truncate_waveform
         super().__init__(dt, tstop, t_init_ss, dt_init_ss)
@@ -1247,8 +1245,7 @@ class ScaledStim(Stimulation):
     ) -> None:
         """Set the waveform and convert it to interpolants for evaluation at simulation time.
 
-        Accepts a single callable or a list of callables, processes each independently,
-        and stores interpolants on ``waveform``.
+        Accepts a single callable or a list of callables, processes each independently.
         Also checks if the waveform has a max absolute value of 1 (recommended).
 
         Array or list-of-float inputs are deprecated. They are converted to
