@@ -221,7 +221,7 @@ repos:
     - rstcheck[toml]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.38.0
+  rev: 0.38.2
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
@@ -250,7 +250,7 @@ repos:
     - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.18.1
+  rev: v4.19.0
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
