@@ -859,7 +859,8 @@ class Stimulation:
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
         """
         # Locally skip end-excitation check.
-        # Local dict avoids overwriting user value for confirming run.
+        # A strongly suprathreshold stimulus can appear to be end excitation.
+        # Local dict avoids overwriting user value for later threshold confirmation run.
         run_kwargs = {**kwargs, "fail_on_end_excitation": None}
 
         if condition == ThresholdCondition.ACTIVATION:
