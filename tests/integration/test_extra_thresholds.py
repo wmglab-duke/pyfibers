@@ -10,7 +10,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import scipy.signal as sg
-from scipy.interpolate import interp1d
 from scipy.stats import norm
 
 from pyfibers import (  # BisectionMean,; BoundsSearchMode,; TerminationMode,
@@ -34,12 +33,11 @@ def get_activation_threshold(model, nodecount=133, diameter=5.7, **kwargs):
     fiber = build_fiber(diameter=diameter, fiber_model=model, temperature=37, n_sections=nodecount)
     fiber.potentials = fiber.point_source_potentials(0, 100, fiber.length / 2, 1, 10)
 
-    # Create callable waveform: 0.2 ms positive, 0.2 ms negative, then zeros
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+
+    # parameters
     time_step = 0.001
     time_stop = 20
-    time_points = np.array([0, 0.2, 0.4, time_stop])
-    waveform_values = np.array([1, -1, 0, 0])  # positive from 0-0.2ms, negative from 0.2-0.4ms, then zeros
-    waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
     amp, ap = stimulation.find_threshold(fiber, **kwargs)
@@ -58,12 +56,11 @@ def get_amp_responses(model, stimamps, save=False):
         fiber.record_gating()
         fiber.record_vm()
 
-    # Create callable waveform: 0.2 ms positive, 0.2 ms negative, then zeros
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
+
+    # parameters
     time_step = 0.001
     time_stop = 5
-    time_points = np.array([0, 0.2, 0.4, time_stop])
-    waveform_values = np.array([1, -1, 0, 0])
-    waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
 
     result = [stimulation.run_sim(stimamp, fiber) for stimamp in stimamps]
@@ -76,12 +73,9 @@ def get_amp_responses(model, stimamps, save=False):
 def test_end_excitation():
     fiber = get_fiber()
     fiber.potentials = norm.pdf(np.linspace(-1, 1, 133), 0, 0.5) * 100
-    # Same biphasic pulse as the original sampled array (0.2 ms +, 0.2 ms -, then zeros)
+    waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     time_step = 0.001
     time_stop = 5
-    time_points = np.array([0, 0.2, 0.4, time_stop])
-    waveform_values = np.array([1, -1, 0, 0])
-    waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
     stimulation = ScaledStim(waveform=waveform, dt=time_step, tstop=time_stop)
     with pytest.raises(RuntimeError):
         stimulation.find_threshold(fiber)
@@ -165,9 +159,9 @@ def test_block_threshold():
     time_step = 0.0005  # ms
     time_stop = 50  # ms
     frequency = 20  # khz (because our time units are ms)
-
-    def waveform(t):
-        return sg.square(2 * np.pi * frequency * t)
+    # create time vector to make waveform with sg
+    t = np.arange(0, time_stop, time_step)  # ms
+    waveform = sg.square(2 * np.pi * frequency * t)
 
     n_nodes = 25
 

@@ -27,7 +27,7 @@ class _Section:
 
 def _patch_scaled_loop(stim, fiber, n_timesteps=8):
     stim._validate_scaling_inputs = lambda _fiber, amps: np.atleast_1d(np.array(amps, dtype=float))
-    stim._potentials_at_time = lambda _fiber, _amps: np.zeros(len(fiber.sections))
+    stim._potentials_at_time = lambda _i, _fiber, _amps: np.zeros(len(fiber.sections))
     stim._update_extracellular = lambda *_a, **_k: None
     stim.pre_run_setup = lambda *_a, **_k: setattr(stim, "_n_timesteps", n_timesteps)
     stim.ap_checker = lambda *_a, **_k: (0, None)

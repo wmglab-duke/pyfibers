@@ -29,7 +29,7 @@ def mock_fiber():
     fiber = Mock()
     fiber.temperature = 37
     fiber.v_rest = -70
-    fiber.potentials = np.array([[0.1, 0.2, 0.3]])
+    fiber.potentials = np.array([0.1, 0.2, 0.3])
     fiber.coordinates = [0, 1, 2]
     return fiber
 
@@ -56,7 +56,6 @@ def test_prep_potentials_length_mismatch(mock_neuron, mock_fiber):
 
 def test_prep_potentials_mutates_1d_to_2d(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron)
-    mock_fiber.potentials = np.array([0.1, 0.2, 0.3])
     stim._prep_potentials(mock_fiber)
     assert mock_fiber.potentials.ndim == 2
     assert mock_fiber.potentials.shape == (1, 3)
@@ -107,14 +106,14 @@ def test_array_waveform_future_warning(mock_neuron):
 
 def test_source_count_mismatch(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 0])
-    mock_fiber.potentials = np.array([[0.1, 0.2, 0.3]])
+    mock_fiber.potentials = np.array([0.1, 0.2, 0.3])
     with pytest.raises(ValueError, match="does not match number of waveforms"):
         stim._validate_scaling_inputs(mock_fiber, np.array(1.0))
 
 
 def test_all_zero_potentials(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron)
-    mock_fiber.potentials = np.zeros((1, 3))
+    mock_fiber.potentials = np.zeros(3)
     with pytest.raises(ValueError, match="non-zero fiber potential"):
         stim._validate_scaling_inputs(mock_fiber, np.array(1.0))
 
@@ -122,35 +121,34 @@ def test_all_zero_potentials(mock_neuron, mock_fiber):
 def test_all_zero_waveform(mock_neuron, mock_fiber):
     with pytest.warns(UserWarning, match="max absolute value of 1"):
         stim = _stim(mock_neuron, waveform=lambda t: 0.0)
-    mock_fiber.potentials = np.array([[0.1, 0.2, 0.3]])
     with pytest.raises(ValueError, match="non-zero waveform"):
         stim._validate_scaling_inputs(mock_fiber, np.array(1.0))
 
 
 def test_stimamp_list_length_mismatch(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 1])
-    mock_fiber.potentials = np.array([[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]])
+    mock_fiber.potentials = [np.array([0.1, 0.2, 0.3]), np.array([0.2, 0.3, 0.4])]
     with pytest.raises(ValueError, match="Number of stimamps"):
         stim._validate_scaling_inputs(mock_fiber, np.array([1.0, 2.0, 3.0]))
 
 
 def test_scalar_stimamp_broadcast(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 1])
-    mock_fiber.potentials = np.array([[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]])
+    mock_fiber.potentials = [np.array([0.1, 0.2, 0.3]), np.array([0.2, 0.3, 0.4])]
     result = stim._validate_scaling_inputs(mock_fiber, np.array(2.0))
     np.testing.assert_array_equal(result, [2.0, 2.0])
 
 
 def test_stimamp_list_matching_length_returned(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 1])
-    mock_fiber.potentials = np.array([[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]])
+    mock_fiber.potentials = [np.array([0.1, 0.2, 0.3]), np.array([0.2, 0.3, 0.4])]
     result = stim._validate_scaling_inputs(mock_fiber, np.array([1.5, 2.5]))
     np.testing.assert_array_equal(result, [1.5, 2.5])
 
 
-def test_callable_exception_propagates(mock_neuron):
+def test_callable_raises_runtime_error(mock_neuron):
     def bad(_t):
         raise ValueError("bad time")
 
-    with patch("pyfibers.stimulation.h", mock_neuron), pytest.raises(ValueError, match="bad time"):
+    with patch("pyfibers.stimulation.h", mock_neuron), pytest.raises(RuntimeError, match="processing callable"):
         ScaledStim(waveform=bad, dt=0.01, tstop=0.05)
