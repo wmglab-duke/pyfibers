@@ -2,6 +2,30 @@
 
 <!-- version list -->
 
+## v0.10.4 (2026-09-29)
+
+### Bug Fixes
+
+- Keep end-excitation check on confirming threshold run
+  ([#76](https://github.com/wmglab-duke/pyfibers/pull/76),
+  [`6f5172b`](https://github.com/wmglab-duke/pyfibers/commit/6f5172b6be41c3312864a15484c1c49b1be1548e))
+
+- Reject stimamp_bottom=0 for geometric bisection mean
+  ([#75](https://github.com/wmglab-duke/pyfibers/pull/75),
+  [`cb77613`](https://github.com/wmglab-duke/pyfibers/commit/cb7761393ddb61e803b18758e72b480a46998a34))
+
+### Build System
+
+- Keep 0.x majors on minor bumps ([#66](https://github.com/wmglab-duke/pyfibers/pull/66),
+  [`e7c8cd4`](https://github.com/wmglab-duke/pyfibers/commit/e7c8cd4c0a00d3a30e0f5ca9c0ac518f00ac36b9))
+
+### Documentation
+
+- Align threshold algorithms wording with code
+  ([#73](https://github.com/wmglab-duke/pyfibers/pull/73),
+  [`15de80e`](https://github.com/wmglab-duke/pyfibers/commit/15de80ec0a15fbbcc135516b1ae0153e86c5fe58))
+
+
 ## v0.10.3 (2026-09-23)
 
 ### Bug Fixes
