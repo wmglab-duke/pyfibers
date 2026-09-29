@@ -1095,21 +1095,16 @@ class IntraStim(Stimulation):
 class ScaledStim(Stimulation):
     """Manage extracellular stimulation of model fibers.
 
-    This class takes one or more waveforms, each of which is expected to match one corresponding
-    set of fiber potentials (i.e., one source) in the fiber being stimulated.
-    Therefore, if you have N potential sets on the fiber, you must provide N waveforms,
-    each describing the time course of stimulation for that source.
+    This class takes one or more waveforms, each matching one set of fiber potentials
+    (i.e., one source). See :attr:`waveform` for accepted waveform inputs.
 
-    ``stimamp`` in :meth:`run_sim` is a multiplicative scaling factor applied to ``fiber.potentials`` and the waveform.
-
-    The waveform can be either:
-        - A callable that accepts a single float argument for the stimulation time (in ms) and returns
-    the waveform value at that time.
-        - A list of such callables with length N if there are N sources
+    ``stimamp`` in :meth:`run_sim` is a multiplicative scaling factor applied to
+    :attr:`~pyfibers.fiber.Fiber.potentials` and :attr:`waveform`.
 
     .. seealso::
 
-        For more information on defining potentials, see :doc:`/extracellular_potentials`.
+        - :doc:`/extracellular_potentials` for defining potentials
+        - :doc:`/algorithms` for how potentials, waveforms, and ``stimamp`` are combined each time step
 
     **Example Usage**
 
@@ -1158,23 +1153,15 @@ class ScaledStim(Stimulation):
     ) -> None:
         """Initialize the ScaledStim class.
 
-        :param waveform: :class:`~collections.abc.Callable` or list of
-            callables (e.g., function). Each callable should accept
-            a single float argument for the simulation time (in ms) and return the waveform value at
-            that time. It is recommended that you provide unit waveforms (maximum absolute value of 1).
-            1D/2D arrays (or lists of floats) are deprecated and will be removed in a future release.
-            Internally, they are converted to ``interp1d`` interpolants with 
-            ``kind='previous'`` (out-of-range times raise an error).
-        :param dt: Main simulation time step (ms).
-        :param tstop: Total simulation duration (ms).
-        :param t_init_ss: Time (<=0) to reach steady-state prior to the main simulation.
-        :param dt_init_ss: Large time step used during the steady-state period (ms).
-        :param pad_waveform: If ``True``, pad a *deprecated* array waveform with zeros
-            to match ``tstop``. Has no effect on callable interpolants.
-        :param truncate_waveform: If ``True``, truncate a *deprecated* array waveform
-            to ``tstop``. Has no effect on callable interpolants.
-        :ivar waveform: The waveform(s) to be applied to the fiber potentials.
-            See :class:`ScaledStim` for more info.
+        :param waveform: See :attr:`waveform`.
+        :param dt: See :class:`Stimulation`.
+        :param tstop: See :class:`Stimulation`.
+        :param t_init_ss: See :class:`Stimulation`.
+        :param dt_init_ss: See :class:`Stimulation`.
+        :param pad_waveform: If ``True``, pad a *deprecated* array waveform with zeros to :attr:`tstop`.
+            Ignored for callables. Exposed after init as :attr:`pad`.
+        :param truncate_waveform: If ``True``, truncate a *deprecated* array waveform to :attr:`tstop`.
+            Ignored for callables. Exposed after init as :attr:`truncate`.
         """
         self._waveform_input: np.ndarray | list | None = None  # storage for deprecated array inputs
         self._pad = pad_waveform
@@ -1192,50 +1179,71 @@ class ScaledStim(Stimulation):
 
     @property
     def pad(self: ScaledStim) -> bool:
-        """If ``True``, pad a deprecated array waveform with zeros to ``tstop``.
+        """Whether deprecated array waveforms are padded to :attr:`tstop`.
 
-        Callable interpolants are not padded; they are evaluated at each time step.
-
-        :return: Whether deprecated array waveforms are padded to ``tstop``.
-        """
+        Same meaning as the ``pad_waveform`` argument to :meth:`__init__`.
+        """  # noqa: DAR201
         return self._pad
 
     @pad.setter
     def pad(self: ScaledStim, value: bool) -> None:
-        """Set array-waveform padding and re-process the original waveform input.
+        """Set :attr:`pad` and re-process a deprecated array waveform if present.
 
-        :param value: If ``True``, pad a deprecated array waveform with zeros to ``tstop``.
-            Ignored for callable interpolants.
+        :param value: New :attr:`pad` value.
         """
         self._pad = value
         self._reprocess_arr_waveform()  # deprecated array waveform path
 
     @property
     def truncate(self: ScaledStim) -> bool:
-        """If ``True``, truncate a deprecated array waveform to ``tstop``.
+        """Whether deprecated array waveforms are truncated to :attr:`tstop`.
 
-        Callable interpolants are not truncated; they are evaluated at each time step.
-
-        :return: Whether deprecated array waveforms are truncated to ``tstop``.
-        """
+        Same meaning as the ``truncate_waveform`` argument to :meth:`__init__`.
+        """  # noqa: DAR201
         return self._truncate
 
     @truncate.setter
     def truncate(self: ScaledStim, value: bool) -> None:
-        """Set array-waveform truncation and re-process the original waveform input.
+        """Set :attr:`truncate` and re-process a deprecated array waveform if present.
 
-        :param value: If ``True``, truncate a deprecated array waveform to ``tstop``.
-            Ignored for callable interpolants.
+        :param value: New :attr:`truncate` value.
         """
         self._truncate = value
         self._reprocess_arr_waveform()  # deprecated array waveform path
 
+    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
+        """Prepare the fiber's potentials for scaled stimulation.
+
+        Ensures they are in a suitable 2D numpy array form, one row per
+        potential set. Each row must match the length of the fiber coordinates.
+
+        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
+        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
+        """
+        # This should be moved to the Fiber class as a setter method
+        if fiber.potentials is None:
+            raise ValueError("No fiber potentials found.")
+        fiber.potentials = np.array(fiber.potentials)
+
+        # If it's just one 1D array, wrap it in a list for stacking
+        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
+            fiber.potentials = [fiber.potentials]
+
+        # Convert each potential to a np.array and check lengths
+        processed_potentials = [np.array(potential) for potential in fiber.potentials]
+        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
+            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
+
+        # Stack them into a 2D array
+        fiber.potentials = np.vstack(processed_potentials)
+
     @property
     def waveform(self: ScaledStim) -> list[Callable[[float], float]]:
-        """Interpolants applied to the fiber potentials.
+        """Waveform callables applied to the fiber potentials.
 
-        :return: The waveform interpolants applied to the fiber potentials.
-        """
+        See the setter for accepted input forms. Use :meth:`sample_waveforms`
+        to evaluate them on the current :attr:`dt` / :attr:`tstop` grid.
+        """  # noqa: DAR201
         return self._waveform
 
     @waveform.setter
@@ -1243,32 +1251,35 @@ class ScaledStim(Stimulation):
         self: ScaledStim,
         value: np.ndarray | list[Callable[[float], float]] | Callable[[float], float],
     ) -> None:
-        """Set the waveform and convert it to interpolants for evaluation at simulation time.
+        """Set the waveform(s) applied to fiber potentials.
 
-        Accepts a single callable or a list of callables, processes each independently.
-        Also checks if the waveform has a max absolute value of 1 (recommended).
+        Accepted forms:
 
-        Array or list-of-float inputs are deprecated. They are converted to
-        ``interp1d`` interpolants with ``kind='previous'``; times outside the
-        sampled range raise. The original array is kept in ``_waveform_input``
-        so pad, truncate, ``dt``, and ``tstop`` can re-process it.
-        Callable inputs do not need reprocessing, so ``_waveform_input`` is cleared.
+        - A callable that accepts a single float argument for the stimulation time (in ms)
+          and returns the waveform value at that time.
+        - A list of such callables with length N if there are N sources.
 
-        :param value: Callable or list of callables. Each callable should accept
-            a single float argument for the simulation time (in ms) and return the waveform value at
-            that time. Arrays/lists of floats are deprecated.
-        :raises TypeError: if a combination of callables and lists of floats are provided as waveforms
-        """
+        Unit waveforms (maximum absolute value of 1) are recommended so ``stimamp`` is
+        easy to interpret. Callables are evaluated at each time step and should return 0
+        outside the intended pulse. :meth:`sample_waveforms` is used to check the peak;
+        a warning is issued if it is not 1.
+
+        1D/2D arrays (or lists of floats) are deprecated and will be removed in a future
+        release. They are converted to :func:`scipy.interpolate.interp1d` interpolants with
+        ``kind='previous'`` (out-of-range times raise an error). Deprecated array inputs are stored
+        for reprocessing when :attr:`pad` / :attr:`truncate` / :attr:`dt` / :attr:`tstop` are changed;
+        callable inputs are not.
+
+        :param value: Waveform callable(s) or deprecated array input.
+        :raises TypeError: if callables and arrays are mixed in one list.
+        """  # noqa: D202, D402
 
         def array_processor(array_waveform: np.ndarray) -> list[Callable[[float], float]]:
-            """Process a deprecated array waveform into interpolants.
+            """Convert a deprecated array waveform into :func:`scipy.interpolate.interp1d` callables.
 
-            Each row is converted to an ``interp1d`` with ``kind='previous'``.
-            Times outside the sampled range raise (``bounds_error=True``).
-
-            :param array_waveform: Waveform provided as array
-            :raises ValueError: if any processed waveform row length is not equal to the number of time steps
-            :return: List of processed waveforms
+            :param array_waveform: Waveform provided as an array.
+            :raises ValueError: if a row length does not match :attr:`tstop` / :attr:`dt` after pad/truncate.
+            :return: List of interpolants, one per waveform row.
             """
             # process waveform provided as array for backwards compatibility
             warnings.warn(
@@ -1307,66 +1318,43 @@ class ScaledStim(Stimulation):
 
             return processed_waveforms
 
-        # wrap waveform in a list in not already a list
-        if not isinstance(value, list | np.ndarray):
-            waveforms = [value]
-        else:
+        if isinstance(value, list | np.ndarray):
             waveforms = value
+        else:  # wrap waveform in a list if not already a list
+            waveforms = [value]
 
         if any(callable(wf) for wf in waveforms):
             # if a mix of callables and arrays were specified, throw an error
             if not all(callable(wf) for wf in waveforms):
                 raise TypeError("Waveform must be specified as either a callable or a list of callables.")
-            waveform_list = waveforms if isinstance(value, list) else list(waveforms)
             self._waveform_input = None
         else:
-            waveform_list = array_processor(waveforms)
+            waveforms = array_processor(waveforms)
             self._waveform_input = value
 
         # if max abs value is not 1, warn user
-        if np.max(np.abs(self._sample_waveforms(waveform_list))) != 1:
+        if np.max(np.abs(self.sample_waveforms(waveforms))) != 1:
             warnings.warn(
                 'Waveform does not have a max absolute value of 1. '
                 'This is recommended to simplify scaling of the waveform.',
                 stacklevel=2,
             )
 
-        self._waveform = waveform_list
+        self._waveform = waveforms
 
-    def _sample_waveforms(self: ScaledStim, waveform_list: list[Callable[[float], float]]) -> np.ndarray:
-        """Evaluate interpolants on the current ``dt``/``tstop`` grid.
+    def sample_waveforms(
+        self: ScaledStim,
+        waveform_list: list[Callable[[float], float]] | None = None,
+    ) -> np.ndarray:
+        """Evaluate waveform callables on the current :attr:`dt` / :attr:`tstop` grid.
 
-        :param waveform_list: Interpolants to sample.
+        :param waveform_list: Callables to sample. Defaults to :attr:`waveform`.
         :return: Array of shape ``(n_waveforms, n_timesteps)``.
         """
+        if waveform_list is None:
+            waveform_list = self.waveform
         times = np.arange(self.n_timesteps) * self.dt
         return np.array([[wf(t) for t in times] for wf in waveform_list], dtype=float)
-
-    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
-        """Prepare the fiber's potentials for scaled stimulation.
-
-        Ensures they are in a suitable 2D numpy array form, one row per
-        potential set. Each row must match the length of the fiber coordinates.
-
-        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
-        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
-        """
-        # This should be moved to the Fiber class as a setter method
-        if fiber.potentials is None:
-            raise ValueError("No fiber potentials found.")
-        fiber.potentials = np.array(fiber.potentials)
-
-        # If it's just one 1D array, wrap it in a list for stacking
-        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
-            fiber.potentials = [fiber.potentials]
-
-        # Convert each potential to a np.array and check lengths
-        processed_potentials = [np.array(potential) for potential in fiber.potentials]
-        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
-            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
-
-        # Stack them into a 2D array
-        fiber.potentials = np.vstack(processed_potentials)
 
     def _potentials_at_time(
         self: ScaledStim, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
@@ -1405,7 +1393,7 @@ class ScaledStim(Stimulation):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
         if np.all(potential_rows == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero fiber potential')
-        if np.all(self._sample_waveforms(self.waveform) == 0):
+        if np.all(self.sample_waveforms() == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero waveform')
         if len(stimamps.shape) == 0:  # if single float, apply to all sources
             return np.array([stimamps] * len(self.waveform))
@@ -1432,12 +1420,13 @@ class ScaledStim(Stimulation):
 
             For more information on the underlying math, see :doc:`/algorithms`.
 
-        :param stimamp: Amplitude scaling factor for the product of extracellular potentials and waveform:
+        :param stimamp: Amplitude scaling factor for the product of extracellular potentials and
+            :attr:`waveform`:
             if there is a single source, ``stimamp`` should be a single float;
-            if there are multiple sources (i.e., ``fiber.potentials`` has multiple rows)
+            if there are multiple sources (i.e., :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
             and ``stimamp`` is a single float,
             the same stimamp is applied to all sources;
-            if there are multiple sources (i.e., ``fiber.potentials`` has multiple rows)
+            if there are multiple sources (i.e., :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
             and ``stimamp`` is a list of floats,
             each float is applied to the corresponding source. (List length must match number of sources.)
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.

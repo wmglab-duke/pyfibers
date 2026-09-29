@@ -77,7 +77,7 @@ def test_initialize_array_waveform(mock_neuron):
         assert stim.pad is True
         assert stim.truncate is True
         padded_waveforms = np.vstack([np.concatenate([wf, np.zeros(4995)]) for wf in waveforms])
-        assert np.array_equal(stim._sample_waveforms(stim.waveform), padded_waveforms)
+        assert np.array_equal(stim.sample_waveforms(), padded_waveforms)
         assert len(stim.waveform) == 2
         assert all(callable(wf) for wf in stim.waveform)
 
@@ -122,7 +122,7 @@ def test_waveform_array_prep(mock_neuron):
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
 
         expected_waveforms = np.array([[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]])
-        assert np.array_equal(stim._sample_waveforms(stim.waveform), expected_waveforms)
+        assert np.array_equal(stim.sample_waveforms(), expected_waveforms)
         assert all(callable(wf) for wf in stim.waveform)
 
 
@@ -130,11 +130,11 @@ def test_tstop_setter_repads_array_waveform(mock_neuron):
     with patch('pyfibers.stimulation.h', mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
-        assert stim._sample_waveforms(stim.waveform).shape[1] == 5
+        assert stim.sample_waveforms().shape[1] == 5
 
         stim.tstop = 50
         padded_waveforms = np.vstack([np.concatenate([wf, np.zeros(4995)]) for wf in waveforms])
-        assert np.array_equal(stim._sample_waveforms(stim.waveform), padded_waveforms)
+        assert np.array_equal(stim.sample_waveforms(), padded_waveforms)
 
 
 def test_potentials_at_time(mock_fiber, mock_neuron):
@@ -185,14 +185,14 @@ def test_pad_setter_reprocesses_waveform(mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=False, truncate_waveform=False)
         assert stim.pad is False
-        assert stim._sample_waveforms(stim.waveform).shape[1] == 5
+        assert stim.sample_waveforms().shape[1] == 5
 
         # Extend tstop so waveform is now short, then enable pad
         stim._tstop = 0.1  # bypass setter to avoid reprocessing
         stim.pad = True
         assert stim.pad is True
         padded_waveforms = np.vstack([np.concatenate([wf, np.zeros(5)]) for wf in waveforms])
-        assert np.array_equal(stim._sample_waveforms(stim.waveform), padded_waveforms)
+        assert np.array_equal(stim.sample_waveforms(), padded_waveforms)
 
 
 def test_truncate_setter_reprocesses_waveform(mock_neuron):
@@ -202,14 +202,14 @@ def test_truncate_setter_reprocesses_waveform(mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6], [0.5, 0.4, 0.3, 0.2, 0.1, 0.0]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.06, pad_waveform=False, truncate_waveform=False)
         assert stim.truncate is False
-        assert stim._sample_waveforms(stim.waveform).shape[1] == 6
+        assert stim.sample_waveforms().shape[1] == 6
 
         # Shorten tstop so waveform is now long, then enable truncate
         stim._tstop = 0.05  # bypass setter
         stim.truncate = True
         assert stim.truncate is True
         expected = np.array([[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]])
-        assert np.array_equal(stim._sample_waveforms(stim.waveform), expected)
+        assert np.array_equal(stim.sample_waveforms(), expected)
 
 
 def test_array_and_callable_waveforms_equivalent(mock_fiber, mock_neuron):
@@ -222,8 +222,8 @@ def test_array_and_callable_waveforms_equivalent(mock_fiber, mock_neuron):
         callable_stim = ScaledStim(callable_waveforms, dt=0.01, tstop=0.05)
 
         np.testing.assert_array_equal(
-            array_stim._sample_waveforms(array_stim.waveform),
-            callable_stim._sample_waveforms(callable_stim.waveform),
+            array_stim.sample_waveforms(),
+            callable_stim.sample_waveforms(),
         )
         for t in times:
             mock_neuron.t = t
@@ -267,10 +267,10 @@ def test_waveform_dt_setter_reprocesses_array(mock_neuron):
     with patch('pyfibers.stimulation.h', mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True)
-        assert stim._sample_waveforms(stim.waveform).shape[1] == 5
+        assert stim.sample_waveforms().shape[1] == 5
 
         stim.dt = 0.005
-        sampled = stim._sample_waveforms(stim.waveform)
+        sampled = stim.sample_waveforms()
         assert sampled.shape[1] == 10
         np.testing.assert_array_equal(sampled[0], np.concatenate([[0.1, 0.2, 0.3, 0.4, 0.5], np.zeros(5)]))
 
@@ -282,7 +282,7 @@ def test_waveform_input_preserved_across_reprocess(mock_neuron):
         np.testing.assert_array_equal(stim._waveform_input, waveform)
         stim.tstop = 0.1
         np.testing.assert_array_equal(stim._waveform_input, waveform)
-        sampled = stim._sample_waveforms(stim.waveform)
+        sampled = stim.sample_waveforms()
         assert sampled.shape[1] == 10
         np.testing.assert_array_equal(sampled[0], np.concatenate([waveform, np.zeros(5)]))
 

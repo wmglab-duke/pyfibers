@@ -93,12 +93,12 @@ def test_waveform_pad_truncate():
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
         stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._sample_waveforms(stimulation.waveform).shape[1] == 5000
+    assert stimulation.sample_waveforms().shape[1] == 5000
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
     with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
         stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._sample_waveforms(stimulation.waveform).shape[1] == 5000
+    assert stimulation.sample_waveforms().shape[1] == 5000
 
 
 def test_waveform_callable():
@@ -123,8 +123,8 @@ def test_waveform_callable():
     callable_waveform = interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous")
     callable_stimulation = ScaledStim(waveform=callable_waveform, dt=dt, tstop=stop)
     assert np.array_equal(
-        concat_stimulation._sample_waveforms(concat_stimulation.waveform),
-        callable_stimulation._sample_waveforms(callable_stimulation.waveform),
+        concat_stimulation.sample_waveforms(),
+        callable_stimulation.sample_waveforms(),
     )
     assert all(callable(wf) for wf in concat_stimulation.waveform)
     assert concat_stimulation.waveform[0](up) == 1
@@ -162,8 +162,8 @@ def test_multiple_waveforms():
         concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
     callable_stimulation = ScaledStim(waveform=callable_waveforms, dt=dt, tstop=stop)
     assert np.array_equal(
-        concat_stimulation._sample_waveforms(concat_stimulation.waveform),
-        callable_stimulation._sample_waveforms(callable_stimulation.waveform),
+        concat_stimulation.sample_waveforms(),
+        callable_stimulation.sample_waveforms(),
     )
     assert len(callable_stimulation.waveform) == len(callable_waveforms)
     for i, (up, down) in enumerate(zip(up_list, down_list)):
