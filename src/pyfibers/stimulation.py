@@ -225,8 +225,6 @@ class Stimulation:
                 f"Fiber model rest potential is specified as {fiber.v_rest} mV,"
                 f"but the transmembrane potential at the end of the steady-state period was {vs[-1]} mV."
             )
-        # Restore the smaller dt
-        h.dt = self.dt
         # Reset simulation time to 0
         h.t = 0
         h.fcurrent()
@@ -281,6 +279,8 @@ class Stimulation:
         fiber.apcounts(thresh=ap_detect_threshold)
         self._initialize_extracellular(fiber)  # Set extracellular stimulation at each segment to zero
         self._steady_state(fiber)  # Allow system to reach steady-state before simulation
+        h.dt = self.dt
+        h.tstop = self.tstop
 
     @staticmethod
     def ap_checker(
@@ -1027,7 +1027,7 @@ class IntraStim(Stimulation):
         :param fiber: The :class:`~pyfibers.fiber.Fiber` to be stimulated.
         :param ap_detect_location: Location to detect action potentials (percent along fiber)
         :param exit_func: Function to call to check if simulation should be exited early.
-        :param exit_func_interval: Interval (simulation time steps) between calls to ``exit_func``.
+        :param exit_func_interval: Call ``exit_func`` every ``exit_func_interval * dt`` ms.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
         :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
         :param fail_on_end_excitation: Behavior for end excitation detection:
@@ -1047,15 +1047,18 @@ class IntraStim(Stimulation):
 
         exit_func_kws = exit_func_kws or {}
 
-        # Run simulation
-        for i in range(self.n_timesteps):
+        # Run simulation until NEURON time reaches tstop
+        next_exit_check = exit_func_interval * self.dt
+        while h.t < h.tstop:
             h.fadvance()
 
             # check for NaNs in fiber potentials
             if np.any(np.isnan([s.v for s in fiber.sections])):
                 raise RuntimeError('NaN detected in fiber potentials at t =', h.t)
-            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location, **exit_func_kws):
-                break
+            if h.t >= next_exit_check:
+                if exit_func(fiber, ap_detect_location, **exit_func_kws):
+                    break
+                next_exit_check += exit_func_interval * self.dt
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
                 break
 
@@ -1432,7 +1435,7 @@ class ScaledStim(Stimulation):
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param ap_detect_location: Normalized location in [0,1] to check for APs.
         :param exit_func: Callback to check if the simulation can be ended early (e.g., upon detection of an AP).
-        :param exit_func_interval: How often (in time steps) to call exit_func.
+        :param exit_func_interval: Call ``exit_func`` every ``exit_func_interval * dt`` ms.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
         :param fail_on_end_excitation: Behavior for end excitation detection:
@@ -1453,8 +1456,9 @@ class ScaledStim(Stimulation):
 
         exit_func_kws = exit_func_kws or {}
 
-        # Advance the simulation in small steps, updating extracellular potentials each time
-        for i in range(self.n_timesteps):
+        # Advance until NEURON time reaches tstop, evaluating waveforms at h.t each step
+        next_exit_check = exit_func_interval * self.dt
+        while h.t < h.tstop:
             timestep_potentials = self._potentials_at_time(fiber, stimamps)
             self._update_extracellular(fiber, timestep_potentials)
 
@@ -1465,8 +1469,10 @@ class ScaledStim(Stimulation):
                 raise RuntimeError("NaN detected in fiber potentials.")
 
             # Periodically call exit_func to see if we should stop early
-            if i % exit_func_interval == 0 and exit_func(fiber, ap_detect_location, **exit_func_kws):
-                break
+            if h.t >= next_exit_check:
+                if exit_func(fiber, ap_detect_location, **exit_func_kws):
+                    break
+                next_exit_check += exit_func_interval * self.dt
             # If _exit_t was set (e.g., after first AP detection) and time has passed it, stop simulation
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
                 break
