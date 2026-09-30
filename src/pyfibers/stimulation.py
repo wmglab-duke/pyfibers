@@ -32,7 +32,7 @@ h.load_file('stdrun.hoc')
 # Set up module-level logger
 logger = logging.getLogger(__name__)
 
-### Enumerators to define configuration options ### noqa: E266
+### Enumerators to define configuration options ### # noqa: E266
 
 
 @unique
@@ -1269,8 +1269,9 @@ class ScaledStim(Stimulation):
 
         1D/2D arrays (or lists of floats) are deprecated and will be removed in a future
         release. They are converted to :func:`scipy.interpolate.interp1d` interpolants with
-        ``kind='previous'`` (out-of-range times raise an error). Deprecated array inputs are stored
-        for reprocessing when :attr:`pad` / :attr:`truncate` / :attr:`dt` / :attr:`tstop` are changed;
+        ``kind='previous'``, with an endpoint at :attr:`tstop` so times in ``[0, tstop)`` stay
+        in range (out-of-range times still raise). Deprecated array inputs are stored for
+        reprocessing when :attr:`pad` / :attr:`truncate` / :attr:`dt` / :attr:`tstop` are changed;
         callable inputs are not.
 
         :param value: Waveform callable(s) or deprecated array input.
@@ -1317,6 +1318,11 @@ class ScaledStim(Stimulation):
                 if len(times) == 1:
                     times = np.append(times, times[0] + self.dt)
                     row = np.append(row, row[0])
+                # Close the domain at tstop so h.t just under tstop (FP drift) stays in range.
+                # With kind='previous', the trailing 0 is only used at exactly tstop.
+                if times[-1] < self.tstop:
+                    times = np.append(times, self.tstop)
+                    row = np.append(row, 0.0)
                 processed_waveforms.append(interp1d(times, row, kind='previous', bounds_error=True))
 
             return processed_waveforms
