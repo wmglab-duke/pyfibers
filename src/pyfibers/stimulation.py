@@ -1102,7 +1102,7 @@ class ScaledStim(Stimulation):
     (i.e., one source). See :attr:`waveform` for accepted waveform inputs.
 
     ``stimamp`` in :meth:`run_sim` is a multiplicative scaling factor applied to
-    :attr:`~pyfibers.fiber.Fiber.potentials` and :attr:`waveform`.
+    ``Fiber.potentials`` and :attr:`waveform`.
 
     .. seealso::
 
@@ -1161,9 +1161,11 @@ class ScaledStim(Stimulation):
         :param tstop: See :class:`Stimulation`.
         :param t_init_ss: See :class:`Stimulation`.
         :param dt_init_ss: See :class:`Stimulation`.
-        :param pad_waveform: If ``True``, pad a *deprecated* array waveform with zeros to :attr:`tstop`.
+        :param pad_waveform: If ``True``, pad a *deprecated* array waveform with zeros to
+            :attr:`~pyfibers.stimulation.Stimulation.tstop`.
             Ignored for callables. Exposed after init as :attr:`pad`.
-        :param truncate_waveform: If ``True``, truncate a *deprecated* array waveform to :attr:`tstop`.
+        :param truncate_waveform: If ``True``, truncate a *deprecated* array waveform to
+            :attr:`~pyfibers.stimulation.Stimulation.tstop`.
             Ignored for callables. Exposed after init as :attr:`truncate`.
         """
         self._waveform_input: np.ndarray | list | None = None  # storage for deprecated array inputs
@@ -1182,9 +1184,9 @@ class ScaledStim(Stimulation):
 
     @property
     def pad(self: ScaledStim) -> bool:
-        """Whether deprecated array waveforms are padded to :attr:`tstop`.
+        """Whether deprecated array waveforms are padded to :attr:`~pyfibers.stimulation.Stimulation.tstop`.
 
-        Same meaning as the ``pad_waveform`` argument to :meth:`__init__`.
+        Same meaning as the ``pad_waveform`` argument to :meth:`ScaledStim.__init__`.
         """  # noqa: DAR201
         return self._pad
 
@@ -1199,9 +1201,9 @@ class ScaledStim(Stimulation):
 
     @property
     def truncate(self: ScaledStim) -> bool:
-        """Whether deprecated array waveforms are truncated to :attr:`tstop`.
+        """Whether deprecated array waveforms are truncated to :attr:`~pyfibers.stimulation.Stimulation.tstop`.
 
-        Same meaning as the ``truncate_waveform`` argument to :meth:`__init__`.
+        Same meaning as the ``truncate_waveform`` argument to :meth:`ScaledStim.__init__`.
         """  # noqa: DAR201
         return self._truncate
 
@@ -1245,7 +1247,8 @@ class ScaledStim(Stimulation):
         """Waveform callables applied to the fiber potentials.
 
         See the setter for accepted input forms. Use :meth:`sample_waveforms`
-        to evaluate them on the current :attr:`dt` / :attr:`tstop` grid.
+        to evaluate them on the current :attr:`~pyfibers.stimulation.Stimulation.dt` /
+        :attr:`~pyfibers.stimulation.Stimulation.tstop` grid.
         """  # noqa: DAR201
         return self._waveform
 
@@ -1269,10 +1272,11 @@ class ScaledStim(Stimulation):
 
         1D/2D arrays (or lists of floats) are deprecated and will be removed in a future
         release. They are converted to :func:`scipy.interpolate.interp1d` interpolants with
-        ``kind='previous'``, with an endpoint at :attr:`tstop` so times in ``[0, tstop)`` stay
-        in range (out-of-range times still raise). Deprecated array inputs are stored for
-        reprocessing when :attr:`pad` / :attr:`truncate` / :attr:`dt` / :attr:`tstop` are changed;
-        callable inputs are not.
+        ``kind='previous'``, with an endpoint at :attr:`~pyfibers.stimulation.Stimulation.tstop`
+        so times in ``[0, tstop)`` stay in range (out-of-range times still raise). Deprecated
+        array inputs are stored for reprocessing when :attr:`pad` / :attr:`truncate` /
+        :attr:`~pyfibers.stimulation.Stimulation.dt` /
+        :attr:`~pyfibers.stimulation.Stimulation.tstop` are changed; callable inputs are not.
 
         :param value: Waveform callable(s) or deprecated array input.
         :raises TypeError: if callables and arrays are mixed in one list.
@@ -1282,7 +1286,9 @@ class ScaledStim(Stimulation):
             """Convert a deprecated array waveform into :func:`scipy.interpolate.interp1d` callables.
 
             :param array_waveform: Waveform provided as an array.
-            :raises ValueError: if a row length does not match :attr:`tstop` / :attr:`dt` after pad/truncate.
+            :raises ValueError: if a row length does not match
+                :attr:`~pyfibers.stimulation.Stimulation.tstop` /
+                :attr:`~pyfibers.stimulation.Stimulation.dt` after pad/truncate.
             :return: List of interpolants, one per waveform row.
             """
             # process waveform provided as array for backwards compatibility
@@ -1355,7 +1361,11 @@ class ScaledStim(Stimulation):
         self: ScaledStim,
         waveform_list: list[Callable[[float], float]] | None = None,
     ) -> np.ndarray:
-        """Evaluate waveform callables on the current :attr:`dt` / :attr:`tstop` grid.
+        """Evaluate waveform callables on the current dt / tstop grid.
+
+        Samples at ``np.arange(n_timesteps) * dt`` using
+        :attr:`~pyfibers.stimulation.Stimulation.dt` and
+        :attr:`~pyfibers.stimulation.Stimulation.tstop`.
 
         :param waveform_list: Callables to sample. Defaults to :attr:`waveform`.
         :return: Array of shape ``(n_waveforms, n_timesteps)``.
@@ -1432,10 +1442,10 @@ class ScaledStim(Stimulation):
         :param stimamp: Amplitude scaling factor for the product of extracellular potentials and
             :attr:`waveform`:
             if there is a single source, ``stimamp`` should be a single float;
-            if there are multiple sources (i.e., :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
+            if there are multiple sources (i.e., ``Fiber.potentials`` has multiple rows)
             and ``stimamp`` is a single float,
             the same stimamp is applied to all sources;
-            if there are multiple sources (i.e., :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
+            if there are multiple sources (i.e., ``Fiber.potentials`` has multiple rows)
             and ``stimamp`` is a list of floats,
             each float is applied to the corresponding source. (List length must match number of sources.)
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
