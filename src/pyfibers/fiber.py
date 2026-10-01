@@ -289,32 +289,6 @@ def _shift_fiber(
     return final_shift % delta_z
 
 
-class _PotentialsArray(np.ndarray):
-    """Ndarray view that routes ``+=`` through :attr:`Fiber.potentials`.
-
-    In-place addition on a property otherwise mutates the live array before the
-    setter runs. Computing the sum first keeps validation on the setter and
-    leaves the stored potentials unchanged if the addend is invalid.
-    """
-
-    def __array_finalize__(self: _PotentialsArray, obj: np.ndarray | None) -> None:
-        """Copy the owning fiber from the parent array, if any."""  # noqa: DAR101
-        self._fiber = getattr(obj, '_fiber', None)
-
-    def __iadd__(self: _PotentialsArray, other: np.ndarray | list | float) -> np.ndarray:
-        """Add ``other`` via :attr:`Fiber.potentials` when this view is owned by a fiber.
-
-        :param other: Values to add (broadcastable to the current potentials).
-        :return: The updated potentials array.
-        """
-        fiber = getattr(self, '_fiber', None)
-        if fiber is None:
-            super().__iadd__(other)
-            return self
-        fiber.potentials = np.asarray(self, dtype=float) + np.asarray(other, dtype=float)
-        return fiber.potentials
-
-
 class Fiber:
     """Base class for model fibers.
 
@@ -651,11 +625,13 @@ class Fiber:
         array stores it as a single source row. In-place addition (``+=``) superposes
         another potential set onto the stored values.
 
+        Returns the stored array with normal NumPy mutation semantics. In-place
+        operations mutate it before setter validation; use
+        ``fiber.potentials = fiber.potentials + other`` to validate before storing.
+
         :return: Potential values for each source and fiber section.
         """
-        view = self._potentials.view(_PotentialsArray)
-        view._fiber = self
-        return view
+        return self._potentials
 
     @potentials.setter
     def potentials(self: Fiber, value: np.ndarray | list[np.ndarray] | None) -> None:
@@ -666,13 +642,15 @@ class Fiber:
         ``fiber.potentials += other`` superposes ``other`` onto the current values.
 
         :param value: Potential values (mV) to store on the fiber.
-        :raises ValueError: If ``value`` is ``None`` or row lengths do not match
-            ``len(Fiber.coordinates)``.
+        :raises ValueError: If ``value`` is ``None``, has more than two dimensions,
+            or row lengths do not match ``len(Fiber.coordinates)``.
         """
         if value is None:
             raise ValueError("No fiber potentials found.")
 
         potentials_2d = np.atleast_2d(np.array(value, dtype=float, copy=True))
+        if potentials_2d.ndim != 2:
+            raise ValueError("Potentials must be a 1D or 2D array.")
         if not all(len(row) == len(self.coordinates) for row in potentials_2d):
             raise ValueError("Potential arrays must match the length of fiber.coordinates.")
 
