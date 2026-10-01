@@ -289,6 +289,32 @@ def _shift_fiber(
     return final_shift % delta_z
 
 
+class _PotentialsArray(np.ndarray):
+    """Ndarray view that routes ``+=`` through :attr:`Fiber.potentials`.
+
+    In-place addition on a property otherwise mutates the live array before the
+    setter runs. Computing the sum first keeps validation on the setter and
+    leaves the stored potentials unchanged if the addend is invalid.
+    """
+
+    def __array_finalize__(self: _PotentialsArray, obj: np.ndarray | None) -> None:
+        """Copy the owning fiber from the parent array, if any."""  # noqa: DAR101
+        self._fiber = getattr(obj, '_fiber', None)
+
+    def __iadd__(self: _PotentialsArray, other: np.ndarray | list | float) -> np.ndarray:
+        """Add ``other`` via :attr:`Fiber.potentials` when this view is owned by a fiber.
+
+        :param other: Values to add (broadcastable to the current potentials).
+        :return: The updated potentials array.
+        """
+        fiber = getattr(self, '_fiber', None)
+        if fiber is None:
+            super().__iadd__(other)
+            return self
+        fiber.potentials = np.asarray(self, dtype=float) + np.asarray(other, dtype=float)
+        return fiber.potentials
+
+
 class Fiber:
     """Base class for model fibers.
 
@@ -384,7 +410,8 @@ class Fiber:
 
         .. set by user
 
-        :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
+        :ivar potentials: 2D numpy array of extracellular potentials (mV) with shape
+            ``(n_sources, n_sections)``. A 1D input is stored as a single row.
             For more info, see :doc:`/extracellular_potentials`.
         """
         if diameter <= 0:
@@ -417,7 +444,7 @@ class Fiber:
         self.sections: list = []
         self.nodes: list = []
         self.coordinates: np.ndarray = np.array([])
-        self.potentials: np.ndarray = np.array([])
+        self._potentials: np.ndarray = np.empty((0, 0))
         self.path: nd_line = None
 
     # MAGIC METHODS #
@@ -617,6 +644,41 @@ class Fiber:
         return float(np.sum([section.L for section in self.sections]))
 
     @property
+    def potentials(self: Fiber) -> np.ndarray:
+        """Extracellular potential values along the fiber [mV].
+
+        Stored as a 2D array with shape ``(n_sources, n_sections)``. Assigning a 1D
+        array stores it as a single source row. In-place addition (``+=``) superposes
+        another potential set onto the stored values.
+
+        :return: Potential values for each source and fiber section.
+        """
+        view = self._potentials.view(_PotentialsArray)
+        view._fiber = self
+        return view
+
+    @potentials.setter
+    def potentials(self: Fiber, value: np.ndarray | list[np.ndarray] | None) -> None:
+        """Set and normalize extracellular potentials.
+
+        Accepts a 1D array (one source), a 2D array, or a sequence of 1D arrays.
+        Values are stacked into a 2D array and checked against ``Fiber.coordinates``.
+        ``fiber.potentials += other`` superposes ``other`` onto the current values.
+
+        :param value: Potential values (mV) to store on the fiber.
+        :raises ValueError: If ``value`` is ``None`` or row lengths do not match
+            ``len(Fiber.coordinates)``.
+        """
+        if value is None:
+            raise ValueError("No fiber potentials found.")
+
+        potentials_2d = np.atleast_2d(np.array(value, dtype=float, copy=True))
+        if not all(len(row) == len(self.coordinates) for row in potentials_2d):
+            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
+
+        self._potentials = potentials_2d
+
+    @property
     def longitudinal_coordinates(self: Fiber) -> np.ndarray:
         """A numpy array of 1D (arc-length) coordinates of the center of each section along the fiber.
 
@@ -727,11 +789,6 @@ class Fiber:
 
         if inplace:
             self.potentials = newpotentials
-            if len(self.potentials) != len(self.longitudinal_coordinates):
-                raise ValueError(
-                    f"Potentials and coordinates must be the same length. "
-                    f"Got {len(self.potentials)} potentials and {len(self.longitudinal_coordinates)} coordinates."
-                )
 
         return newpotentials
 

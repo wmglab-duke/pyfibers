@@ -33,9 +33,10 @@ for spot in [100, -100]:
 
 fiber.potentials = np.vstack(pots)
 
-plt.plot(fiber.potentials[0, :])
-plt.plot(fiber.potentials[1, :])
+plt.plot(fiber.potentials[0])
+plt.plot(fiber.potentials[1])
 
+# create biphasic square wave to use as a stimulation waveform
 # parameters
 time_step = 0.001  # timestep
 time_stop = 15  # duration of simulation

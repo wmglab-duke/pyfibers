@@ -155,13 +155,14 @@ potentials_array = np.vstack((potentials_array_1, potentials_array_2))
 Similarly, multiple waveforms must then be provided to the {py:class}`~pyfibers.stimulation.ScaledStim` class instance as a list, where each callable in the list corresponds to the waveform from a different source.
 
 ```python
-waveform = scipy.interpolate.interp1d(
+waveform1 = scipy.interpolate.interp1d(
     [0, 0.1, 0.2, time_stop], [0, 1, 0, 0], kind="previous"
 )
-waveform = scipy.interpolate.interp1d(
+waveform2 = scipy.interpolate.interp1d(
     [0, 0.1, 0.2, time_stop], [0, -1, 0, 0], kind="previous"
 )
-stimulation = ScaledStim(fiber, [waveform1, waveform2])
+fiber.potentials = potentials_array
+stimulation = ScaledStim(waveform=[waveform1, waveform2], dt=0.001, tstop=time_stop)
 ```
 
 ## Algorithm details
