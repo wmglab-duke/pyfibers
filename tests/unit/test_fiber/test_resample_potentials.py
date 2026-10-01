@@ -56,7 +56,7 @@ class TestResamplePotentials:
         original_potentials = test_fiber.potentials.copy()
         test_fiber.resample_potentials(potentials, coords, inplace=True)
         assert not np.array_equal(test_fiber.potentials, original_potentials)
-        np.testing.assert_array_equal(test_fiber.potentials[0], resampled)
+        np.testing.assert_array_equal(test_fiber.potentials, resampled)
 
     def test_centering(self, test_fiber, test_potentials):
         """Test centered vs non-centered resampling."""

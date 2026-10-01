@@ -78,8 +78,7 @@ def test_point_source_potentials_inplace(mock_fiber):
     x, y, z, i0, sigma = 0, 0, 0, 1, 1.0
     mock_fiber.point_source_potentials(x, y, z, i0, sigma, inplace=True)
     expected_potentials = i0 / (4 * np.pi * sigma * np.sqrt(np.array([0, 100, 400, 900, 1600]) * 1e-12))
-    assert mock_fiber.potentials.shape == (1, 5)
-    assert np.allclose(mock_fiber.potentials[0], expected_potentials, atol=1e-10)
+    assert np.allclose(mock_fiber.potentials, expected_potentials, atol=1e-10)
 
 
 if __name__ == "__main__":
