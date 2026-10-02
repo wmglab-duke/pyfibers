@@ -20,7 +20,7 @@ def mock_fiber():
     fiber = Mock()
     fiber.temperature = 37
     fiber.v_rest = -70
-    fiber.potentials = [np.array([0.1, 0.2, 0.3]), np.array([0.2, 0.3, 0.4])]
+    fiber.potentials = np.array([[0.1, 0.2, 0.3], [0.2, 0.3, 0.4]])
     fiber.coordinates = [0, 1, 2]
     fiber.apc = [Mock(time=5.0, n=1), Mock(time=0, n=0), Mock(time=0, n=0)]
     fiber.loc_index = Mock(return_value=1)
@@ -73,7 +73,6 @@ def test_potentials_at_time(mock_fiber, mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
         stim._prep_waveform()
-        stim._prep_potentials(mock_fiber)
 
         potentials = stim._potentials_at_time(0, mock_fiber, [1, 1])
         assert np.allclose(potentials, np.array([0.11, 0.17, 0.23]))
@@ -88,7 +87,6 @@ def test_potentials_at_time_strict_zip(mock_fiber, mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
         stim._prep_waveform()
-        stim._prep_potentials(mock_fiber)
         with pytest.raises(ValueError, match="zip\\(\\)"):
             stim._potentials_at_time(0, mock_fiber, [1])
 

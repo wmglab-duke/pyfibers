@@ -381,12 +381,6 @@ class Fiber:
         :ivar nc: A NEURON :class:`NetCon <neuron:NetCon>` object for intrinsic activity.
         :ivar syn: A NEURON :class:`ExpSyn <neuron:ExpSyn>` object for intrinsic activity.
         :ivar stim: A NEURON :class:`NetStim <neuron:NetStim>` object for intrinsic activity.
-
-        .. set by user
-
-        :ivar potentials: 2D numpy array of extracellular potentials (mV) with shape
-            ``(n_sources, n_sections)``. A 1D input is stored as a single row.
-            For more info, see :doc:`/extracellular_potentials`.
         """
         if diameter <= 0:
             raise ValueError("Diameter must be positive")
@@ -619,15 +613,12 @@ class Fiber:
 
     @property
     def potentials(self: Fiber) -> np.ndarray:
-        """Extracellular potential values along the fiber [mV].
+        """Extracellular potentials in mV, with one row per source and one column per section.
 
-        Stored as a 2D array with shape ``(n_sources, n_sections)``. Assigning a 1D
-        array stores it as a single source row. In-place addition (``+=``) superposes
-        another potential set onto the stored values.
+        The array has shape ``(n_sources, n_sections)``. Assigning a 1D array stores
+        it as a single row.
 
-        Returns the stored array with normal NumPy mutation semantics. In-place
-        operations mutate it before setter validation; use
-        ``fiber.potentials = fiber.potentials + other`` to validate before storing.
+        See :doc:`/extracellular_potentials` for examples.
 
         :return: Potential values for each source and fiber section.
         """
