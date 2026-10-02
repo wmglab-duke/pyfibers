@@ -83,6 +83,14 @@ def test_array_waveform_future_warning(mock_neuron):
         ScaledStim(waveform=[0, 1, 0, 0, 0], dt=0.01, tstop=0.05)
 
 
+@pytest.mark.parametrize('shape', [(0, 0), (0, 3), (1, 0)])
+def test_empty_potentials_reports_assignment_required(mock_neuron, mock_fiber, shape):
+    stim = _stim(mock_neuron)
+    mock_fiber.potentials = np.empty(shape)
+    with pytest.raises(ValueError, match=r"Fiber potentials are empty.*assign fiber\.potentials"):
+        stim._validate_scaling_inputs(mock_fiber, np.array(1.0))
+
+
 def test_source_count_mismatch(mock_neuron, mock_fiber):
     stim = _stim(mock_neuron, waveform=[lambda t: 1, lambda t: 0])
     mock_fiber.potentials = np.array([[0.1, 0.2, 0.3]])

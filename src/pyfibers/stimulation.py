@@ -1368,6 +1368,10 @@ class ScaledStim(Stimulation):
         """
         self._prep_waveform()
 
+        if fiber.potentials.size == 0:
+            raise ValueError(
+                "Fiber potentials are empty. Before running extracellular stimulation, assign fiber.potentials."
+            )
         if len(fiber.potentials) != len(self._prepped_waveform):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
         if np.all(fiber.potentials == 0):
