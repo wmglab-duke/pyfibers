@@ -24,7 +24,7 @@ sys.path.append(r'/Applications/NEURON-7.8/lib/python')
 
 nodecount = 133
 
-model = FiberModel.SMALL_MRG_INTERPOLATION  # type of fiber model
+model = FiberModel.PENA  # type of fiber model
 
 # create fiber
 fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=nodecount)
