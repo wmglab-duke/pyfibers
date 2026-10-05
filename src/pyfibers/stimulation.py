@@ -428,8 +428,8 @@ class Stimulation:
         :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search:
             if bounds_search_mode is ``"percent"``, this is the percentage increase/decrease;
             if bounds_search_mode is ``"absolute"``, this is the absolute increase/decrease.
-            Shrinking the lower bound (both amplitudes suprathreshold) must keep the same sign.
-            If the step would hit or cross zero, the search raises ``RuntimeError``; use a smaller step.
+            Both bounds must keep the same sign. If an absolute step would hit or cross zero, 
+            the search raises ``RuntimeError``; use a smaller step.
         :param termination_mode: The termination mode
             (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
         :param termination_tolerance: Difference between upper and lower bounds that indicates convergence:
@@ -621,7 +621,6 @@ class Stimulation:
                 )
 
             # Both suprathreshold: lower the bottom bound and old bottom -> new top.
-            # sign() only chooses direction; a large step can hit or cross zero (#487).
             elif supra_bot and supra_top:
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
