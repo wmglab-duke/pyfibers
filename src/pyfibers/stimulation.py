@@ -623,21 +623,19 @@ class Stimulation:
             # Both suprathreshold: lower the bottom bound and old bottom -> new top.
             # sign() only chooses direction; a large step can hit or cross zero (#487).
             elif supra_bot and supra_top:
-                previous_bottom = stimamp_bottom
-                stimamp_top = previous_bottom
+                stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
-                    updated_bottom = previous_bottom - np.sign(previous_bottom) * bounds_search_step
+                    stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
-                    updated_bottom = previous_bottom * (1 - bounds_search_step / 100)
-                if previous_bottom * updated_bottom <= 0:
+                    stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
+                if stimamp_top * stimamp_bottom <= 0:
                     raise RuntimeError(
                         "Bounds search would move stimamp_bottom from "
-                        f"{previous_bottom} to {updated_bottom} "
+                        f"{stimamp_top} to {stimamp_bottom} "
                         f"(mode={bounds_search_mode}, step={bounds_search_step}), "
                         "crossing or hitting zero. Shrink bounds_search_step so the "
                         "updated bound keeps the same sign."
                     )
-                stimamp_bottom = updated_bottom
 
                 logger.info(
                     "Bounds iter. %3d: [%+10.4f, %+10.4f]",
