@@ -428,7 +428,7 @@ class Stimulation:
         :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search:
             if bounds_search_mode is ``"percent"``, this is the percentage increase/decrease;
             if bounds_search_mode is ``"absolute"``, this is the absolute increase/decrease.
-            Both bounds must keep the same sign. If an absolute step would hit or cross zero, 
+            Both bounds must keep the same sign. If an absolute step would hit or cross zero,
             the search raises ``RuntimeError``; use a smaller step.
         :param termination_mode: The termination mode
             (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
