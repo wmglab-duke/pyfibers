@@ -615,8 +615,11 @@ class Fiber:
     def potentials(self: Fiber) -> np.ndarray:
         """Extracellular potentials in mV, with one row per source and one column per section.
 
-        The array has shape ``(n_sources, n_sections)``. Assigning a 1D array stores
-        it as a single row.
+        The array has shape ``(n_sources, n_sections)``. Assign a 1D array for one source;
+        it is stored as a single row. For several sources, assign a 2D array, with one row
+        per source. Each row must have the same length as
+        ``fiber.coordinates``. ``fiber.potentials += other`` adds ``other`` to the potentials
+        already stored.
 
         See :doc:`/extracellular_potentials` for examples.
 
@@ -627,10 +630,6 @@ class Fiber:
     @potentials.setter
     def potentials(self: Fiber, value: np.ndarray | list[np.ndarray] | None) -> None:
         """Set and normalize extracellular potentials.
-
-        Accepts a 1D array (one source), a 2D array, or a sequence of 1D arrays.
-        Values are stacked into a 2D array and checked against ``Fiber.coordinates``.
-        ``fiber.potentials += other`` superposes ``other`` onto the current values.
 
         :param value: Potential values (mV) to store on the fiber.
         :raises ValueError: If ``value`` is ``None``, has more than two dimensions,

@@ -138,6 +138,8 @@ class Stimulation:
     def dt(self: Stimulation) -> float:
         """Time step for the simulation (ms).
 
+        The value must be positive.
+
         :return: The simulation time step in milliseconds.
         """
         return self._dt
@@ -157,6 +159,8 @@ class Stimulation:
     @property
     def tstop(self: Stimulation) -> float:
         """Total duration of the simulation (ms).
+
+        The value must be positive.
 
         :return: The simulation stop time in milliseconds.
         """
@@ -1216,6 +1220,8 @@ class ScaledStim(Stimulation):
     def pad(self: ScaledStim) -> bool:
         """If ``True``, extend a sampled waveform with zeros to match simulation time.
 
+        Setting this reprocesses the current waveform.
+
         :return: Whether sampled waveforms are padded to ``tstop``.
         """
         return self._pad
@@ -1233,6 +1239,8 @@ class ScaledStim(Stimulation):
     @property
     def truncate(self: ScaledStim) -> bool:
         """If ``True``, truncate a sampled waveform if it exceeds the simulation time.
+
+        Setting this reprocesses the current waveform.
 
         :return: Whether sampled waveforms are truncated to ``tstop``.
         """
