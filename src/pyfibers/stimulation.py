@@ -428,6 +428,8 @@ class Stimulation:
         :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search:
             if bounds_search_mode is ``"percent"``, this is the percentage increase/decrease;
             if bounds_search_mode is ``"absolute"``, this is the absolute increase/decrease.
+            Both bounds must keep the same sign. If an absolute step would hit or cross zero,
+            the search raises ``RuntimeError``; use a smaller step.
         :param termination_mode: The termination mode
             (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
         :param termination_tolerance: Difference between upper and lower bounds that indicates convergence:
@@ -533,8 +535,9 @@ class Stimulation:
         See :meth:`find_threshold`.
 
         :return: The bounding ``(stimamp_top, stimamp_bottom)``.
-        :raises RuntimeError: If the initial bounds are contradictory, or if valid bounds
-            are not found within ``max_iterations``.
+        :raises RuntimeError: If the initial bounds are contradictory, if shrinking the
+            lower bound would hit or cross zero, or if valid bounds are not found
+            within ``max_iterations``.
         """
         logger.info("Beginning bounds search. Checking initial bounds...")
         iteration = 0
@@ -617,13 +620,21 @@ class Stimulation:
                     **kwargs,
                 )
 
-            # Both suprathreshold: lower the bottom bound and old bottom -> new top
+            # Both suprathreshold: lower the bottom bound and old bottom -> new top.
             elif supra_bot and supra_top:
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
+                if stimamp_top * stimamp_bottom <= 0:
+                    raise RuntimeError(
+                        "Bounds search would move stimamp_bottom from "
+                        f"{stimamp_top} to {stimamp_bottom} "
+                        f"(mode={bounds_search_mode}, step={bounds_search_step}), "
+                        "crossing or hitting zero. Shrink bounds_search_step so the "
+                        "updated bound keeps the same sign."
+                    )
 
                 logger.info(
                     "Bounds iter. %3d: [%+10.4f, %+10.4f]",
