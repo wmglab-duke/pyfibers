@@ -25,7 +25,7 @@ jobs:
         SKIP: no-commit-to-branch
       with:
         extra_args: --all-files
-    - uses: pre-commit-ci/lite-action@v1.1.0
+    - uses: pre-commit-ci/lite-action@v1.2.0
       if: always() && github.event_name == 'pull_request'
       with:
         msg: 'style: apply automatic fixes'
