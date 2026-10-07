@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v0.10.5 (2026-10-07)
+
+### Bug Fixes
+
+- Error if absolute bounds shrink crosses zero for lower bound
+  ([#79](https://github.com/wmglab-duke/pyfibers/pull/79),
+  [`e9bd840`](https://github.com/wmglab-duke/pyfibers/commit/e9bd840ceb81b4be348e047d31c55260beb296c4))
+
+
 ## v0.10.4 (2026-09-29)
 
 ### Bug Fixes
