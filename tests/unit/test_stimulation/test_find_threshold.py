@@ -344,6 +344,36 @@ def test_find_threshold_returns_confirmed_amplitude(fiber):
     assert stim.run_sim_calls[-1] == pytest.approx(amp)
 
 
+def test_find_threshold_resets_exit_t_after_return(fiber):
+    """find_threshold must not leave a finite _exit_t on the instance (#492)."""
+    stim = StubStim(lambda amp: abs(amp) >= 0.5, dt=0.001, tstop=1)
+    stim.find_threshold(
+        fiber,
+        stimamp_top=-1,
+        stimamp_bottom=-0.01,
+        bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
+        bounds_search_step=0.1,
+        termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
+        termination_tolerance=0.05,
+    )
+    assert stim._exit_t == float("inf")
+
+
+def test_find_threshold_resets_exit_t_after_raise(fiber):
+    """_exit_t must reset even when find_threshold raises after setting a cutoff (#492)."""
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="max_iterations"):
+        stim.find_threshold(
+            fiber,
+            stimamp_top=-1,
+            stimamp_bottom=-0.5,
+            bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
+            bounds_search_step=0.1,
+            max_iterations=1,
+        )
+    assert stim._exit_t == float("inf")
+
+
 def test_bisection_confirming_run_keeps_end_excitation_default():
     """Confirming run_sim must not inherit fail_on_end_excitation=None from threshsim (#484)."""
     stim = Stimulation(dt=0.001, tstop=1)
