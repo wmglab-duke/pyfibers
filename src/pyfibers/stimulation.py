@@ -138,6 +138,8 @@ class Stimulation:
     def dt(self: Stimulation) -> float:
         """Time step for the simulation (ms).
 
+        The value must be positive.
+
         :return: The simulation time step in milliseconds.
         """
         return self._dt
@@ -157,6 +159,8 @@ class Stimulation:
     @property
     def tstop(self: Stimulation) -> float:
         """Total duration of the simulation (ms).
+
+        The value must be positive.
 
         :return: The simulation stop time in milliseconds.
         """
@@ -1231,6 +1235,8 @@ class ScaledStim(Stimulation):
     def pad(self: ScaledStim) -> bool:
         """If ``True``, extend a sampled waveform with zeros to match simulation time.
 
+        Setting this reprocesses the current waveform.
+
         :return: Whether sampled waveforms are padded to ``tstop``.
         """
         return self._pad
@@ -1249,6 +1255,8 @@ class ScaledStim(Stimulation):
     def truncate(self: ScaledStim) -> bool:
         """If ``True``, truncate a sampled waveform if it exceeds the simulation time.
 
+        Setting this reprocesses the current waveform.
+
         :return: Whether sampled waveforms are truncated to ``tstop``.
         """
         return self._truncate
@@ -1262,32 +1270,6 @@ class ScaledStim(Stimulation):
         self._truncate = value
         if getattr(self, 'waveform', None) is not None:
             self._prep_waveform()
-
-    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
-        """Prepare the fiber's potentials for scaled stimulation.
-
-        Ensures they are in a suitable 2D numpy array form, one row per
-        potential set. Each row must match the length of the fiber coordinates.
-
-        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
-        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
-        """
-        # This should be moved to the Fiber class as a setter method
-        if fiber.potentials is None:
-            raise ValueError("No fiber potentials found.")
-        fiber.potentials = np.array(fiber.potentials)
-
-        # If it's just one 1D array, wrap it in a list for stacking
-        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
-            fiber.potentials = [fiber.potentials]
-
-        # Convert each potential to a np.array and check lengths
-        processed_potentials = [np.array(potential) for potential in fiber.potentials]
-        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
-            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
-
-        # Stack them into a 2D array
-        fiber.potentials = np.vstack(processed_potentials)
 
     def _prep_waveform(self: ScaledStim) -> None:
         """Process user-provided waveform(s) to match the simulation length.
@@ -1408,8 +1390,11 @@ class ScaledStim(Stimulation):
         :raises ValueError: If validation checks fail for potentials, waveforms, or stimamps.
         """
         self._prep_waveform()
-        self._prep_potentials(fiber)
 
+        if fiber.potentials.size == 0:
+            raise ValueError(
+                "Fiber potentials are empty. Before running extracellular stimulation, assign fiber.potentials."
+            )
         if len(fiber.potentials) != len(self._prepped_waveform):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
         if np.all(fiber.potentials == 0):

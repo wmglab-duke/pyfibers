@@ -381,11 +381,6 @@ class Fiber:
         :ivar nc: A NEURON :class:`NetCon <neuron:NetCon>` object for intrinsic activity.
         :ivar syn: A NEURON :class:`ExpSyn <neuron:ExpSyn>` object for intrinsic activity.
         :ivar stim: A NEURON :class:`NetStim <neuron:NetStim>` object for intrinsic activity.
-
-        .. set by user
-
-        :ivar potentials: A numpy array of extracellular potentials (mV) at each node along the fiber.
-            For more info, see :doc:`/extracellular_potentials`.
         """
         if diameter <= 0:
             raise ValueError("Diameter must be positive")
@@ -417,7 +412,7 @@ class Fiber:
         self.sections: list = []
         self.nodes: list = []
         self.coordinates: np.ndarray = np.array([])
-        self.potentials: np.ndarray = np.array([])
+        self._potentials: np.ndarray = np.empty((0, 0))
         self.path: nd_line = None
 
     # MAGIC METHODS #
@@ -617,6 +612,41 @@ class Fiber:
         return float(np.sum([section.L for section in self.sections]))
 
     @property
+    def potentials(self: Fiber) -> np.ndarray:
+        """Extracellular potentials in mV, with one row per source and one column per section.
+
+        The array has shape ``(n_sources, n_sections)``. Assign a 1D array for one source;
+        it is stored as a single row. For several sources, assign a 2D array, with one row
+        per source. Each row must have the same length as
+        ``fiber.coordinates``. ``fiber.potentials += other`` adds ``other`` to the potentials
+        already stored.
+
+        See :doc:`/extracellular_potentials` for examples.
+
+        :return: Potential values for each source and fiber section.
+        """
+        return self._potentials
+
+    @potentials.setter
+    def potentials(self: Fiber, value: np.ndarray | list[np.ndarray] | None) -> None:
+        """Set and normalize extracellular potentials.
+
+        :param value: Potential values (mV) to store on the fiber.
+        :raises ValueError: If ``value`` is ``None``, has more than two dimensions,
+            or row lengths do not match ``len(Fiber.coordinates)``.
+        """
+        if value is None:
+            raise ValueError("No fiber potentials found.")
+
+        potentials_2d = np.atleast_2d(np.array(value, dtype=float, copy=True))
+        if potentials_2d.ndim != 2:
+            raise ValueError("Potentials must be a 1D or 2D array.")
+        if not all(len(row) == len(self.coordinates) for row in potentials_2d):
+            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
+
+        self._potentials = potentials_2d
+
+    @property
     def longitudinal_coordinates(self: Fiber) -> np.ndarray:
         """A numpy array of 1D (arc-length) coordinates of the center of each section along the fiber.
 
@@ -727,11 +757,6 @@ class Fiber:
 
         if inplace:
             self.potentials = newpotentials
-            if len(self.potentials) != len(self.longitudinal_coordinates):
-                raise ValueError(
-                    f"Potentials and coordinates must be the same length. "
-                    f"Got {len(self.potentials)} potentials and {len(self.longitudinal_coordinates)} coordinates."
-                )
 
         return newpotentials
 
