@@ -22,6 +22,12 @@ repos:
   - id: debug-statements            # Blocks leftover pdb / breakpoint()
   - id: detect-private-key          # Blocks committed private keys
 
+  ### Semantic pyproject.toml checks (beyond TOML syntax)
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: '0.26'                       # Quoted: unquoted 0.26 is a YAML float
+  hooks:
+  - id: validate-pyproject          # Validates PEP 517/518/621 metadata
+
   ### Check pre-commit hook versions
 - repo: https://github.com/pre-commit/sync-pre-commit-deps
   rev: v0.0.5
@@ -226,6 +232,7 @@ repos:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
   - id: check-github-workflows      # Validates GitHub Actions workflows
+  - id: check-citation-file-format  # Validates CITATION.cff
   - id: check-dependabot            # Validates Dependabot config
   - id: check-readthedocs           # Checks ReadTheDocs configuration
   - id: check-jsonschema
@@ -235,6 +242,12 @@ repos:
     args:
     - --schemafile
     - https://raw.githubusercontent.com/zenodo/zenodo/master/zenodo/modules/deposit/jsonschemas/deposits/records/legacyrecord.json
+
+  ### GitHub Actions lint (expressions and action inputs, beyond workflow schema)
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.7.12
+  hooks:
+  - id: actionlint                  # Lints .github/workflows
 
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v2.3.1
