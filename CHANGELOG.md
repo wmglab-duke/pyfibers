@@ -2,6 +2,77 @@
 
 <!-- version list -->
 
+## v0.10.5 (2026-10-07)
+
+### Bug Fixes
+
+- Error if absolute bounds shrink crosses zero for lower bound
+  ([#79](https://github.com/wmglab-duke/pyfibers/pull/79),
+  [`e9bd840`](https://github.com/wmglab-duke/pyfibers/commit/e9bd840ceb81b4be348e047d31c55260beb296c4))
+
+
+## v0.10.4 (2026-09-29)
+
+### Bug Fixes
+
+- Keep end-excitation check on confirming threshold run
+  ([#76](https://github.com/wmglab-duke/pyfibers/pull/76),
+  [`6f5172b`](https://github.com/wmglab-duke/pyfibers/commit/6f5172b6be41c3312864a15484c1c49b1be1548e))
+
+- Reject stimamp_bottom=0 for geometric bisection mean
+  ([#75](https://github.com/wmglab-duke/pyfibers/pull/75),
+  [`cb77613`](https://github.com/wmglab-duke/pyfibers/commit/cb7761393ddb61e803b18758e72b480a46998a34))
+
+### Build System
+
+- Keep 0.x majors on minor bumps ([#66](https://github.com/wmglab-duke/pyfibers/pull/66),
+  [`e7c8cd4`](https://github.com/wmglab-duke/pyfibers/commit/e7c8cd4c0a00d3a30e0f5ca9c0ac518f00ac36b9))
+
+### Documentation
+
+- Align threshold algorithms wording with code
+  ([#73](https://github.com/wmglab-duke/pyfibers/pull/73),
+  [`15de80e`](https://github.com/wmglab-duke/pyfibers/commit/15de80ec0a15fbbcc135516b1ae0153e86c5fe58))
+
+
+## v0.10.3 (2026-09-23)
+
+### Bug Fixes
+
+- Require positive block_delay for block searches
+  ([#65](https://github.com/wmglab-duke/pyfibers/pull/65),
+  [`ce41072`](https://github.com/wmglab-duke/pyfibers/commit/ce410726378993bba5e38be619fd980a8242b88c))
+
+### Documentation
+
+- Fix changelog ([#64](https://github.com/wmglab-duke/pyfibers/pull/64),
+  [`c0a70c2`](https://github.com/wmglab-duke/pyfibers/commit/c0a70c217e70af739e17fe0eeadede5c218a6144))
+
+
+## v0.10.2 (2026-09-22)
+
+### Bug Fixes
+
+- Add fiber section to time recorder ([#61](https://github.com/wmglab-duke/pyfibers/pull/61),
+  [`3e55137`](https://github.com/wmglab-duke/pyfibers/commit/3e5513711168cbfc799c9ac98dfee5d9a008f108))
+
+### Build System
+
+- Ignore dependabot commits in changelog ([#59](https://github.com/wmglab-duke/pyfibers/pull/59),
+  [`0edf660`](https://github.com/wmglab-duke/pyfibers/commit/0edf66082ea8af0e514f6b87803918ebdc892a4e))
+
+- Ignore Zenodo URLs in Sphinx linkcheck ([#63](https://github.com/wmglab-duke/pyfibers/pull/63),
+  [`ec61726`](https://github.com/wmglab-duke/pyfibers/commit/ec6172600a9e9a46aeded79a625e89e899d20ec6))
+
+### Documentation
+
+- Update zenodo badge to use shields.io ([#62](https://github.com/wmglab-duke/pyfibers/pull/62),
+  [`8f5e629`](https://github.com/wmglab-duke/pyfibers/commit/8f5e6297b59bc1bdc09258135b9aaa5b8bc9864c))
+
+- Update zenodo badge to use shields.io ([#58](https://github.com/wmglab-duke/pyfibers/pull/58),
+  [`c7f97fe`](https://github.com/wmglab-duke/pyfibers/commit/c7f97fe31bb74471d49a21e92ea6151c054b3677))
+
+
 ## v0.10.1 (2026-09-11)
 
 ### Bug Fixes

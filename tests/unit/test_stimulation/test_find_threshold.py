@@ -59,7 +59,7 @@ def _bounds_search(stim, fiber, stimamp_top, stimamp_bottom, **overrides):
         "stimamp_bottom": stimamp_bottom,
         "max_iterations": 50,
         "exit_t_shift": 5,
-        "block_delay": 0,
+        "block_delay": 5.0,
         "thresh_num_aps": 1,
         "kwargs": {},
     }
@@ -75,7 +75,7 @@ def _bisection_search(stim, fiber, stimamp_top, stimamp_bottom, **overrides):
         "stimamp_top": stimamp_top,
         "stimamp_bottom": stimamp_bottom,
         "bisection_mean": BisectionMean.ARITHMETIC,
-        "block_delay": 0,
+        "block_delay": 5.0,
         "thresh_num_aps": 1,
         "kwargs": {},
     }
@@ -150,16 +150,55 @@ def test_validate_threshold_enums_rejects_invalid(bad_kwargs, match):
         stim._validate_threshold_enums(**kwargs)
 
 
+def _mock_block_fiber():
+    fiber = MagicMock()
+    fiber.stim = MagicMock()  # pretend intrinsic activity present
+    return fiber
+
+
 def test_validate_threshold_args_rejects_inconsistent_bounds():
     stim = Stimulation(dt=0.001, tstop=1)
     fiber = MagicMock()
     fiber.stim = None
     with pytest.raises(ValueError, match="greater in magnitude"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -0.1, -1.0, 5, fiber)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -0.1, -1.0, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     with pytest.raises(ValueError, match="opposite signs"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, 0.01, 5, fiber)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, 0.01, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     with pytest.raises(ValueError, match="exit_t_shift must be nonzero and positive"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 0, fiber)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, -0.01, 0, fiber, None, BisectionMean.ARITHMETIC
+        )
+
+
+def test_validate_threshold_args_rejects_zero_bottom_for_geometric():
+    """Geometric mean with stimamp_bottom=0 never moves mid off 0 (#488)."""
+    stim = Stimulation(dt=0.001, tstop=1)
+    fiber = MagicMock()
+    fiber.stim = None
+    with pytest.raises(ValueError, match="stimamp_bottom cannot be 0.*geometric"):
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION,
+            1.0,
+            0.0,
+            5,
+            fiber,
+            None,
+            BisectionMean.GEOMETRIC,
+        )
+    # Arithmetic mean still allows bottom=0 (default path used by some callers).
+    stim._validate_threshold_args(
+        ThresholdCondition.ACTIVATION,
+        1.0,
+        0.0,
+        5,
+        fiber,
+        None,
+        BisectionMean.ARITHMETIC,
+    )
 
 
 def test_validate_threshold_args_warns_for_intrinsic_activity():
@@ -167,10 +206,12 @@ def test_validate_threshold_args_warns_for_intrinsic_activity():
     fiber = MagicMock()
     fiber.stim = object()
     with pytest.warns(UserWarning, match="intrinsic activity"):
-        stim._validate_threshold_args(ThresholdCondition.ACTIVATION, -1.0, -0.01, 5, fiber)
+        stim._validate_threshold_args(
+            ThresholdCondition.ACTIVATION, -1.0, -0.01, 5, fiber, None, BisectionMean.ARITHMETIC
+        )
     fiber.stim = None
     with pytest.warns(UserWarning, match="lacks intrinsic activity"):
-        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber)
+        stim._validate_threshold_args(ThresholdCondition.BLOCK, -1.0, -0.01, 5, fiber, 5.0, BisectionMean.ARITHMETIC)
     assert stim._exit_t == float("Inf")
 
 
@@ -197,6 +238,30 @@ def test_bounds_search_percent_shrinks_bottom_when_both_supra(fiber):
     assert bottom == pytest.approx(-0.45)
 
 
+@pytest.mark.parametrize(
+    ("bottom", "mode", "step"),
+    [
+        (-0.05, BoundsSearchMode.ABSOLUTE_INCREMENT, 0.1),
+        (0.05, BoundsSearchMode.ABSOLUTE_INCREMENT, 0.1),
+        (-0.5, BoundsSearchMode.PERCENT_INCREMENT, 100),
+        (-0.5, BoundsSearchMode.PERCENT_INCREMENT, 150),
+    ],
+)
+def test_bounds_search_shrink_rejects_zero_crossing(fiber, bottom, mode, step):
+    """Both-supra shrink must not hit or cross zero (#487)."""
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="Shrink bounds_search_step"):
+        _bounds_search(
+            stim,
+            fiber,
+            -1.0 if bottom < 0 else 1.0,
+            bottom,
+            bounds_search_mode=mode,
+            bounds_search_step=step,
+        )
+    assert stim.threshsim_calls == pytest.approx([-1.0 if bottom < 0 else 1.0, bottom])
+
+
 def test_bounds_search_raises_on_contradictory_bounds(fiber):
     stim = StubStim(lambda amp: abs(amp) < 0.5, dt=0.001, tstop=1)
     with pytest.raises(RuntimeError, match="unexpected"):
@@ -205,7 +270,7 @@ def test_bounds_search_raises_on_contradictory_bounds(fiber):
 
 def test_bounds_search_block_does_not_set_exit_t(fiber):
     stim = StubStim(lambda amp: abs(amp) >= 0.5, dt=0.001, tstop=1)
-    _bounds_search(stim, fiber, -1.0, -0.01, condition=ThresholdCondition.BLOCK)
+    _bounds_search(stim, fiber, -1.0, -0.01, condition=ThresholdCondition.BLOCK, block_delay=5.0)
     assert stim._exit_t is None
 
 
@@ -277,3 +342,107 @@ def test_find_threshold_returns_confirmed_amplitude(fiber):
     assert n_aps == 1
     assert aptime == 2.0
     assert stim.run_sim_calls[-1] == pytest.approx(amp)
+
+
+def test_find_threshold_resets_exit_t_after_return(fiber):
+    """find_threshold must not leave a finite _exit_t on the instance (#492)."""
+    stim = StubStim(lambda amp: abs(amp) >= 0.5, dt=0.001, tstop=1)
+    stim.find_threshold(
+        fiber,
+        stimamp_top=-1,
+        stimamp_bottom=-0.01,
+        bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
+        bounds_search_step=0.1,
+        termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
+        termination_tolerance=0.05,
+    )
+    assert stim._exit_t == float("inf")
+
+
+def test_find_threshold_resets_exit_t_after_raise(fiber):
+    """_exit_t must reset even when find_threshold raises after setting a cutoff (#492)."""
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="max_iterations"):
+        stim.find_threshold(
+            fiber,
+            stimamp_top=-1,
+            stimamp_bottom=-0.5,
+            bounds_search_mode=BoundsSearchMode.ABSOLUTE_INCREMENT,
+            bounds_search_step=0.1,
+            max_iterations=1,
+        )
+    assert stim._exit_t == float("inf")
+
+
+def test_bisection_confirming_run_keeps_end_excitation_default():
+    """Confirming run_sim must not inherit fail_on_end_excitation=None from threshsim (#484)."""
+    stim = Stimulation(dt=0.001, tstop=1)
+    run_flags = []
+
+    def fake_run_sim(stimamp, fiber_arg, **kwargs):
+        # Missing key means run_sim default (True) applies — the bug set it to None.
+        run_flags.append(kwargs.get("fail_on_end_excitation", "DEFAULT"))
+        return 1, 2.0
+
+    stim.run_sim = fake_run_sim
+    # Always supra: one threshsim at the midpoint mutates shared kwargs (pre-fix), then confirm.
+    stim.threshold_checker = lambda *args, **kwargs: True
+    shared_kwargs = {}
+    _bisection_search(
+        stim,
+        MagicMock(),
+        -1.0,
+        -0.5,
+        termination_mode=TerminationMode.ABSOLUTE_DIFFERENCE,
+        termination_tolerance=0.3,
+        kwargs=shared_kwargs,
+    )
+    assert "fail_on_end_excitation" not in shared_kwargs
+    assert None in run_flags  # intermediate threshsim still disables the check
+    assert run_flags[-1] == "DEFAULT"  # confirming run must keep the default
+
+
+def test_block_delay_none_errors():
+    """Block searches with default block_delay=None should raise ValueError."""
+    fiber = _mock_block_fiber()
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(ValueError, match="positive block_delay"):
+        stim.find_threshold(
+            fiber,
+            condition="block",
+            stimamp_top=-1,
+            stimamp_bottom=-0.01,
+            max_iterations=1,
+        )
+
+
+def test_block_delay_nonpositive_errors():
+    """Block searches with block_delay <= 0 should raise ValueError."""
+    fiber = _mock_block_fiber()
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    for delay in (0, -1.0):
+        with pytest.raises(ValueError, match="positive block_delay"):
+            stim.find_threshold(
+                fiber,
+                condition="block",
+                stimamp_top=-1,
+                stimamp_bottom=-0.01,
+                block_delay=delay,
+                max_iterations=1,
+            )
+
+
+def test_activation_block_delay_none_ok():
+    """Activation searches may leave block_delay as None."""
+    fiber = _mock_block_fiber()
+    fiber.stim = None  # avoid intrinsic-activity warning for activation
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="max_iterations"):
+        stim.find_threshold(
+            fiber,
+            condition="activation",
+            stimamp_top=-1,
+            stimamp_bottom=-0.01,
+            block_delay=None,
+            max_iterations=1,
+        )

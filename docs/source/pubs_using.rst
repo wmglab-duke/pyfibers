@@ -14,6 +14,8 @@ Conference papers
 
 - Atchuthan NA, Grill WM, Meijs S (2025) *Exploring Tonic and Burst Stimulation in Neural Fibers: A Computational Modeling Approach.* Annu Int Conf IEEE Eng Med Biol Soc 2025:1-6. https://doi.org/10.1109/EMBC58623.2025.11253067
 
+- Jantz MK, Grill WM, Hamer EL (2026) *Mechanisms of kilohertz-frequency nerve conduction block vary by frequency.* Neuromodulation 29(7): e38. https://doi.org/10.1016/j.neurom.2026.06.062
+
 Preprints
 ---------
 
