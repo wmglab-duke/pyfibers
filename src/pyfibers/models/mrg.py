@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import logging
 import math
-import warnings
 from collections.abc import Callable
 from typing import TypedDict
 
@@ -109,7 +108,7 @@ fiber_parameters_all: FiberParameters = {
 class MRGFiber(Fiber):
     """Implementation of the MRG fiber model."""
 
-    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'SMALL_MRG_INTERPOLATION', 'PENA']
+    submodels = ['MRG_DISCRETE', 'MRG_INTERPOLATION', 'PENA']
 
     myelinated = True
     v_rest = -80  # millivolts
@@ -184,17 +183,7 @@ class MRGFiber(Fiber):
             }
             if self.diameter < 2 or self.diameter > 16:
                 raise ValueError("Diameter for MRG_INTERPOLATION must be between 2 and 16 um (inclusive)")
-        elif self.fiber_model.name in ["SMALL_MRG_INTERPOLATION", "PENA"]:
-            # Show deprecation warning for old name
-            if self.fiber_model.name == "SMALL_MRG_INTERPOLATION":
-                warnings.warn(
-                    "SMALL_MRG_INTERPOLATION is deprecated and will be removed in a future version. "
-                    "Use PENA instead.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
-
-            # Use PENA logic for both names
+        elif self.fiber_model.name == "PENA":
             fiber_param_interp = fiber_parameters_all["PENA"]
             self.mrg_params = {
                 param: fiber_param_interp[param](self.diameter) for param in fiber_param_interp.keys()  # type: ignore
