@@ -238,6 +238,30 @@ def test_bounds_search_percent_shrinks_bottom_when_both_supra(fiber):
     assert bottom == pytest.approx(-0.45)
 
 
+@pytest.mark.parametrize(
+    ("bottom", "mode", "step"),
+    [
+        (-0.05, BoundsSearchMode.ABSOLUTE_INCREMENT, 0.1),
+        (0.05, BoundsSearchMode.ABSOLUTE_INCREMENT, 0.1),
+        (-0.5, BoundsSearchMode.PERCENT_INCREMENT, 100),
+        (-0.5, BoundsSearchMode.PERCENT_INCREMENT, 150),
+    ],
+)
+def test_bounds_search_shrink_rejects_zero_crossing(fiber, bottom, mode, step):
+    """Both-supra shrink must not hit or cross zero (#487)."""
+    stim = StubStim(lambda _amp: True, dt=0.001, tstop=1)
+    with pytest.raises(RuntimeError, match="Shrink bounds_search_step"):
+        _bounds_search(
+            stim,
+            fiber,
+            -1.0 if bottom < 0 else 1.0,
+            bottom,
+            bounds_search_mode=mode,
+            bounds_search_step=step,
+        )
+    assert stim.threshsim_calls == pytest.approx([-1.0 if bottom < 0 else 1.0, bottom])
+
+
 def test_bounds_search_raises_on_contradictory_bounds(fiber):
     stim = StubStim(lambda amp: abs(amp) < 0.5, dt=0.001, tstop=1)
     with pytest.raises(RuntimeError, match="unexpected"):
