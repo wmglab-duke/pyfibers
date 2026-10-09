@@ -456,46 +456,50 @@ class Stimulation:
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(
-            condition,
-            stimamp_top,
-            stimamp_bottom,
-            exit_t_shift,
-            fiber,
-            block_delay,
-            bisection_mean,
-        )
+        try:
+            self._validate_threshold_args(
+                condition,
+                stimamp_top,
+                stimamp_bottom,
+                exit_t_shift,
+                fiber,
+                block_delay,
+                bisection_mean,
+            )
 
-        self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
+            self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
-        stimamp_top, stimamp_bottom = self._bounds_search(
-            fiber,
-            condition,
-            bounds_search_mode,
-            bounds_search_step,
-            stimamp_top,
-            stimamp_bottom,
-            max_iterations,
-            exit_t_shift,
-            block_delay,
-            thresh_num_aps,
-            kwargs,
-        )
+            stimamp_top, stimamp_bottom = self._bounds_search(
+                fiber,
+                condition,
+                bounds_search_mode,
+                bounds_search_step,
+                stimamp_top,
+                stimamp_bottom,
+                max_iterations,
+                exit_t_shift,
+                block_delay,
+                thresh_num_aps,
+                kwargs,
+            )
 
-        stimamp_top, n_aps, aptime = self._bisection_search(
-            fiber,
-            condition,
-            termination_mode,
-            termination_tolerance,
-            stimamp_top,
-            stimamp_bottom,
-            bisection_mean,
-            block_delay,
-            thresh_num_aps,
-            kwargs,
-        )
+            stimamp_top, n_aps, aptime = self._bisection_search(
+                fiber,
+                condition,
+                termination_mode,
+                termination_tolerance,
+                stimamp_top,
+                stimamp_bottom,
+                bisection_mean,
+                block_delay,
+                thresh_num_aps,
+                kwargs,
+            )
 
-        return stimamp_top, (n_aps, aptime)
+            return stimamp_top, (n_aps, aptime)
+        finally:
+            # Avoid leaking early-exit cutoff into a later runs (guard against wf change).
+            self._exit_t = float("inf")
 
     def _validate_threshold_enums(
         self: Stimulation,
