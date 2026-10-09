@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v0.10.6 (2026-10-09)
+
+### Bug Fixes
+
+- Reset _exit_t after find_threshold ([#81](https://github.com/wmglab-duke/pyfibers/pull/81),
+  [`d5338d5`](https://github.com/wmglab-duke/pyfibers/commit/d5338d5a2b71dbdfcf081e972c8821e680237fb6))
+
+### Documentation
+
+- Add Jantz et al. 2026 Neuromodulation abstract to pubs_using
+  ([#80](https://github.com/wmglab-duke/pyfibers/pull/80),
+  [`bdc73e7`](https://github.com/wmglab-duke/pyfibers/commit/bdc73e76df17d09f6205c74adb53af860e56ef1c))
+
+
 ## v0.10.5 (2026-10-07)
 
 ### Bug Fixes
