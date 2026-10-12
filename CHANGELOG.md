@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v0.11.0 (2026-10-12)
+
+### Documentation
+
+- Index fiber.potentials[0] in examples and tutorials
+  ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+### Features
+
+- Convert fiber.potentials to a property ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+- Store fiber.potentials as always-2D property
+  ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+
 ## v0.10.6 (2026-10-09)
 
 ### Bug Fixes
