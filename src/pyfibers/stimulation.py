@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from decimal import Decimal
 from enum import StrEnum, unique
 from typing import TYPE_CHECKING
 
@@ -1097,7 +1098,9 @@ class IntraStim(Stimulation):
                 break
 
         # get precision from the number of decimal places in self.dt
-        precision = len(str(self.dt).split('.')[1])
+        # (Decimal handles scientific notation such as 5e-05 and integer dt values)
+        dt_exponent = Decimal(str(self.dt)).as_tuple().exponent
+        precision = max(0, -dt_exponent) if isinstance(dt_exponent, int) else 3
 
         # check for end excitation. None means don't check at all
         if fail_on_end_excitation is not None:
