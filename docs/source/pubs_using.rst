@@ -9,6 +9,8 @@ Journal articles
 
 - Marshall DP, Upadhye AR, Buyukcelik ON, Shoffstall AJ, Grill WM, Pelot NA (2026) *Computational modeling of human vagus nerve stimulation with three-dimensional fascicular morphology.* APL Bioeng 10(1): 016112. https://doi.org/10.1063/5.0308450
 
+- Lung D, Jia Y, Moro A, Fachino M, Haberbusch M (2026) *golgi: open-source software for automated nerve model generation and recruitment simulation.* SoftwareX 36: 103094. https://doi.org/10.1016/j.softx.2026.103094
+
 Conference papers
 -----------------
 
@@ -22,8 +24,6 @@ Preprints
 - Pelot NA, Baumgart I, Blitz A, Brunsman B, et al. (2025) *The human vagal complex: from gross anatomy to single neurons, from brainstem to abdomen.* Research Square. https://doi.org/10.21203/rs.3.rs-7707775/v1
 
 - Lung D, Jia Y, Blumer R, Reissig L, Zopf LM, Heimel P, Kraus C, Moro A, Fachino M, Haberbusch M (2026) *golgi: an open-source graphical platform for image-to-recruitment modeling of peripheral nerve stimulation.* bioRxiv 2026.07.10.737529. https://doi.org/10.64898/2026.07.10.737529
-
-- Lung D, Jia Y, Moro A, Fachino M, Haberbusch M (2026) *golgi: open-source software for automated nerve model generation and recruitment simulation.* bioRxiv 2026.07.10.737846. https://doi.org/10.64898/2026.07.10.737846
 
 - Lung D, Haberbusch M (2026) *jaxon: a differentiable, GPU-native simulator for peripheral-nerve fiber models.* bioRxiv 2026.07.30.741846. https://doi.org/10.64898/2026.07.30.741846
 
