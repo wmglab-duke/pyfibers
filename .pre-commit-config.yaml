@@ -70,13 +70,13 @@ repos:
     args: [--py311-plus]
 
 - repo: https://github.com/psf/black
-  rev: 26.5.1
+  rev: 26.10.1
   hooks:
   - id: black                       # Formats Python code
     types_or: [python, pyi]
 
 - repo: https://github.com/psf/black
-  rev: 26.5.1
+  rev: 26.10.1
   hooks:
   - id: black                       # Formats Python code
     additional_dependencies:
