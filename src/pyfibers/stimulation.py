@@ -1098,9 +1098,7 @@ class IntraStim(Stimulation):
                 break
 
         # get precision from the number of decimal places in self.dt
-        # (Decimal handles scientific notation such as 5e-05 and integer dt values)
-        dt_exponent = Decimal(str(self.dt)).as_tuple().exponent
-        precision = max(0, -dt_exponent) if isinstance(dt_exponent, int) else 3
+        precision = -int(Decimal(str(self.dt)).as_tuple().exponent)
 
         # check for end excitation. None means don't check at all
         if fail_on_end_excitation is not None:
@@ -1493,11 +1491,14 @@ class ScaledStim(Stimulation):
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
                 break
 
+        # get precision from the number of decimal places in self.dt
+        precision = -int(Decimal(str(self.dt)).as_tuple().exponent)
+
         # Optionally check for end excitation
         if fail_on_end_excitation is not None:
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
 
         # Finally, count action potentials at the chosen location
-        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location)
+        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
         logger.info("N aps: %s, time %s", int(n_ap), time)
         return n_ap, time
