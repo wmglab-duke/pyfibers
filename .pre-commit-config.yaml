@@ -64,7 +64,7 @@ repos:
   - id: nbstripout                  # Strips outputs from Jupyter notebooks
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.21.2
+  rev: v3.22.0
   hooks:
   - id: pyupgrade                   # Upgrades Python syntax to specified version
     args: [--py311-plus]
@@ -237,7 +237,7 @@ repos:
     - https://raw.githubusercontent.com/zenodo/zenodo/master/zenodo/modules/deposit/jsonschemas/deposits/records/legacyrecord.json
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v2.3.1
+  rev: v2.4.0
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
@@ -250,7 +250,7 @@ repos:
     - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.19.0
+  rev: v4.19.2
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
