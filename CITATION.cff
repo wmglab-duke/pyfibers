@@ -21,7 +21,7 @@ authors:
     orcid: "https://orcid.org/0000-0001-5240-6588"
     affiliation: "Duke University"
 title: "PyFibers"
-date-released: 2025-6-25
+date-released: 2025-06-25
 url: "https://github.com/wmglab-duke/pyfibers"
 repository: "https://github.com/wmglab-duke/pyfibers"
 doi: "10.5281/zenodo.17068760"
