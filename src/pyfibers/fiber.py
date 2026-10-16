@@ -760,6 +760,23 @@ class Fiber:
 
         return newpotentials
 
+    def ve_second_difference(self: Fiber) -> np.ndarray:
+        """Return the second difference of extracellular potentials (Ve) at the nodes.
+
+        Computes ``Ve[n-1] - 2*Ve[n] + Ve[n+1]`` over node potentials only, a discrete proxy for the
+        activating function. Values are in mV and are not divided by the internodal spacing squared.
+        For myelinated fibers, non-node sections (e.g., MYSA, FLUT, STIN) are skipped.
+
+        :raises ValueError: If extracellular potentials have not been set.
+        :return: 2D array with one row per potential source and ``len(fiber.nodes) - 2`` columns.
+            Column ``i`` corresponds to node ``i + 1``.
+        """
+        potentials = self.potentials
+        if potentials.size == 0 or not np.any(potentials):
+            raise ValueError("No fiber potentials set. Set fiber.potentials before computing the second difference.")
+        node_inds = [i for i, section in enumerate(self.sections) if section in self.nodes]
+        return np.diff(potentials[:, node_inds], n=2, axis=1)
+
     def apcounts(self: Fiber, thresh: float = -30) -> None:
         """Create NEURON :class:`APCount <neuron:APCount>` objects at each node to detect action potentials.
 
