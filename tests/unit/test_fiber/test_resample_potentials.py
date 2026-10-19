@@ -161,6 +161,10 @@ class TestResamplePotentials:
         with pytest.raises(ValueError, match="1D array"):
             test_fiber.resample_potentials(np.array([1, 2, 3, 4]), np.array([[0, 1], [2, 3]]))  # 2D coordinates
 
+        # (x, y, z) coordinates should point users to arc lengths / resample_potentials_3d
+        with pytest.raises(ValueError, match="arc lengths first.*resample_potentials_3d"):
+            test_fiber.resample_potentials(np.array([1, 2, 3]), np.zeros((3, 3)))
+
         # Test mismatched lengths
         with pytest.raises(ValueError, match="same length"):
             test_fiber.resample_potentials(np.array([1, 2, 3]), np.array([0, 1]))  # Different length
