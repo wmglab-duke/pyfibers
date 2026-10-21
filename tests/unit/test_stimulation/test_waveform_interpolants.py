@@ -113,7 +113,6 @@ def test_potentials_at_time_uses_interp_at_h_t(mock_neuron):
     with patch("pyfibers.stimulation.h", mock_neuron):
         with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
             stim = ScaledStim(waveform=[0, 1, 0, 0, 0], dt=0.01, tstop=0.05)
-        stim._prep_potentials(fiber)
 
         mock_neuron.t = 0.01
         potentials = stim._potentials_at_time(fiber, np.array([2.0]))

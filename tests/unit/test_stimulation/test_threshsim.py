@@ -63,3 +63,25 @@ def test_threshsim_block_skips_early_exit(fiber):
     assert "exit_func" not in captured
     assert captured["checker_kwargs"]["block"] is True
     assert captured["checker_kwargs"]["block_delay"] == 3.0
+
+
+def test_threshsim_does_not_mutate_caller_kwargs():
+    """Shared kwargs from find_threshold must keep the caller's end-excitation setting."""
+    from unittest.mock import MagicMock
+
+    stim, captured = _stim_with_captured_run()
+    caller_kwargs = {"ap_detect_location": 0.5}
+    stim.threshsim(1.0, MagicMock(), condition=ThresholdCondition.ACTIVATION, **caller_kwargs)
+    assert "fail_on_end_excitation" not in caller_kwargs
+    assert captured["fail_on_end_excitation"] is None
+    assert captured["ap_detect_location"] == 0.5
+
+
+def test_threshsim_block_does_not_mutate_caller_kwargs():
+    from unittest.mock import MagicMock
+
+    stim, captured = _stim_with_captured_run()
+    caller_kwargs = {"ap_detect_location": 0.1}
+    stim.threshsim(1.0, MagicMock(), condition=ThresholdCondition.BLOCK, block_delay=3.0, **caller_kwargs)
+    assert "fail_on_end_excitation" not in caller_kwargs
+    assert captured["fail_on_end_excitation"] is None

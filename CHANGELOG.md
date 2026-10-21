@@ -2,6 +2,71 @@
 
 <!-- version list -->
 
+## v0.11.0 (2026-10-12)
+
+### Documentation
+
+- Index fiber.potentials[0] in examples and tutorials
+  ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+### Features
+
+- Convert fiber.potentials to a property ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+- Store fiber.potentials as always-2D property
+  ([#82](https://github.com/wmglab-duke/pyfibers/pull/82),
+  [`d86fee6`](https://github.com/wmglab-duke/pyfibers/commit/d86fee625a248f814e7fffbcc140c0a49745acc6))
+
+
+## v0.10.6 (2026-10-09)
+
+### Bug Fixes
+
+- Reset _exit_t after find_threshold ([#81](https://github.com/wmglab-duke/pyfibers/pull/81),
+  [`d5338d5`](https://github.com/wmglab-duke/pyfibers/commit/d5338d5a2b71dbdfcf081e972c8821e680237fb6))
+
+### Documentation
+
+- Add Jantz et al. 2026 Neuromodulation abstract to pubs_using
+  ([#80](https://github.com/wmglab-duke/pyfibers/pull/80),
+  [`bdc73e7`](https://github.com/wmglab-duke/pyfibers/commit/bdc73e76df17d09f6205c74adb53af860e56ef1c))
+
+
+## v0.10.5 (2026-10-07)
+
+### Bug Fixes
+
+- Error if absolute bounds shrink crosses zero for lower bound
+  ([#79](https://github.com/wmglab-duke/pyfibers/pull/79),
+  [`e9bd840`](https://github.com/wmglab-duke/pyfibers/commit/e9bd840ceb81b4be348e047d31c55260beb296c4))
+
+
+## v0.10.4 (2026-09-29)
+
+### Bug Fixes
+
+- Keep end-excitation check on confirming threshold run
+  ([#76](https://github.com/wmglab-duke/pyfibers/pull/76),
+  [`6f5172b`](https://github.com/wmglab-duke/pyfibers/commit/6f5172b6be41c3312864a15484c1c49b1be1548e))
+
+- Reject stimamp_bottom=0 for geometric bisection mean
+  ([#75](https://github.com/wmglab-duke/pyfibers/pull/75),
+  [`cb77613`](https://github.com/wmglab-duke/pyfibers/commit/cb7761393ddb61e803b18758e72b480a46998a34))
+
+### Build System
+
+- Keep 0.x majors on minor bumps ([#66](https://github.com/wmglab-duke/pyfibers/pull/66),
+  [`e7c8cd4`](https://github.com/wmglab-duke/pyfibers/commit/e7c8cd4c0a00d3a30e0f5ca9c0ac518f00ac36b9))
+
+### Documentation
+
+- Align threshold algorithms wording with code
+  ([#73](https://github.com/wmglab-duke/pyfibers/pull/73),
+  [`15de80e`](https://github.com/wmglab-duke/pyfibers/commit/15de80ec0a15fbbcc135516b1ae0153e86c5fe58))
+
+
 ## v0.10.3 (2026-09-23)
 
 ### Bug Fixes

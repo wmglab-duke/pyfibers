@@ -22,6 +22,12 @@ repos:
   - id: debug-statements            # Blocks leftover pdb / breakpoint()
   - id: detect-private-key          # Blocks committed private keys
 
+  ### Semantic pyproject.toml checks (beyond TOML syntax)
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: '0.26'                       # Quoted: unquoted 0.26 is a YAML float
+  hooks:
+  - id: validate-pyproject          # Validates PEP 517/518/621 metadata
+
   ### Check pre-commit hook versions
 - repo: https://github.com/pre-commit/sync-pre-commit-deps
   rev: v0.0.5
@@ -50,7 +56,7 @@ repos:
 
   ### Formatting Hooks (pre-commit stage)
 - repo: https://github.com/pycqa/isort
-  rev: 9.0.1
+  rev: 9.0.2
   hooks:
   - id: isort                       # Sorts Python imports
 - repo: https://github.com/ikamensh/flynt/
@@ -64,19 +70,19 @@ repos:
   - id: nbstripout                  # Strips outputs from Jupyter notebooks
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.21.2
+  rev: v3.22.0
   hooks:
   - id: pyupgrade                   # Upgrades Python syntax to specified version
     args: [--py311-plus]
 
 - repo: https://github.com/psf/black
-  rev: 26.5.1
+  rev: 26.10.1
   hooks:
   - id: black                       # Formats Python code
     types_or: [python, pyi]
 
 - repo: https://github.com/psf/black
-  rev: 26.5.1
+  rev: 26.10.1
   hooks:
   - id: black                       # Formats Python code
     additional_dependencies:
@@ -97,7 +103,7 @@ repos:
   hooks:
   - id: blacken-docs                # Formats Python code blocks in markdown files
     additional_dependencies:
-    - black==26.5.1
+    - black==26.10.1
     args: [--line-length, '88']
 
 - repo: https://github.com/hukkin/mdformat
@@ -123,7 +129,7 @@ repos:
   hooks:
   - id: yesqa                       # Removes unused noqa comments
     additional_dependencies:
-    - flake8==7.3.0
+    - flake8==7.4.1
     - flake8-eradicate
     - flake8-bugbear
     - flake8-simplify
@@ -147,7 +153,7 @@ repos:
 
   ### Linting Hooks
 - repo: https://github.com/pycqa/flake8
-  rev: 7.3.0
+  rev: 7.4.1
   hooks:
   - id: flake8                      # Comprehensive Python linting
     additional_dependencies:
@@ -221,11 +227,12 @@ repos:
     - rstcheck[toml]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.38.0
+  rev: 0.38.2
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
   - id: check-github-workflows      # Validates GitHub Actions workflows
+  - id: check-citation-file-format  # Validates CITATION.cff
   - id: check-dependabot            # Validates Dependabot config
   - id: check-readthedocs           # Checks ReadTheDocs configuration
   - id: check-jsonschema
@@ -236,8 +243,14 @@ repos:
     - --schemafile
     - https://raw.githubusercontent.com/zenodo/zenodo/master/zenodo/modules/deposit/jsonschemas/deposits/records/legacyrecord.json
 
+  ### GitHub Actions lint (expressions and action inputs, beyond workflow schema)
+- repo: https://github.com/rhysd/actionlint
+  rev: v1.7.12
+  hooks:
+  - id: actionlint                  # Lints .github/workflows
+
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v2.3.1
+  rev: v2.4.0
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
@@ -250,7 +263,7 @@ repos:
     - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.18.1
+  rev: v4.19.2
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]

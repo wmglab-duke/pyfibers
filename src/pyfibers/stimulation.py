@@ -139,6 +139,8 @@ class Stimulation:
     def dt(self: Stimulation) -> float:
         """Time step for the simulation (ms).
 
+        The value must be positive.
+
         :return: The simulation time step in milliseconds.
         """
         return self._dt
@@ -158,6 +160,8 @@ class Stimulation:
     @property
     def tstop(self: Stimulation) -> float:
         """Total duration of the simulation (ms).
+
+        The value must be positive.
 
         :return: The simulation stop time in milliseconds.
         """
@@ -345,9 +349,14 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to evaluate.
         :param ap_detect_location: Normalized location in [0,1] where APs are detected.
         :param block: If ``True``, check for block threshold; otherwise, check for activation threshold.
-        :param block_delay: Time after simulation start to check for block (ms). Required and must be
-            positive when ``block`` is ``True``; ignored for activation.
-        :param thresh_num_aps: Number of APs that constitutes a suprathreshold response.
+        :param block_delay: Time after simulation start to check for block (ms).
+            Required and must be positive when ``block`` is ``True``; ignored for activation.
+            APs with ``detect_time <= block_delay`` are ignored for scoring failed block;
+            only an AP with ``detect_time > block_delay`` counts as failed block (subthreshold).
+        :param thresh_num_aps: For activation, number of APs that constitutes suprathreshold.
+            For block, only ``1`` is supported: a single AP after ``block_delay`` makes the
+            trial subthreshold (:class:`APCount <neuron:APCount>` records only the last AP
+            time, so multi-AP thresholds in the block window are not implemented).
         :param check_all_apc: Passed to :meth:`Stimulation.ap_checker` for additional warnings.
         :return: ``True`` if stimulation is suprathreshold; ``False`` if subthreshold.
         :raises ValueError: If thresh_num_aps is not positive.
@@ -375,7 +384,8 @@ class Stimulation:
                     "No APs detected for block threshold. Possibly the intrinsic activity weight is too low, "
                     "or no excitation is triggered at all. Check block_delay and/or start time of intrinsic activity."
                 )
-            # If no APs occur after block_delay, we interpret that as a successful block (supra-threshold for block).
+            # Last AP at/before block_delay: no APs in the block window => successful block (suprathreshold).
+            # An AP after block_delay: failed block (subthreshold). Earlier APs are ignored for that scoring.
             return detect_time <= block_delay
 
         # If not a block search, check for activation (detect_n >= thresh_num_aps).
@@ -423,6 +433,8 @@ class Stimulation:
         :param bounds_search_step: The iterative increase/decrease of the upper/lower bound during bounds search:
             if bounds_search_mode is ``"percent"``, this is the percentage increase/decrease;
             if bounds_search_mode is ``"absolute"``, this is the absolute increase/decrease.
+            Both bounds must keep the same sign. If an absolute step would hit or cross zero,
+            the search raises ``RuntimeError``; use a smaller step.
         :param termination_mode: The termination mode
             (:attr:`TerminationMode.PERCENT_DIFFERENCE` or :attr:`TerminationMode.ABSOLUTE_DIFFERENCE`).
         :param termination_tolerance: Difference between upper and lower bounds that indicates convergence:
@@ -431,52 +443,64 @@ class Stimulation:
         :param stimamp_top: Initial upper-bound scaling factor passed to :meth:`run_sim`.
         :param stimamp_bottom: Initial lower-bound scaling factor passed to :meth:`run_sim`.
         :param max_iterations: Maximum attempts to find bounding amplitudes before bisection.
-        :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
+        :param exit_t_shift: Extra time (ms) after a suprathreshold AP is detected; later activation
+            trials may stop at that AP time + ``exit_t_shift``. Used for activation searches only.
+            Pass ``None`` to disable setting an early-exit time.
         :param bisection_mean: The bisection mean type
             (:attr:`BisectionMean.ARITHMETIC` or :attr:`BisectionMean.GEOMETRIC`).
-        :param block_delay: Time (ms) after start to check for a blocked AP, used in block searches.
-            Defaults to ``None``; block searches require an explicit positive value (past onset /
-            intrinsic activity). Ignored for activation searches.
-        :param thresh_num_aps: Number of action potentials for threshold search:
+        :param block_delay: Time at which to start checking for block (ms). See
+            :meth:`threshold_checker`. Block searches require an explicit positive value;
+            ignored for activation searches.
+        :param thresh_num_aps: AP-count threshold; see :meth:`threshold_checker`:
             if threshold condition is ``"activation"``, suprathreshold requires detected aps >= thresh_num_aps;
             if threshold condition is ``"block"``, suprathreshold requires detected aps < thresh_num_aps.
         :param kwargs: Additional arguments passed to the run_sim method.
         :return: A tuple (threshold_amplitude, (num_detected_aps, last_detected_ap_time in ms)).
         """
-        self._validate_threshold_args(
-            condition, stimamp_top, stimamp_bottom, exit_t_shift, fiber, block_delay=block_delay
-        )
+        try:
+            self._validate_threshold_args(
+                condition,
+                stimamp_top,
+                stimamp_bottom,
+                exit_t_shift,
+                fiber,
+                block_delay,
+                bisection_mean,
+            )
 
-        self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
+            self._validate_threshold_enums(condition, bounds_search_mode, termination_mode, bisection_mean)
 
-        stimamp_top, stimamp_bottom = self._bounds_search(
-            fiber,
-            condition,
-            bounds_search_mode,
-            bounds_search_step,
-            stimamp_top,
-            stimamp_bottom,
-            max_iterations,
-            exit_t_shift,
-            block_delay,
-            thresh_num_aps,
-            kwargs,
-        )
+            stimamp_top, stimamp_bottom = self._bounds_search(
+                fiber,
+                condition,
+                bounds_search_mode,
+                bounds_search_step,
+                stimamp_top,
+                stimamp_bottom,
+                max_iterations,
+                exit_t_shift,
+                block_delay,
+                thresh_num_aps,
+                kwargs,
+            )
 
-        stimamp_top, n_aps, aptime = self._bisection_search(
-            fiber,
-            condition,
-            termination_mode,
-            termination_tolerance,
-            stimamp_top,
-            stimamp_bottom,
-            bisection_mean,
-            block_delay,
-            thresh_num_aps,
-            kwargs,
-        )
+            stimamp_top, n_aps, aptime = self._bisection_search(
+                fiber,
+                condition,
+                termination_mode,
+                termination_tolerance,
+                stimamp_top,
+                stimamp_bottom,
+                bisection_mean,
+                block_delay,
+                thresh_num_aps,
+                kwargs,
+            )
 
-        return stimamp_top, (n_aps, aptime)
+            return stimamp_top, (n_aps, aptime)
+        finally:
+            # Avoid leaking early-exit cutoff into a later runs (guard against wf change).
+            self._exit_t = float("inf")
 
     def _validate_threshold_enums(
         self: Stimulation,
@@ -520,8 +544,9 @@ class Stimulation:
         See :meth:`find_threshold`.
 
         :return: The bounding ``(stimamp_top, stimamp_bottom)``.
-        :raises RuntimeError: If the initial bounds are contradictory, or if valid bounds
-            are not found within ``max_iterations``.
+        :raises RuntimeError: If the initial bounds are contradictory, if shrinking the
+            lower bound would hit or cross zero, or if valid bounds are not found
+            within ``max_iterations``.
         """
         logger.info("Beginning bounds search. Checking initial bounds...")
         iteration = 0
@@ -604,13 +629,21 @@ class Stimulation:
                     **kwargs,
                 )
 
-            # Both suprathreshold: lower the bottom bound and old bottom -> new top
+            # Both suprathreshold: lower the bottom bound and old bottom -> new top.
             elif supra_bot and supra_top:
                 stimamp_top = stimamp_bottom
                 if bounds_search_mode == BoundsSearchMode.ABSOLUTE_INCREMENT:
                     stimamp_bottom = stimamp_bottom - np.sign(stimamp_bottom) * bounds_search_step
                 else:
                     stimamp_bottom = stimamp_bottom * (1 - bounds_search_step / 100)
+                if stimamp_top * stimamp_bottom <= 0:
+                    raise RuntimeError(
+                        "Bounds search would move stimamp_bottom from "
+                        f"{stimamp_top} to {stimamp_bottom} "
+                        f"(mode={bounds_search_mode}, step={bounds_search_step}), "
+                        "crossing or hitting zero. Shrink bounds_search_step so the "
+                        "updated bound keeps the same sign."
+                    )
 
                 logger.info(
                     "Bounds iter. %3d: [%+10.4f, %+10.4f]",
@@ -742,7 +775,8 @@ class Stimulation:
         stimamp_bottom: float,
         exit_t_shift: float | None,
         fiber: Fiber,
-        block_delay: float | None = None,
+        block_delay: float | None,
+        bisection_mean: BisectionMean,
     ) -> None:
         """Check that threshold arguments are logically consistent.
 
@@ -753,7 +787,9 @@ class Stimulation:
         :param exit_t_shift: Extra time (ms) after an AP is detected, beyond which the simulation can be cut short.
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object being stimulated.
         :param block_delay: Block-check window start (ms); required and must be positive for block searches.
+        :param bisection_mean: Mean type for bisection.
         :raises ValueError: If stimamp_top and stimamp_bottom have different signs or invalid magnitudes.
+        :raises ValueError: If geometric mean is used with stimamp_bottom equal to 0.
         :raises ValueError: If exit_t_shift is not positive.
         :raises ValueError: If ``condition`` is block and ``block_delay`` is unset or non-positive.
         """
@@ -763,6 +799,11 @@ class Stimulation:
             raise ValueError(
                 f"stimamp_top={stimamp_top} and stimamp_bottom={stimamp_bottom} have opposite signs. "
                 "Both bounds must have the same sign."
+            )
+        if bisection_mean == BisectionMean.GEOMETRIC and stimamp_bottom == 0:
+            raise ValueError(
+                "stimamp_bottom cannot be 0 when using geometric bisection mean "
+                "(geometric midpoint would stay at 0)."
             )
         if fiber.stim is not None and condition == ThresholdCondition.ACTIVATION:
             warnings.warn(
@@ -853,14 +894,16 @@ class Stimulation:
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.
         :param condition: Threshold condition
             (:attr:`ThresholdCondition.ACTIVATION` or :attr:`ThresholdCondition.BLOCK`).
-        :param block_delay: If condition=BLOCK, time after which AP detection is considered blocked (ms).
+        :param block_delay: If condition=BLOCK, passed to :meth:`threshold_checker` (ms).
             Must be an explicit positive value for block; ignored for activation.
-        :param thresh_num_aps: Number of APs required to be considered suprathreshold.
+        :param thresh_num_aps: Passed to :meth:`threshold_checker`.
         :param kwargs: Additional arguments for the run_sim method.
         :return: A tuple (is_suprathreshold, (num_aps, last_ap_time in ms)).
         """
-        # Deactivate end-excitation check for intermediate threshold sims
-        kwargs["fail_on_end_excitation"] = None
+        # Locally skip end-excitation check.
+        # A strongly suprathreshold stimulus can appear to be end excitation.
+        # Local dict avoids overwriting user value for later threshold confirmation run.
+        run_kwargs = {**kwargs, "fail_on_end_excitation": None}
 
         if condition == ThresholdCondition.ACTIVATION:
             # Use supra_exit only for single-AP detection
@@ -868,19 +911,19 @@ class Stimulation:
             exit_func_kws = {"thresh_num_aps": thresh_num_aps}
 
             n_aps, aptime = self.run_sim(
-                stimamp, fiber, exit_func=exit_func, use_exit_t=True, **kwargs, exit_func_kws=exit_func_kws
+                stimamp, fiber, exit_func=exit_func, use_exit_t=True, **run_kwargs, exit_func_kws=exit_func_kws
             )
             # Determine whether it is above threshold
             is_supra = self.threshold_checker(
-                fiber, ap_detect_location=kwargs.get("ap_detect_location", 0.9), thresh_num_aps=thresh_num_aps
+                fiber, ap_detect_location=run_kwargs.get("ap_detect_location", 0.9), thresh_num_aps=thresh_num_aps
             )
             return is_supra, (n_aps, aptime)
         if condition == ThresholdCondition.BLOCK:  # noqa: R503
             # BLOCK condition
-            n_aps, aptime = self.run_sim(stimamp, fiber, **kwargs)
+            n_aps, aptime = self.run_sim(stimamp, fiber, **run_kwargs)
             is_block = self.threshold_checker(
                 fiber,
-                ap_detect_location=kwargs.get("ap_detect_location", 0.9),
+                ap_detect_location=run_kwargs.get("ap_detect_location", 0.9),
                 block=True,
                 block_delay=block_delay,
                 thresh_num_aps=thresh_num_aps,
@@ -1029,7 +1072,10 @@ class IntraStim(Stimulation):
         :param exit_func: Function to call to check if simulation should be exited early.
         :param exit_func_interval: Call ``exit_func`` every ``exit_func_interval * dt`` ms.
         :param exit_func_kws: Keyword arguments to pass to ``exit_func``.
-        :param use_exit_t: If ``True``, use the time returned by ``exit_func`` as the simulation end time.
+        :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;
@@ -1216,32 +1262,6 @@ class ScaledStim(Stimulation):
         self._truncate = value
         self._reprocess_arr_waveform()  # deprecated array waveform path
 
-    def _prep_potentials(self: ScaledStim, fiber: Fiber) -> None:
-        """Prepare the fiber's potentials for scaled stimulation.
-
-        Ensures they are in a suitable 2D numpy array form, one row per
-        potential set. Each row must match the length of the fiber coordinates.
-
-        :param fiber: The :class:`~pyfibers.fiber.Fiber` object containing the potentials to be prepared.
-        :raises ValueError: If no potentials are found or mismatch in lengths of fiber coordinates.
-        """
-        # This should be moved to the Fiber class as a setter method
-        if fiber.potentials is None:
-            raise ValueError("No fiber potentials found.")
-        fiber.potentials = np.array(fiber.potentials)
-
-        # If it's just one 1D array, wrap it in a list for stacking
-        if isinstance(fiber.potentials, np.ndarray) and fiber.potentials.ndim == 1:
-            fiber.potentials = [fiber.potentials]
-
-        # Convert each potential to a np.array and check lengths
-        processed_potentials = [np.array(potential) for potential in fiber.potentials]
-        if not all(len(potential) == len(fiber.coordinates) for potential in processed_potentials):
-            raise ValueError("Potential arrays must match the length of fiber.coordinates.")
-
-        # Stack them into a 2D array
-        fiber.potentials = np.vstack(processed_potentials)
-
     @property
     def waveform(self: ScaledStim) -> list[Callable[[float], float]]:
         """Waveform callables applied to the fiber potentials.
@@ -1387,7 +1407,7 @@ class ScaledStim(Stimulation):
         :param stimamps: Array of amplitude scaling factors (one per waveform row).
         :return: 1D array of summed extracellular potentials (mV) along the fiber sections.
         """
-        # atleast_2d: works with 1D-or-2D fiber.potentials (no always-2D property)
+        # atleast_2d: Fiber.potentials is always 2D; this also accepts 1D arrays (e.g. test mocks).
         potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
         potentials = np.zeros(potential_rows.shape[1])
         # Multiply each potential row by the waveform and amplitude at this time
@@ -1405,8 +1425,11 @@ class ScaledStim(Stimulation):
         :return: Array of scaling factors, one per waveform row.
         :raises ValueError: If validation checks fail for potentials, waveforms, or stimamps.
         """
-        self._prep_potentials(fiber)
-        # atleast_2d: works with 1D-or-2D fiber.potentials (no always-2D property)
+        if fiber.potentials.size == 0:
+            raise ValueError(
+                "Fiber potentials are empty. Before running extracellular stimulation, assign fiber.potentials."
+            )
+        # atleast_2d: Fiber.potentials is always 2D; this also accepts 1D arrays (e.g. test mocks).
         potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
         if potential_rows.shape[0] != len(self.waveform):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
@@ -1454,6 +1477,9 @@ class ScaledStim(Stimulation):
         :param exit_func_interval: Call ``exit_func`` every ``exit_func_interval * dt`` ms.
         :param exit_func_kws: Additional arguments for exit_func.
         :param use_exit_t: If ``True``, simulation will stop after ``self._exit_t`` (if set).
+            ``_exit_t`` is set during activation threshold search via the ``exit_t_shift``
+            argument of :meth:`~pyfibers.stimulation.Stimulation.find_threshold`;
+            see also :doc:`/algorithms`.
         :param fail_on_end_excitation: Behavior for end excitation detection:
             if ``True``, raise an error if end excitation is detected;
             if ``False``, continue the simulation if end excitation is detected;

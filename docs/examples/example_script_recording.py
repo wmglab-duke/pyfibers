@@ -31,17 +31,18 @@ fiber = build_fiber(diameter=5.7, fiber_model=model, temperature=37, n_sections=
 
 # create curve of potentials
 fiber.potentials = fiber.point_source_potentials(0, 1000, fiber.length / 2, 1, 1)
-plt.plot(fiber.potentials)
+plt.plot(fiber.potentials[0])
 
 # Arbitrarily set point_source_potentials arguments to generate some sort of mock potentials for recording.
 
 
+# create biphasic square wave to use as a stimulation waveform
 # parameters
 time_step = 0.005  # timestep
 time_stop = 10  # duration of simulation
 # Create callable waveform: 0.1 ms delay, 0.1 ms positive, then zeros
 time_points = np.array([0, 0.1, 0.2, time_stop])
-waveform_values = np.array([0, 1, 0, 0])
+waveform_values = np.array([0, 1, 0, 0])  # zeros from 0-0.1ms, positive from 0.1-0.2ms, then zeros
 waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
 
 # Create instance of ScaledStim class

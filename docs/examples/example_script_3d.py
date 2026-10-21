@@ -99,7 +99,7 @@ point_source_potentials = fiber.point_source_potentials(x, y, z, i0, sigma)
 fiber.potentials = point_source_potentials
 
 plt.figure()
-plt.plot(fiber.longitudinal_coordinates, fiber.potentials, label='Point Source Potentials', marker='o')
+plt.plot(fiber.longitudinal_coordinates, fiber.potentials[0], label='Point Source Potentials', marker='o')
 plt.legend()
 
 # Additional setup for simulation using ScaledStim class
@@ -107,7 +107,7 @@ time_step = 0.005
 time_stop = 15
 # Create callable waveform: 0.5 ms positive, 0.5 ms negative, then zeros
 time_points = np.array([0, 0.5, 1.0, time_stop])
-waveform_values = np.array([1, -1, 0, 0])
+waveform_values = np.array([1, -1, 0, 0])  # positive from 0-0.5ms, negative from 0.5-1.0ms, then zeros
 waveform = interp1d(time_points, waveform_values, kind='previous', bounds_error=False, fill_value=0.0)
 
 # Create instance of ScaledStim
