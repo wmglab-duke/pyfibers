@@ -105,7 +105,7 @@ def test_single_timestep_array_waveform(mock_neuron):
     assert wf(0.01) == pytest.approx(1.0)
 
 
-def test_potentials_at_time_uses_interp_at_h_t(mock_neuron):
+def test_potentials_at_time_uses_grid_time(mock_neuron):
     fiber = Mock()
     fiber.potentials = np.array([1.0, 2.0, 3.0])
     fiber.coordinates = [0, 1, 2]
@@ -114,11 +114,9 @@ def test_potentials_at_time_uses_interp_at_h_t(mock_neuron):
         with pytest.warns(FutureWarning, match="lists/arrays is deprecated"):
             stim = ScaledStim(waveform=[0, 1, 0, 0, 0], dt=0.01, tstop=0.05)
 
-        mock_neuron.t = 0.01
-        potentials = stim._potentials_at_time(fiber, np.array([2.0]))
+        mock_neuron.t = 0.049999999999  # drifted clock must not be used
+        potentials = stim._potentials_at_time(fiber, np.array([2.0]), 0.01)
         assert np.allclose(potentials, np.array([2.0, 4.0, 6.0]))
 
-        # Just under tstop with trailing zeros — still evaluable.
-        mock_neuron.t = 0.049999999999
-        potentials = stim._potentials_at_time(fiber, np.array([1.0]))
+        potentials = stim._potentials_at_time(fiber, np.array([1.0]), 0.04)
         assert np.allclose(potentials, np.zeros(3))

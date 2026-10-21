@@ -63,13 +63,12 @@ def test_potentials_at_time(mock_fiber, mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
 
-        mock_neuron.t = 0.0
-        potentials = stim._potentials_at_time(mock_fiber, [1, 1])
+        mock_neuron.t = 123.0  # drifted clock must not affect lookup
+        potentials = stim._potentials_at_time(mock_fiber, [1, 1], 0.0)
         assert np.allclose(potentials, np.array([0.11, 0.17, 0.23]))
-        potentials = stim._potentials_at_time(mock_fiber, [1, 2])
+        potentials = stim._potentials_at_time(mock_fiber, [1, 2], 0.0)
         assert np.allclose(potentials, [0.21, 0.32, 0.43])
-        mock_neuron.t = 0.01
-        potentials = stim._potentials_at_time(mock_fiber, [1, 1])
+        potentials = stim._potentials_at_time(mock_fiber, [1, 1], 0.01)
         assert np.allclose(potentials, [0.10, 0.16, 0.22])
 
 
@@ -78,7 +77,7 @@ def test_potentials_at_time_strict_zip(mock_fiber, mock_neuron):
         waveforms = [[0.1, 0.2, 0.3, 0.4, 0.5], [0.5, 0.4, 0.3, 0.2, 0.1]]
         stim = ScaledStim(waveforms, dt=0.01, tstop=0.05, pad_waveform=True, truncate_waveform=True)
         with pytest.raises(ValueError, match="zip\\(\\)"):
-            stim._potentials_at_time(mock_fiber, [1])
+            stim._potentials_at_time(mock_fiber, [1], 0.0)
 
 
 def test_tstop_setter_repads_array_waveform(mock_neuron):

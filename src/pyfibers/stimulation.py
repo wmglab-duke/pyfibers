@@ -1286,9 +1286,10 @@ class ScaledStim(Stimulation):
         - A list of such callables with length N if there are N sources.
 
         Unit waveforms (maximum absolute value of 1) are recommended so ``stimamp`` is
-        easy to interpret. Callables are evaluated at each time step and should return 0
-        outside the intended pulse. :meth:`sample_waveforms` is used to check the peak;
-        a warning is issued if it is not 1.
+        easy to interpret. Callables are evaluated at ``step * dt`` for each step in
+        ``range(n_timesteps)``, the same grid as :meth:`sample_waveforms`, and should
+        return 0 outside the intended pulse. :meth:`sample_waveforms` is used to check
+        the peak; a warning is issued if it is not 1.
 
         1D/2D arrays (or lists of floats) are deprecated and will be removed in a future
         release. They are converted to :func:`scipy.interpolate.interp1d` interpolants with
@@ -1344,7 +1345,7 @@ class ScaledStim(Stimulation):
                 if len(times) == 1:
                     times = np.append(times, times[0] + self.dt)
                     row = np.append(row, row[0])
-                # Close the domain at tstop so h.t just under tstop (FP drift) stays in range.
+                # Close the domain at tstop so a time in [last sample, tstop] stays in range.
                 # With kind='previous', the trailing 0 is only used at exactly tstop.
                 if times[-1] < self.tstop:
                     times = np.append(times, self.tstop)
@@ -1396,15 +1397,16 @@ class ScaledStim(Stimulation):
         return np.array([[wf(t) for t in times] for wf in waveform_list], dtype=float)
 
     def _potentials_at_time(
-        self: ScaledStim, fiber: Fiber, stimamps: np.typing.NDArray[np.float64]
+        self: ScaledStim, fiber: Fiber, stimamps: np.typing.NDArray[np.float64], t: float
     ) -> np.typing.NDArray[np.float64]:
-        """Compute the total extracellular potential at the current NEURON time.
+        """Compute the total extracellular potential at simulation time ``t``.
 
         Each row of the fiber's potentials is multiplied by the corresponding
-        waveform value at ``h.t`` and the corresponding stimamp, then summed.
+        waveform value at ``t`` and the corresponding stimamp, then summed.
 
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object whose potentials are being scaled.
         :param stimamps: Array of amplitude scaling factors (one per waveform row).
+        :param t: Waveform evaluation time (ms).
         :return: 1D array of summed extracellular potentials (mV) along the fiber sections.
         """
         # atleast_2d: Fiber.potentials is always 2D; this also accepts 1D arrays (e.g. test mocks).
@@ -1412,7 +1414,7 @@ class ScaledStim(Stimulation):
         potentials = np.zeros(potential_rows.shape[1])
         # Multiply each potential row by the waveform and amplitude at this time
         for potential_set, waveform_func, amp in zip(potential_rows, self.waveform, stimamps, strict=True):
-            potentials += amp * waveform_func(h.t) * potential_set
+            potentials += amp * waveform_func(t) * potential_set
         return potentials
 
     def _validate_scaling_inputs(
@@ -1498,10 +1500,11 @@ class ScaledStim(Stimulation):
 
         exit_func_kws = exit_func_kws or {}
 
-        # Advance until NEURON time reaches tstop, evaluating waveforms at h.t each step
+        # Query waveforms at step * dt. Leave h.t to NEURON for integration and early exit;
+        # accumulated h.t drifts off the grid and shifts discontinuous waveforms.
         next_exit_check = exit_func_interval * self.dt
-        while h.t < h.tstop:
-            timestep_potentials = self._potentials_at_time(fiber, stimamps)
+        for step in range(self.n_timesteps):
+            timestep_potentials = self._potentials_at_time(fiber, stimamps, step * self.dt)
             self._update_extracellular(fiber, timestep_potentials)
 
             h.fadvance()

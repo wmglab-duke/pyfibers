@@ -36,7 +36,7 @@ def _advance_time(mock_neuron, dt, tstop):
 
 def _patch_scaled_loop(stim, fiber, mock_neuron):
     stim._validate_scaling_inputs = lambda _fiber, amps: np.atleast_1d(np.array(amps, dtype=float))
-    stim._potentials_at_time = lambda _fiber, _amps: np.zeros(len(fiber.sections))
+    stim._potentials_at_time = lambda _fiber, _amps, _t: np.zeros(len(fiber.sections))
     stim._update_extracellular = lambda *_a, **_k: None
     stim.pre_run_setup = lambda *_a, **_k: None
     stim.ap_checker = lambda *_a, **_k: (0, None)
@@ -116,6 +116,32 @@ def test_use_exit_t_ignored_when_exit_t_falsy(mock_neuron, mock_fiber):
         stim._exit_t = None
         stim.run_sim(1.0, mock_fiber, use_exit_t=True, fail_on_end_excitation=None)
         assert mock_neuron.fadvance.call_count == 5
+
+
+def test_scaled_run_sim_queries_waveform_on_dt_grid(mock_neuron, mock_fiber):
+    queried = []
+
+    def waveform(t):
+        queried.append(t)
+        return 1.0
+
+    with patch("pyfibers.stimulation.h", mock_neuron):
+        stim = ScaledStim(waveform=waveform, dt=0.01, tstop=0.05)
+        queried.clear()
+
+        def fadvance():
+            mock_neuron.t += stim.dt * 0.999
+
+        mock_neuron.fadvance.side_effect = fadvance
+        mock_neuron.t = 0
+        mock_neuron.tstop = stim.tstop
+        stim._validate_scaling_inputs = lambda _fiber, amps: np.atleast_1d(np.array(amps, dtype=float))
+        stim._update_extracellular = lambda *_a, **_k: None
+        stim.pre_run_setup = lambda *_a, **_k: None
+        stim.ap_checker = lambda *_a, **_k: (0, None)
+        stim.end_excitation_checker = Mock(return_value=False)
+        stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
+        assert np.allclose(queried, np.arange(stim.n_timesteps) * stim.dt)
 
 
 def test_scaled_run_sim_calls_end_excitation_checker(mock_neuron, mock_fiber):
