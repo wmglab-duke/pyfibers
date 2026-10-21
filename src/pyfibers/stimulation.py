@@ -1232,7 +1232,7 @@ class ScaledStim(Stimulation):
     def pad(self: ScaledStim) -> bool:
         """Whether deprecated array waveforms are padded to :attr:`~pyfibers.stimulation.Stimulation.tstop`.
 
-        Same meaning as the ``pad_waveform`` argument to :meth:`ScaledStim.__init__`.
+        Same meaning as the ``pad_waveform`` argument of :class:`~pyfibers.stimulation.ScaledStim`.
         """  # noqa: DAR201
         return self._pad
 
@@ -1249,7 +1249,7 @@ class ScaledStim(Stimulation):
     def truncate(self: ScaledStim) -> bool:
         """Whether deprecated array waveforms are truncated to :attr:`~pyfibers.stimulation.Stimulation.tstop`.
 
-        Same meaning as the ``truncate_waveform`` argument to :meth:`ScaledStim.__init__`.
+        Same meaning as the ``truncate_waveform`` argument of :class:`~pyfibers.stimulation.ScaledStim`.
         """  # noqa: DAR201
         return self._truncate
 
