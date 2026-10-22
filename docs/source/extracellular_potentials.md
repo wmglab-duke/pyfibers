@@ -67,15 +67,11 @@ When importing potentials from finite element models, follow these key steps:
 
    ```python
    # Example: Convert 3D coordinates to arc-length
-   from scipy.spatial.distance import euclidean
-
    coords_3d = np.array([[x1, y1, z1], [x2, y2, z2], ...])  # From FEM
-   arc_lengths = np.zeros(len(coords_3d))
-   arc_lengths[1:] = np.cumsum(
-       [euclidean(coords_3d[i - 1], coords_3d[i]) for i in range(1, len(coords_3d))]
-   )
+   segment_lengths = np.linalg.norm(np.diff(coords_3d, axis=0), axis=1)
+   arc_lengths = np.concatenate([[0], np.cumsum(segment_lengths)])
    # Resample the high-resolution FEM potentials onto the fiber's coordinates
-   fiber.resample_potentials(potentials_fem, arc_lengths_fem, inplace=True)
+   fiber.resample_potentials(potentials_fem, arc_lengths, inplace=True)
    ```
 
 ### Direct assignment

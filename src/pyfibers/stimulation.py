@@ -667,7 +667,7 @@ class Stimulation:
                 f"stimamp_top={stimamp_top} is {'supra' if supra_top else 'sub'}-threshold, "
                 f"stimamp_bottom={stimamp_bottom} is {'supra' if supra_bot else 'sub'}-threshold. "
                 "Typically this indicates a problem with the initial bounds or the stimulation setup. "
-                "Check your starting bounds, this can commonly occur in activation threshold searches"
+                "Check your starting bounds, this can commonly occur in activation threshold searches "
                 "if the initial top bound is high enough for virtual anode block. "
                 "For block threshold searches, this can occur if the top bound is high enough for re-excitation."
             )
@@ -1302,14 +1302,14 @@ class ScaledStim(Stimulation):
             except Exception as e:  # noqa: B902
                 # provide some information on where the error happened to the user
                 raise RuntimeError(
-                    'Error encountered while processing callable into array.'
+                    'Error encountered while processing callable into array. '
                     'Does the callable produce valid output for all time steps?'
                 ) from e
         else:
             # process waveform provided as array for backwards compatibility
             warnings.warn(
-                """Specifying waveforms using lists/arrays is deprecated."""
-                """Please specify as callable or list of callables""",
+                "Specifying waveforms using lists/arrays is deprecated. "
+                "Please specify as callable or list of callables.",
                 FutureWarning,
                 stacklevel=2,
             )
