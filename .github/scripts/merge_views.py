@@ -4,6 +4,8 @@ Same merge as the MShawon traffic.py gist, without the step that folds days
 older than about 100 into YYYY-MM month buckets.
 """
 
+from __future__ import annotations
+
 import json
 
 with open("traffic.json", encoding="utf-8") as fh:
@@ -12,9 +14,7 @@ with open("traffic.json", encoding="utf-8") as fh:
 with open("traffic_before.json", encoding="utf-8") as fh:
     before = json.load(fh)
 
-timestamps = {
-    before["views"][i]["timestamp"]: i for i in range(len(before["views"]))
-}
+timestamps = {before["views"][i]["timestamp"]: i for i in range(len(before["views"]))}
 
 latest = dict(before)
 for entry in now["views"]:
