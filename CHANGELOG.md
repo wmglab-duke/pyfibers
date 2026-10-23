@@ -2,6 +2,21 @@
 
 <!-- version list -->
 
+## v0.13.0 (2026-10-23)
+
+### Features
+
+- Store ScaledStim waveforms as interpolants
+  ([#95](https://github.com/wmglab-duke/pyfibers/pull/95),
+  [`3b2fb61`](https://github.com/wmglab-duke/pyfibers/commit/3b2fb6133c50edb0cff429f9dc628fc0bc02f195))
+
+### Breaking Changes
+
+- ScaledStim.waveform getter returns callables (interpolants) instead of sampled arrays. Deprecated
+  array inputs are converted to interpolants; pad/truncate apply to array inputs only. test: cover
+  deprecated array waveform interpolants
+
+
 ## v0.12.0 (2026-10-23)
 
 ### Bug Fixes
