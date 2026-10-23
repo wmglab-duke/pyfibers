@@ -47,12 +47,12 @@ def test_threshsim_activation_uses_supra_exit(fiber):
     assert captured["exit_func_kws"] == {"thresh_num_aps": 1}
 
 
-def test_threshsim_activation_multi_ap_disables_exit(fiber):
+def test_threshsim_activation_multi_ap_uses_supra_exit(fiber):
     stim, captured = _stim_with_captured_run()
     stim.threshsim(1.0, fiber, condition=ThresholdCondition.ACTIVATION, thresh_num_aps=2)
     assert captured["use_exit_t"] is True
-    assert captured["exit_func"] is not stim.supra_exit
-    assert captured["exit_func"](fiber, 0.9) is False
+    assert captured["exit_func"] == stim.supra_exit
+    assert captured["exit_func_kws"] == {"thresh_num_aps": 2}
 
 
 def test_threshsim_block_skips_early_exit(fiber):

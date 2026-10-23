@@ -2,6 +2,33 @@
 
 <!-- version list -->
 
+## v0.12.0 (2026-10-23)
+
+### Bug Fixes
+
+- Enable exit func for thresh_num_aps > 1 ([#94](https://github.com/wmglab-duke/pyfibers/pull/94),
+  [`06b2506`](https://github.com/wmglab-duke/pyfibers/commit/06b25069f38d8e4a094d25232c98101110dfc3ff))
+
+### Documentation
+
+- Fix 3D arc-length example and clarify resample/threshold messages
+  ([#91](https://github.com/wmglab-duke/pyfibers/pull/91),
+  [`f8fa27b`](https://github.com/wmglab-duke/pyfibers/commit/f8fa27b74163596c82fd440b1cd4a6f4f3e9e235))
+
+- Update citations badge to dimensions ([#90](https://github.com/wmglab-duke/pyfibers/pull/90),
+  [`7e59596`](https://github.com/wmglab-duke/pyfibers/commit/7e595964bd569ffdcae01a85b2d139a707a47bba))
+
+- Update golgi entry in pubs_using to SoftwareX version
+  ([#83](https://github.com/wmglab-duke/pyfibers/pull/83),
+  [`1391f83`](https://github.com/wmglab-duke/pyfibers/commit/1391f83976eb972617a13aedf4a6cab89c157480))
+
+### Features
+
+- Add Fiber method for second difference of Ve at nodes
+  ([#93](https://github.com/wmglab-duke/pyfibers/pull/93),
+  [`5cbc2b2`](https://github.com/wmglab-duke/pyfibers/commit/5cbc2b2da46e4714c708209c5e34fbb11dc118af))
+
+
 ## v0.11.0 (2026-10-12)
 
 ### Documentation
