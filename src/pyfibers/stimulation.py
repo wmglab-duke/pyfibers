@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 import warnings
+from decimal import Decimal
 from enum import StrEnum, unique
 from typing import TYPE_CHECKING
 
@@ -667,7 +668,7 @@ class Stimulation:
                 f"stimamp_top={stimamp_top} is {'supra' if supra_top else 'sub'}-threshold, "
                 f"stimamp_bottom={stimamp_bottom} is {'supra' if supra_bot else 'sub'}-threshold. "
                 "Typically this indicates a problem with the initial bounds or the stimulation setup. "
-                "Check your starting bounds, this can commonly occur in activation threshold searches"
+                "Check your starting bounds, this can commonly occur in activation threshold searches "
                 "if the initial top bound is high enough for virtual anode block. "
                 "For block threshold searches, this can occur if the top bound is high enough for re-excitation."
             )
@@ -1106,7 +1107,7 @@ class IntraStim(Stimulation):
                 break
 
         # get precision from the number of decimal places in self.dt
-        precision = len(str(self.dt).split('.')[1])
+        precision = -int(Decimal(str(self.dt)).as_tuple().exponent)
 
         # check for end excitation. None means don't check at all
         if fail_on_end_excitation is not None:
@@ -1303,14 +1304,14 @@ class ScaledStim(Stimulation):
             except Exception as e:  # noqa: B902
                 # provide some information on where the error happened to the user
                 raise RuntimeError(
-                    'Error encountered while processing callable into array.'
+                    'Error encountered while processing callable into array. '
                     'Does the callable produce valid output for all time steps?'
                 ) from e
         else:
             # process waveform provided as array for backwards compatibility
             warnings.warn(
-                """Specifying waveforms using lists/arrays is deprecated."""
-                """Please specify as callable or list of callables""",
+                "Specifying waveforms using lists/arrays is deprecated. "
+                "Please specify as callable or list of callables.",
                 FutureWarning,
                 stacklevel=2,
             )
@@ -1480,11 +1481,14 @@ class ScaledStim(Stimulation):
             if use_exit_t and self._exit_t and h.t >= self._exit_t:
                 break
 
+        # get precision from the number of decimal places in self.dt
+        precision = -int(Decimal(str(self.dt)).as_tuple().exponent)
+
         # Optionally check for end excitation
         if fail_on_end_excitation is not None:
             self.end_excitation_checker(fiber, fail_on_end_excitation=fail_on_end_excitation)
 
         # Finally, count action potentials at the chosen location
-        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location)
+        n_ap, time = self.ap_checker(fiber, ap_detect_location=ap_detect_location, precision=precision)
         logger.info("N aps: %s, time %s", int(n_ap), time)
         return n_ap, time
