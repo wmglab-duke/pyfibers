@@ -25,24 +25,35 @@ class _Section:
         return self._seg
 
 
-def _patch_scaled_loop(stim, fiber, n_timesteps=8):
+def _advance_time(mock_neuron, dt, tstop):
+    def fadvance():
+        mock_neuron.t += dt
+
+    mock_neuron.fadvance.side_effect = fadvance
+    mock_neuron.t = 0
+    mock_neuron.tstop = tstop
+
+
+def _patch_scaled_loop(stim, fiber, mock_neuron):
     stim._validate_scaling_inputs = lambda _fiber, amps: np.atleast_1d(np.array(amps, dtype=float))
-    stim._potentials_at_time = lambda _i, _fiber, _amps: np.zeros(len(fiber.sections))
+    stim._potentials_at_time = lambda _fiber, _amps, _t: np.zeros(len(fiber.sections))
     stim._update_extracellular = lambda *_a, **_k: None
-    stim.pre_run_setup = lambda *_a, **_k: setattr(stim, "_n_timesteps", n_timesteps)
+    stim.pre_run_setup = lambda *_a, **_k: None
     stim.ap_checker = lambda *_a, **_k: (0, None)
     stim.end_excitation_checker = Mock(return_value=False)
+    _advance_time(mock_neuron, stim.dt, stim.tstop)
 
 
-def _patch_intra_loop(istim, n_timesteps=8):
+def _patch_intra_loop(istim, mock_neuron):
     def fake_add(_fiber):
         istim.istim = SimpleNamespace(amp=1.0)
 
     istim._add_istim = fake_add
     istim._validate_inputs = lambda *_a, **_k: None
-    istim.pre_run_setup = lambda *_a, **_k: setattr(istim, "_n_timesteps", n_timesteps)
+    istim.pre_run_setup = lambda *_a, **_k: None
     istim.ap_checker = lambda *_a, **_k: (0, None)
     istim.end_excitation_checker = Mock(return_value=False)
+    _advance_time(mock_neuron, istim.dt, istim.tstop)
 
 
 @pytest.fixture
@@ -52,6 +63,7 @@ def mock_neuron():
     h._ref_t = 0
     h.load_file = Mock()
     h.t = 0
+    h.tstop = 0
     h.fadvance = Mock()
     return h
 
@@ -60,7 +72,7 @@ def mock_neuron():
 def mock_fiber():
     fiber = Mock()
     fiber.sections = [_Section() for _ in range(3)]
-    fiber.potentials = np.array([0.1, 0.2, 0.3])
+    fiber.potentials = np.array([[0.1, 0.2, 0.3]])
     fiber.coordinates = [0, 1, 2]
     return fiber
 
@@ -69,7 +81,7 @@ def test_scaled_run_sim_raises_on_nan(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         stim = ScaledStim(waveform=lambda t: 1.0, dt=0.01, tstop=0.05)
         mock_fiber.sections[0].v = np.nan
-        _patch_scaled_loop(stim, mock_fiber)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         with pytest.raises(RuntimeError, match="NaN"):
             stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
 
@@ -77,7 +89,7 @@ def test_scaled_run_sim_raises_on_nan(mock_neuron, mock_fiber):
 def test_scaled_run_sim_exit_func_breaks(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         stim = ScaledStim(waveform=lambda t: 1.0, dt=0.01, tstop=0.05)
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=20)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim.run_sim(
             1.0,
             mock_fiber,
@@ -91,14 +103,8 @@ def test_scaled_run_sim_exit_func_breaks(mock_neuron, mock_fiber):
 def test_scaled_run_sim_use_exit_t(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         stim = ScaledStim(waveform=lambda t: 1.0, dt=0.01, tstop=0.05)
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=20)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim._exit_t = 0.02
-
-        def fadvance():
-            mock_neuron.t += 0.01
-
-        mock_neuron.fadvance.side_effect = fadvance
-        mock_neuron.t = 0
         stim.run_sim(1.0, mock_fiber, use_exit_t=True, fail_on_end_excitation=None)
         assert mock_neuron.fadvance.call_count == 2
 
@@ -106,17 +112,42 @@ def test_scaled_run_sim_use_exit_t(mock_neuron, mock_fiber):
 def test_use_exit_t_ignored_when_exit_t_falsy(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         stim = ScaledStim(waveform=lambda t: 1.0, dt=0.01, tstop=0.05)
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=6)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim._exit_t = None
-        mock_neuron.t = 10
         stim.run_sim(1.0, mock_fiber, use_exit_t=True, fail_on_end_excitation=None)
         assert mock_neuron.fadvance.call_count == 5
+
+
+def test_scaled_run_sim_queries_waveform_on_dt_grid(mock_neuron, mock_fiber):
+    queried = []
+
+    def waveform(t):
+        queried.append(t)
+        return 1.0
+
+    with patch("pyfibers.stimulation.h", mock_neuron):
+        stim = ScaledStim(waveform=waveform, dt=0.01, tstop=0.05)
+        queried.clear()
+
+        def fadvance():
+            mock_neuron.t += stim.dt * 0.999
+
+        mock_neuron.fadvance.side_effect = fadvance
+        mock_neuron.t = 0
+        mock_neuron.tstop = stim.tstop
+        stim._validate_scaling_inputs = lambda _fiber, amps: np.atleast_1d(np.array(amps, dtype=float))
+        stim._update_extracellular = lambda *_a, **_k: None
+        stim.pre_run_setup = lambda *_a, **_k: None
+        stim.ap_checker = lambda *_a, **_k: (0, None)
+        stim.end_excitation_checker = Mock(return_value=False)
+        stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
+        assert np.allclose(queried, np.arange(stim.n_timesteps) * stim.dt)
 
 
 def test_scaled_run_sim_calls_end_excitation_checker(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         stim = ScaledStim(waveform=lambda t: 1.0, dt=0.01, tstop=0.05)
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=2)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=True)
         stim.end_excitation_checker.assert_called_once()
 
@@ -124,7 +155,7 @@ def test_scaled_run_sim_calls_end_excitation_checker(mock_neuron, mock_fiber):
 def test_intra_run_sim_nan(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         istim = IntraStim(istim_loc=0.5, dt=0.01, tstop=0.05)
-        _patch_intra_loop(istim, n_timesteps=4)
+        _patch_intra_loop(istim, mock_neuron)
         mock_fiber.sections[0].v = np.nan
         with pytest.raises(RuntimeError, match="NaN"):
             istim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
@@ -133,7 +164,7 @@ def test_intra_run_sim_nan(mock_neuron, mock_fiber):
 def test_intra_run_sim_exit_func(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         istim = IntraStim(istim_loc=0.5, dt=0.01, tstop=0.05)
-        _patch_intra_loop(istim, n_timesteps=20)
+        _patch_intra_loop(istim, mock_neuron)
         istim.run_sim(
             1.0,
             mock_fiber,
@@ -147,14 +178,8 @@ def test_intra_run_sim_exit_func(mock_neuron, mock_fiber):
 def test_intra_run_sim_use_exit_t(mock_neuron, mock_fiber):
     with patch("pyfibers.stimulation.h", mock_neuron):
         istim = IntraStim(istim_loc=0.5, dt=0.01, tstop=0.05)
-        _patch_intra_loop(istim, n_timesteps=20)
+        _patch_intra_loop(istim, mock_neuron)
         istim._exit_t = 0.02
-
-        def fadvance():
-            mock_neuron.t += 0.01
-
-        mock_neuron.fadvance.side_effect = fadvance
-        mock_neuron.t = 0
         istim.run_sim(1.0, mock_fiber, use_exit_t=True, fail_on_end_excitation=None)
         assert mock_neuron.fadvance.call_count == 2
 
@@ -178,7 +203,7 @@ def test_intra_run_sim_precision_from_dt(mock_neuron, mock_fiber, dt, expected_p
             captured["precision"] = precision
             return 0, None
 
-        _patch_intra_loop(istim, n_timesteps=2)
+        _patch_intra_loop(istim, mock_neuron)
         istim.ap_checker = fake_ap
         istim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
         assert captured["precision"] == expected_precision
@@ -203,7 +228,7 @@ def test_scaled_run_sim_precision_from_dt(mock_neuron, mock_fiber, dt, expected_
             captured["precision"] = precision
             return 0, None
 
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=2)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim.ap_checker = fake_ap
         stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
         assert captured["precision"] == expected_precision

@@ -92,11 +92,11 @@ def test_waveform_pad_truncate():
     fiber = get_fiber()  # noqa: F841
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(49600)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._prepped_waveform.shape[1] == 5000
+    assert stimulation.sample_waveforms().shape[1] == 5000
 
     waveform = np.concatenate((np.ones(200), -np.ones(200), np.zeros(100)))
     stimulation = ScaledStim(waveform=waveform, dt=0.001, tstop=5)
-    assert stimulation._prepped_waveform.shape[1] == 5000
+    assert stimulation.sample_waveforms().shape[1] == 5000
 
 
 def test_waveform_callable():
@@ -119,7 +119,7 @@ def test_waveform_callable():
 
     callable_waveform = interp1d([start, up, down, off, stop], [0, 1, -1, 0, 0], kind="previous")
     callable_stimulation = ScaledStim(waveform=callable_waveform, dt=dt, tstop=stop)
-    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)
+    assert np.array_equal(concat_stimulation.sample_waveforms(), callable_stimulation.sample_waveforms())
 
 
 def test_multiple_waveforms():
@@ -147,4 +147,4 @@ def test_multiple_waveforms():
 
     concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
     callable_stimulation = ScaledStim(waveform=callable_waveforms, dt=dt, tstop=stop)
-    assert np.array_equal(concat_stimulation._prepped_waveform, callable_stimulation._prepped_waveform)
+    assert np.array_equal(concat_stimulation.sample_waveforms(), callable_stimulation.sample_waveforms())

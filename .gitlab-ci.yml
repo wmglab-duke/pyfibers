@@ -101,6 +101,11 @@ pre-commit:
 
 commitizen:
   stage: lint
+  variables:
+    # Full history: a depth-20 clone drops the path from the merge base back to
+    # older main commits that this branch still reaches, so cz check treats
+    # them as part of the merge request.
+    GIT_DEPTH: '0'
   script:
   - pip install commitizen
   - cz check --rev-range "$CI_MERGE_REQUEST_DIFF_BASE_SHA..$CI_COMMIT_SHA"
