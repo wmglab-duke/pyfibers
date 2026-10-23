@@ -907,12 +907,13 @@ class Stimulation:
         run_kwargs = {**kwargs, "fail_on_end_excitation": None}
 
         if condition == ThresholdCondition.ACTIVATION:
-            # Use supra_exit only for single-AP detection
-            exit_func = self.supra_exit if thresh_num_aps == 1 else lambda *x, **y: False
-            exit_func_kws = {"thresh_num_aps": thresh_num_aps}
-
             n_aps, aptime = self.run_sim(
-                stimamp, fiber, exit_func=exit_func, use_exit_t=True, **run_kwargs, exit_func_kws=exit_func_kws
+                stimamp,
+                fiber,
+                exit_func=self.supra_exit,
+                use_exit_t=True,
+                **run_kwargs,
+                exit_func_kws={"thresh_num_aps": thresh_num_aps},
             )
             # Determine whether it is above threshold
             is_supra = self.threshold_checker(
