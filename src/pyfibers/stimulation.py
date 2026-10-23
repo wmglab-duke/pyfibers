@@ -1300,8 +1300,7 @@ class ScaledStim(Stimulation):
         array inputs are stored for reprocessing when :attr:`pad` / :attr:`truncate` /
         :attr:`~pyfibers.stimulation.Stimulation.dt` /
         :attr:`~pyfibers.stimulation.Stimulation.tstop` are changed. Callable inputs are
-        not arrays and are not stored for reprocessing (only deprecated array inputs in
-        ``_waveform_input`` are).
+        not arrays and are not reprocessed.
 
         :param value: Waveform callable(s) or deprecated array input.
         :raises TypeError: if callables and arrays are mixed in one list.
