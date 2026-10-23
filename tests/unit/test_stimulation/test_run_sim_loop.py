@@ -228,7 +228,7 @@ def test_scaled_run_sim_precision_from_dt(mock_neuron, mock_fiber, dt, expected_
             captured["precision"] = precision
             return 0, None
 
-        _patch_scaled_loop(stim, mock_fiber, n_timesteps=2)
+        _patch_scaled_loop(stim, mock_fiber, mock_neuron)
         stim.ap_checker = fake_ap
         stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
         assert captured["precision"] == expected_precision
