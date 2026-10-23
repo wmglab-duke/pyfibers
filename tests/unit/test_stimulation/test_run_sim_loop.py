@@ -184,9 +184,19 @@ def test_intra_run_sim_use_exit_t(mock_neuron, mock_fiber):
         assert mock_neuron.fadvance.call_count == 2
 
 
-def test_intra_run_sim_precision_from_dt(mock_neuron, mock_fiber):
+@pytest.mark.parametrize(
+    ("dt", "expected_precision"),
+    [
+        (0.0001, 4),
+        (0.0025, 4),
+        (5e-05, 5),  # str(5e-05) == '5e-05' (no decimal point)
+        (2.5e-06, 7),
+        (1, 0),  # integer dt has no decimal point
+    ],
+)
+def test_intra_run_sim_precision_from_dt(mock_neuron, mock_fiber, dt, expected_precision):
     with patch("pyfibers.stimulation.h", mock_neuron):
-        istim = IntraStim(istim_loc=0.5, dt=0.0001, tstop=0.001)
+        istim = IntraStim(istim_loc=0.5, dt=dt, tstop=dt * 10)
         captured = {}
 
         def fake_ap(_fiber, ap_detect_location=0.9, precision=3, **_k):
@@ -196,4 +206,29 @@ def test_intra_run_sim_precision_from_dt(mock_neuron, mock_fiber):
         _patch_intra_loop(istim, mock_neuron)
         istim.ap_checker = fake_ap
         istim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
-        assert captured["precision"] == 4
+        assert captured["precision"] == expected_precision
+
+
+@pytest.mark.parametrize(
+    ("dt", "expected_precision"),
+    [
+        (0.0001, 4),
+        (0.0025, 4),
+        (5e-05, 5),  # str(5e-05) == '5e-05' (no decimal point)
+        (2.5e-06, 7),
+        (1, 0),  # integer dt has no decimal point
+    ],
+)
+def test_scaled_run_sim_precision_from_dt(mock_neuron, mock_fiber, dt, expected_precision):
+    with patch("pyfibers.stimulation.h", mock_neuron):
+        stim = ScaledStim(waveform=lambda t: 1.0, dt=dt, tstop=dt * 10)
+        captured = {}
+
+        def fake_ap(_fiber, ap_detect_location=0.9, precision=3, **_k):
+            captured["precision"] = precision
+            return 0, None
+
+        _patch_scaled_loop(stim, mock_fiber, n_timesteps=2)
+        stim.ap_checker = fake_ap
+        stim.run_sim(1.0, mock_fiber, fail_on_end_excitation=None)
+        assert captured["precision"] == expected_precision
