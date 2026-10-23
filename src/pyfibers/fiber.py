@@ -761,15 +761,11 @@ class Fiber:
         return newpotentials
 
     def ve_second_difference(self: Fiber) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Return the second difference of extracellular potentials (Ve) at the nodes.
+        """Return the second difference of extracellular potentials (Ve) at the nodes in mV.
 
-        Computes ``Ve[n-1] - 2*Ve[n] + Ve[n+1]`` over node potentials only, a discrete proxy for the
-        activating function. Values are in mV and are not divided by the internodal spacing squared.
-        For myelinated fibers, non-node sections (e.g., MYSA, FLUT, STIN) are skipped.
-
-        Coordinates are the centers of the interior nodes (nodes 1 through ``n_nodes - 2``). End nodes
-        are omitted because they have no second difference. Row ``i`` of each coordinate array matches
-        column ``i`` of the second difference.
+        Computes the "activating function" ``Ve[n-1] - 2*Ve[n] + Ve[n+1]`` over node potentials.
+        End nodes are omitted because they have no second difference.
+        Row ``i`` of the coordinate array matches column ``i`` of the second difference.
 
         :raises ValueError: If extracellular potentials have not been set.
         :return: Tuple ``(second_difference, longitudinal, coordinates)``. ``second_difference`` is in mV,
