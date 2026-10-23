@@ -72,7 +72,7 @@ def mock_neuron():
 def mock_fiber():
     fiber = Mock()
     fiber.sections = [_Section() for _ in range(3)]
-    fiber.potentials = np.array([0.1, 0.2, 0.3])
+    fiber.potentials = np.array([[0.1, 0.2, 0.3]])
     fiber.coordinates = [0, 1, 2]
     return fiber
 

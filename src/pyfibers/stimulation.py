@@ -1299,7 +1299,9 @@ class ScaledStim(Stimulation):
         so times in ``[0, tstop)`` stay in range (out-of-range times still raise). Deprecated
         array inputs are stored for reprocessing when :attr:`pad` / :attr:`truncate` /
         :attr:`~pyfibers.stimulation.Stimulation.dt` /
-        :attr:`~pyfibers.stimulation.Stimulation.tstop` are changed; callable inputs are not.
+        :attr:`~pyfibers.stimulation.Stimulation.tstop` are changed. Callable inputs are
+        not arrays and are not stored for reprocessing (only deprecated array inputs in
+        ``_waveform_input`` are).
 
         :param value: Waveform callable(s) or deprecated array input.
         :raises TypeError: if callables and arrays are mixed in one list.
@@ -1411,11 +1413,9 @@ class ScaledStim(Stimulation):
         :param t: Waveform evaluation time (ms).
         :return: 1D array of summed extracellular potentials (mV) along the fiber sections.
         """
-        # atleast_2d: Fiber.potentials is always 2D; this also accepts 1D arrays (e.g. test mocks).
-        potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
-        potentials = np.zeros(potential_rows.shape[1])
+        potentials = np.zeros(fiber.potentials.shape[1])
         # Multiply each potential row by the waveform and amplitude at this time
-        for potential_set, waveform_func, amp in zip(potential_rows, self.waveform, stimamps, strict=True):
+        for potential_set, waveform_func, amp in zip(fiber.potentials, self.waveform, stimamps, strict=True):
             potentials += amp * waveform_func(t) * potential_set
         return potentials
 
@@ -1433,11 +1433,9 @@ class ScaledStim(Stimulation):
             raise ValueError(
                 "Fiber potentials are empty. Before running extracellular stimulation, assign fiber.potentials."
             )
-        # atleast_2d: Fiber.potentials is always 2D; this also accepts 1D arrays (e.g. test mocks).
-        potential_rows = np.atleast_2d(np.asarray(fiber.potentials, dtype=float))
-        if potential_rows.shape[0] != len(self.waveform):
+        if len(fiber.potentials) != len(self.waveform):
             raise ValueError('Number of fiber potentials sets does not match number of waveforms')
-        if np.all(potential_rows == 0):
+        if np.all(fiber.potentials == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero fiber potential')
         if np.all(self.sample_waveforms() == 0):
             raise ValueError('Extracellular stimulation requires at least one non-zero waveform')
@@ -1469,10 +1467,12 @@ class ScaledStim(Stimulation):
         :param stimamp: Amplitude scaling factor for the product of extracellular potentials and
             :attr:`waveform`:
             if there is a single source, ``stimamp`` should be a single float;
-            if there are multiple sources (i.e., ``Fiber.potentials`` has multiple rows)
+            if there are multiple sources (i.e.,
+            :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
             and ``stimamp`` is a single float,
             the same stimamp is applied to all sources;
-            if there are multiple sources (i.e., ``Fiber.potentials`` has multiple rows)
+            if there are multiple sources (i.e.,
+            :attr:`~pyfibers.fiber.Fiber.potentials` has multiple rows)
             and ``stimamp`` is a list of floats,
             each float is applied to the corresponding source. (List length must match number of sources.)
         :param fiber: The :class:`~pyfibers.fiber.Fiber` object to stimulate.

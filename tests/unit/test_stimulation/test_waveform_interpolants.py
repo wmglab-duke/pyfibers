@@ -107,7 +107,7 @@ def test_single_timestep_array_waveform(mock_neuron):
 
 def test_potentials_at_time_uses_grid_time(mock_neuron):
     fiber = Mock()
-    fiber.potentials = np.array([1.0, 2.0, 3.0])
+    fiber.potentials = np.array([[1.0, 2.0, 3.0]])
     fiber.coordinates = [0, 1, 2]
 
     with patch("pyfibers.stimulation.h", mock_neuron):
