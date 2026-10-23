@@ -704,7 +704,11 @@ class Fiber:
         potential_coords, potentials = np.array(potential_coords), np.array(potentials)
 
         if len(potential_coords.shape) != 1:
-            raise ValueError("Potential coordinates must be a 1D array")
+            raise ValueError(
+                "Potential coordinates must be a 1D array of arc-length coordinates (µm). "
+                "For (x, y, z) coordinates, convert them to arc lengths first, "
+                "or use resample_potentials_3d() with a 3D fiber."
+            )
         if len(potentials.shape) != 1:
             raise ValueError("Potentials must be a 1D array")
         if len(potential_coords) != len(potentials):
