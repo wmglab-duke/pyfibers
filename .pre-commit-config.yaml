@@ -68,6 +68,7 @@ repos:
   rev: 0.9.1
   hooks:
   - id: nbstripout                  # Strips outputs from Jupyter notebooks
+    args: [--extra-keys=metadata.kernelspec]
 
 - repo: https://github.com/asottile/pyupgrade
   rev: v3.22.0
