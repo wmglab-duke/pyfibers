@@ -214,7 +214,7 @@ repos:
   - id: rst-inline-touching-normal     # Checks for inline code touching normal text in reStructuredText
 
 - repo: https://github.com/igorshubovych/markdownlint-cli
-  rev: v0.49.1
+  rev: v0.50.0
   hooks:
   - id: markdownlint-fix            # Lints and fixes markdown files
     args: [--disable, 'md013,md034,md033,md036']
@@ -228,7 +228,7 @@ repos:
     - rstcheck[toml]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.38.2
+  rev: 0.39.0
   hooks:
   - id: check-gitlab-ci             # Validates GitLab CI configuration
     args: [--disable-formats, regex]
@@ -251,7 +251,7 @@ repos:
   - id: actionlint                  # Lints .github/workflows
 
 - repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v2.4.0
+  rev: v2.4.1
   hooks:
   - id: mypy                        # Runs mypy type checking
     exclude: ^((?!src).)*$
@@ -264,7 +264,7 @@ repos:
     - tomli
 
 - repo: https://github.com/commitizen-tools/commitizen
-  rev: v4.19.2
+  rev: v4.19.3
   hooks:
   - id: commitizen                  # Checks commit messages
     stages: [commit-msg]
