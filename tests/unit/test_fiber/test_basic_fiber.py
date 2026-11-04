@@ -148,3 +148,35 @@ def test_multiple_waveforms():
     concat_stimulation = ScaledStim(waveform=concat_waveforms, dt=dt, tstop=stop)
     callable_stimulation = ScaledStim(waveform=callable_waveforms, dt=dt, tstop=stop)
     assert np.array_equal(concat_stimulation.sample_waveforms(), callable_stimulation.sample_waveforms())
+
+
+def test_asymmetric_passive_end_nodes():
+    """Support different passive end node counts at start and end."""
+    fiber = build_fiber(
+        diameter=5.7,
+        fiber_model=FiberModel.MRG_INTERPOLATION,
+        temperature=37,
+        n_nodes=7,
+        passive_end_nodes=(2, 1),
+    )
+    assert fiber.nodecount == 7
+    assert fiber.passive_end_nodes == (2, 1)
+    assert "passive" in fiber.nodes[0].name()
+    assert "passive" in fiber.nodes[1].name()
+    assert "passive" not in fiber.nodes[2].name()
+    assert "passive" not in fiber.nodes[3].name()
+    assert "passive" not in fiber.nodes[4].name()
+    assert "passive" not in fiber.nodes[5].name()
+    assert "passive" in fiber.nodes[6].name()
+
+
+def test_asymmetric_passive_end_nodes_too_short():
+    """Raise when asymmetric passive ends leave no active nodes."""
+    with pytest.raises(ValueError, match="too short for the requested number of passive end nodes"):
+        build_fiber(
+            diameter=5.7,
+            fiber_model=FiberModel.MRG_INTERPOLATION,
+            temperature=37,
+            n_nodes=5,
+            passive_end_nodes=(3, 2),
+        )

@@ -870,7 +870,7 @@ class Stimulation:
         # Identify indices near the start or end of the fiber
         n_nodes = len(fiber)
         end_excited_nodes = init_nodes[
-            (init_nodes <= int(fiber.passive_end_nodes)) | (init_nodes >= n_nodes - int(fiber.passive_end_nodes) - 1)
+            (init_nodes < fiber._n_passive_start) | (init_nodes >= n_nodes - fiber._n_passive_end)
         ]
 
         if len(end_excited_nodes) and fail_on_end_excitation is not None:
@@ -1038,7 +1038,7 @@ class IntraStim(Stimulation):
             ind = fiber.loc_index(self.istim_loc)
 
         # Warn if we're about to stimulate a passive end node
-        if ind < fiber.passive_end_nodes or ind >= len(fiber.nodes) - fiber.passive_end_nodes:
+        if ind < fiber._n_passive_start or ind >= len(fiber.nodes) - fiber._n_passive_end:
             warnings.warn(f'Intracellularly stimulating passive node at index {ind}.', stacklevel=2)
 
         self.istim = h.trainIClamp(fiber[ind](0.5))

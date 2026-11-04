@@ -315,7 +315,7 @@ class Fiber:
         fiber_model: FiberModel,
         diameter: float,
         temperature: float = 37,
-        passive_end_nodes: int | bool = True,
+        passive_end_nodes: int | bool | tuple[int, int] = True,
         is_3d: bool = False,
     ) -> None:
         """Initialize the :class:`Fiber` class.
@@ -326,7 +326,8 @@ class Fiber:
         :param diameter: The diameter of the fiber (µm).
         :param temperature: The temperature at which the fiber will be simulated (°C).
         :param passive_end_nodes: If ``True``, automatically assign passive properties to the end nodes.
-            Can also be an integer specifying how many passive end nodes to include at each end.
+            Can also be an integer specifying how many passive end nodes to include at each end,
+            or a tuple ``(n_start, n_end)`` to specify different counts for the start and end of the fiber.
         :param is_3d: If ``True``, fiber coordinates are treated as 3D.
             Usually set automatically by :func:`build_fiber_3d`.
         :raises ValueError: If ``diameter`` or ``temperature`` is not positive.
@@ -344,7 +345,7 @@ class Fiber:
         :ivar fiber_model: The
             :enum:`~pyfibers.model_enum.FiberModel` attribute name.
         :ivar temperature: The temperature at which the fiber will be simulated (°C).
-        :ivar passive_end_nodes: The number of passive end nodes included at each end.
+        :ivar passive_end_nodes: The requested passive end node configuration (int, bool, or tuple).
         :ivar delta_z: The center-to-center internodal length of the fiber (µm).
 
         .. Intrinsic from build_fiber
@@ -390,6 +391,20 @@ class Fiber:
         self.fiber_model = fiber_model
         self._temperature = temperature
         self.passive_end_nodes = passive_end_nodes
+        # Normalize to (n_start, n_end) for internal use
+        if isinstance(passive_end_nodes, bool):
+            self._n_passive_start = self._n_passive_end = 1 if passive_end_nodes else 0
+        elif isinstance(passive_end_nodes, int):
+            if passive_end_nodes < 0:
+                raise ValueError("passive_end_nodes must be non-negative")
+            self._n_passive_start = self._n_passive_end = passive_end_nodes
+        elif isinstance(passive_end_nodes, (tuple, list)) and len(passive_end_nodes) == 2:
+            n_start, n_end = passive_end_nodes
+            if not (isinstance(n_start, int) and isinstance(n_end, int) and n_start >= 0 and n_end >= 0):
+                raise ValueError("passive_end_nodes tuple must contain two non-negative integers")
+            self._n_passive_start, self._n_passive_end = n_start, n_end
+        else:
+            raise ValueError("passive_end_nodes must be bool, non-negative int, or tuple of two non-negative ints")
         self.__is_3d = is_3d
 
         # recording
@@ -1364,13 +1379,15 @@ class Fiber:
         if self.nodecount < 3:
             warnings.warn("Fiber has fewer than 3 nodes. Consider increasing the fiber length.", stacklevel=2)
 
-        n_passive = int(self.passive_end_nodes)
-        if n_passive and 2 * n_passive >= self.nodecount:
+        n_start = self._n_passive_start
+        n_end = self._n_passive_end
+        if n_start + n_end >= self.nodecount:
             raise ValueError(
                 f"Fiber is too short for the requested number of passive end nodes: "
-                f"nodecount={self.nodecount}, passive_end_nodes={self.passive_end_nodes}. "
-                f"Need at least {2 * n_passive + 1} nodes so that "
-                f"{n_passive} passive node(s) at each end leave at least one active node."
+                f"nodecount={self.nodecount}, passive_end_nodes={self.passive_end_nodes} "
+                f"(start={n_start}, end={n_end}). "
+                f"Need at least {n_start + n_end + 1} nodes so that "
+                f"the passive regions leave at least one active node."
             )
 
         self._create_sections(function_list)
@@ -1398,10 +1415,8 @@ class Fiber:
                 # passive or active node
                 node_type = 'active'
                 # If within the range of passive end nodes
-                if self.passive_end_nodes and (
-                    ind / len(function_list) < self.passive_end_nodes
-                    or self.nodecount - 1 - ind / len(function_list) < self.passive_end_nodes
-                ):
+                node_idx = ind / len(function_list)
+                if (node_idx < self._n_passive_start) or (self.nodecount - 1 - node_idx < self._n_passive_end):
                     node_type = 'passive'
                 section = function(ind, node_type)
                 if node_type == 'passive':
