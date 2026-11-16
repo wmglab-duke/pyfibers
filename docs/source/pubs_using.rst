@@ -13,6 +13,8 @@ Journal articles
 
 - Lung D, Jia Y, Blumer R, Reissig LFF, Zopf LM, Heimel P, Kraus C, Moro A, Fachino M, Haberbusch M (2026) *golgi: an open-source graphical platform for image-to-recruitment modeling of peripheral nerve stimulation.* J Neural Eng. https://doi.org/10.1088/1741-2552/aeba17
 
+- Lung D, Haberbusch M (2026) *jaxon: a differentiable, GPU-native simulator for peripheral-nerve fiber models.* SoftwareX 36: 103196. https://doi.org/10.1016/j.softx.2026.103196
+
 Conference papers
 -----------------
 
@@ -24,7 +26,5 @@ Preprints
 ---------
 
 - Pelot NA, Baumgart I, Blitz A, Brunsman B, et al. (2025) *The human vagal complex: from gross anatomy to single neurons, from brainstem to abdomen.* Research Square. https://doi.org/10.21203/rs.3.rs-7707775/v1
-
-- Lung D, Haberbusch M (2026) *jaxon: a differentiable, GPU-native simulator for peripheral-nerve fiber models.* bioRxiv 2026.07.30.741846. https://doi.org/10.64898/2026.07.30.741846
 
 - Haberbusch M, Lung D (2026) *A GPU-native, differentiable fiber simulator reveals a species-dependent selectivity penalty in reduced-order peripheral-nerve models.* Research Square. https://doi.org/10.21203/rs.3.rs-10543706/v1
