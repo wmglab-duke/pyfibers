@@ -28,3 +28,5 @@ Preprints
 - Pelot NA, Baumgart I, Blitz A, Brunsman B, et al. (2025) *The human vagal complex: from gross anatomy to single neurons, from brainstem to abdomen.* Research Square. https://doi.org/10.21203/rs.3.rs-7707775/v1
 
 - Haberbusch M, Lung D (2026) *A GPU-native, differentiable fiber simulator reveals a species-dependent selectivity penalty in reduced-order peripheral-nerve models.* Research Square. https://doi.org/10.21203/rs.3.rs-10543706/v1
+
+- Clennell B, Luo B, Lam KT, Hu Y, Peterchev AV, Hannah R (2026) *Motor learning engages intrinsic plasticity in the human cortex.* bioRxiv. https://doi.org/10.64898/2026.11.19.767269
