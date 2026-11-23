@@ -60,3 +60,7 @@ When constructing a fiber, users can specify the number of passive end nodes at 
 - The membrane capacitance is set to 1 [uF/cm^2] (a typical value for membranes).
 - The membrane resistance is set to 0.0001 [S/cm^2] (slightly lower than the typical value, which dulls current entry into the node).
 - The axial resistivity is set to 1e10 [Ohm\*cm] (effectively infinite so that no current flows axially, thereby avoiding the creation of action potentials by restricting current flow to adjacent nodes).
+
+:::{note}
+Passive end nodes are not currently supported for the {py:attr}`~pyfibers.model_enum.FiberModel.TIGERHOLM`, {py:attr}`~pyfibers.model_enum.FiberModel.THIO_AUTONOMIC`, and {py:attr}`~pyfibers.model_enum.FiberModel.THIO_CUTANEOUS` models. For these models, `passive_end_nodes` is ignored: a `UserWarning` is issued and it is set to `False`, so all nodes remain active. Because `passive_end_nodes` defaults to `True`, this warning appears whenever one of these fibers is created without passing `passive_end_nodes=False`. Pass `passive_end_nodes=False` to suppress it.
+:::
