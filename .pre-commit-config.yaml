@@ -65,7 +65,7 @@ repos:
   - id: flynt                      # Formats Python f-strings
 
 - repo: https://github.com/kynan/nbstripout
-  rev: 0.9.1
+  rev: 0.9.2
   hooks:
   - id: nbstripout                  # Strips outputs from Jupyter notebooks
     args: [--extra-keys=metadata.kernelspec]
