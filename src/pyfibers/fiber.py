@@ -327,6 +327,8 @@ class Fiber:
         :param temperature: The temperature at which the fiber will be simulated (°C).
         :param passive_end_nodes: If ``True``, automatically assign passive properties to the end nodes.
             Can also be an integer specifying how many passive end nodes to include at each end.
+            Ignored (with a warning) for the Tigerholm and Thio models, which do not
+            currently support passive end nodes.
         :param is_3d: If ``True``, fiber coordinates are treated as 3D.
             Usually set automatically by :func:`build_fiber_3d`.
         :raises ValueError: If ``diameter`` or ``temperature`` is not positive.
